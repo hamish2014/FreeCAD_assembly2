@@ -41,6 +41,7 @@ Updating to the latest version
 ------------------------------
 
   $ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
+
   $ git pull
 
 
