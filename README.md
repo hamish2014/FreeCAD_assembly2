@@ -5,7 +5,7 @@ Assembly workbench for FreeCAD v0.15 with support for importing parts from exter
 Please note that the Assembly 2 workbench is a work under progress and still contains bugs.
 
 Intended work-flow:
-  * each part in the assembly is designed in its own FreeCAD file.
+  * each part in the assembly is designed in its own FreeCAD file
   * a separate assembly FreeCAD file is created
   * parts are imported to this assembly file using the Assembly 2 workbench
   * spacial constraints are then added to assemble the imported parts
@@ -15,7 +15,7 @@ Features
   * axial constraint
   * plane constraint
   * part importing
-  * an update imported part button for updating parts imported using the assembly 2 workbench
+  * updating of parts already imported
 
 Limitations
   * Poor constraint solver which may fail or take excessively long for complicated assemblies
