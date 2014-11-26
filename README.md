@@ -18,7 +18,7 @@ Features
   * an update imported part button for updating parts imported using the assembly 2 workbench
 
 Limitations
-  * Constraint solver rather weak and may fail or take excessively long for complicated assemblies
+  * Poor constraint solver which may fail or take excessively long for complicated assemblies
   * undo and other similar features not supported
 
 
@@ -29,8 +29,11 @@ To use this workbench clone this git repository under your FreeCAD MyScripts dir
 On a Linux Debian based system such as Ubuntu, installation can be done through BASH as follows
 
   $ sudo apt-get install git python-scipy python-numpy
+
   $ mkdir .FreeCAD/Mod
+
   $ cd .FreeCAD/Mod
+
   $ git clone git@github.com:hamish2014/FreeCAD_assembly2.git
 
 
