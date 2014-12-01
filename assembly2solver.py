@@ -4,7 +4,7 @@ library for solving assembly 2 constraints
 
 
 from assembly2lib import *
-from assembly2lib import __dir__ #variable not imported * directive ...
+from assembly2lib import __dir__ #variables not imported with * directive ...
 from lib3D import *
 import numpy
 from numpy import pi, inf
@@ -245,6 +245,25 @@ def solveConstraints( doc, solver=solve_via_slsqp, random_restart_attempts = 6  
         for k,v in optResults.iteritems():
             FreeCAD.Console.PrintError("    %s: %s\n" % (k,v))
         FreeCAD.Console.PrintError("UNABLE TO SOLVE ASSEMBLY CONSTRAINTS. refer to the Report View window for info\n")
+        # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
+        flags = QtGui.QMessageBox.StandardButton.Yes 
+        flags |= QtGui.QMessageBox.StandardButton.No
+        message = """The assembly 2 solver failed to find a solution to the specified constraints.
+This is due to either
+  - the contraint problem being too difficult for the solver, or
+  - impossible/contridictorary constraints have be specified.
+
+Either way, the solution is most likely to delete the problematic constraints, and try again using a different constraint scheme.
+Delete constraints [%s]?
+ """ % ', '.join(vNames)
+        response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!",
+                                              message,
+                                              flags)
+        if response == QtGui.QMessageBox.Yes:
+            for name in vNames:
+                doc.removeObject(name)
+                FreeCAD.Console.PrintError("removed constraint %s" % name)
+        
     #print(xOpt)
 
 
