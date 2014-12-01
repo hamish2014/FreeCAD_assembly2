@@ -14,7 +14,7 @@ Features
   * circular edge constraint
   * axial constraint
   * plane constraint
-  * part importing
+  * part importing 
   * updating of parts already imported
 
 Limitations

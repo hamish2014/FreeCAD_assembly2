@@ -40,13 +40,14 @@ def parseSelection(selection):
     c.addProperty("App::PropertyInteger","EdgeInd1","ConstraintInfo","Object 1 face index").EdgeInd1 = cParms[0][1]
     c.addProperty("App::PropertyString","Object2","ConstraintInfo","Object 2").Object2 = cParms[1][0]
     c.addProperty("App::PropertyInteger","EdgeInd2","ConstraintInfo","Object 2 face index").EdgeInd2 = cParms[1][1]
-    c.addProperty("App::PropertyBool","enforceAxesDirections", "ConstraintInfo")
-    c.addProperty("App::PropertyBool","axesDirectionsEqual", "ConstraintInfo")
+    
+    c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
+    c.directionConstraint = ["none","aligned","opposed"]
     c.addProperty("App::PropertyFloat","offset","ConstraintInfo")
     
     c.setEditorMode('Type',1)
-    for prop in ["Object1","Object2","EdgeInd1","EdgeInd2", "Type"]:
-        c.setEditorMode(prop, 2) 
+    for prop in ["Object1","Object2","EdgeInd1","EdgeInd2"]:
+        c.setEditorMode(prop, 1) 
         
     c.Proxy = ConstraintObjectProxy()
     c.Proxy.callSolveConstraints()    
@@ -87,8 +88,7 @@ class CircularEdgeConstraint(ConstraintPrototype):
           self.c1_r = p1.rotate_and_then_move_undo( curve1.Center )
           #debugPrint(4, 'surface1.center %s, rotate_and_then_move_undo %s' % (surface1.Center, self.c1_r))
           self.c2_r = p2.rotate_and_then_move_undo( curve2.Center )
-          self.enforceAxesDirections = self.constraintObj.enforceAxesDirections
-          self.axesDirectionsEqual = self.constraintObj.axesDirectionsEqual
+          self.directionConstraint = self.constraintObj.directionConstraint
           self.offset = self.constraintObj.offset
 
      def errors(self):
@@ -103,12 +103,12 @@ class CircularEdgeConstraint(ConstraintPrototype):
           #debugPrint(4, 'c1 %s' % c1.__repr__())
           #debugPrint(4, 'c2 %s' % c2.__repr__())
           ax_prod = numpy.dot( a1, a2 )
-          if not self.enforceAxesDirections :
-               ax_const = (1 - abs(ax_prod))
-          elif self.axesDirectionsEqual:
-               ax_const = (1 - ax_prod)
-          else:
-               ax_const = (1 + ax_prod)
+          if self.directionConstraint == "none" :
+              ax_const = (1 - abs(ax_prod))
+          elif self.directionConstraint == "aligned":
+              ax_const = (1 - ax_prod)
+          else: #opposed
+              ax_const = (1 + ax_prod)
 
           dist = numpy.dot(a1, c1 - c2)
 

@@ -36,12 +36,13 @@ def parseSelection(selection):
      c.addProperty("App::PropertyString","Object2","ConstraintInfo","Object 2").Object2 = cParms[1][0]
      c.addProperty("App::PropertyInteger","FaceInd2","ConstraintInfo","Object 2 face index").FaceInd2 = cParms[1][1]
      c.addProperty("App::PropertyFloat","planeOffset","ConstraintInfo")
-     c.addProperty("App::PropertyBool","enforcePlaneDirections", "ConstraintInfo")
-     c.addProperty("App::PropertyBool","planeDirectionsEqual", "ConstraintInfo")
+     
+     c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
+     c.directionConstraint = ["none","aligned","opposed"]
 
      c.setEditorMode('Type',1)
-     #for prop in ["Object1","Object2","FaceInd1","FaceInd2", "Type"]:
-     #     c.setEditorMode(prop, 2) 
+     for prop in ["Object1","Object2","FaceInd1","FaceInd2"]:
+          c.setEditorMode(prop, 1) 
 
      c.Proxy = ConstraintObjectProxy()
      c.Proxy.callSolveConstraints()
@@ -80,8 +81,7 @@ class PlaneConstraint(ConstraintPrototype):
           self.pos1_r = p1.rotate_and_then_move_undo( surface1.Position )
           self.pos2_r = p2.rotate_and_then_move_undo( surface2.Position )
           self.planeOffset = self.constraintObj.planeOffset
-          self.enforcePlaneDirections = self.constraintObj.enforcePlaneDirections
-          self.planeDirectionsEqual = self.constraintObj.planeDirectionsEqual
+          self.directionConstraint = self.constraintObj.directionConstraint
 
 
      def errors(self):
@@ -94,11 +94,11 @@ class PlaneConstraint(ConstraintPrototype):
           dist = numpy.dot(a1, pos1 - pos2) #distance between planes
           #debugPrint(2, 'dist %f' % dist)
           ax_prod = numpy.dot( a1, a2 )
-          if not self.enforcePlaneDirections :
+          if self.directionConstraint == "none" :
                ax_const = (1 - abs(ax_prod))
-          elif self.planeDirectionsEqual:
+          elif self.directionConstraint == "aligned":
                ax_const = (1 - ax_prod)
-          else:
+          else: #opposed
                ax_const = (1 + ax_prod)
           
           return [
