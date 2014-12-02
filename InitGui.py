@@ -6,8 +6,8 @@ class Assembly2Workbench (Workbench):
     MenuText = "Assembly 2"
     def Initialize(self):
         from assembly2lib import __dir__
-        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint
-        commandslist = ["importPart", "updateImportedPartsCommand", "addCircularEdgeConstraint", "addPlaneConstraint", "addAxialConstraint", "assembly2SolveConstraints"]
+        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly
+        commandslist = ["importPart", "updateImportedPartsCommand", "addCircularEdgeConstraint", "addPlaneConstraint", "addAxialConstraint", "assembly2SolveConstraints","muxAssembly"]
         self.appendToolbar("Assembly 2", commandslist)
 
 Gui.addWorkbench(Assembly2Workbench())
