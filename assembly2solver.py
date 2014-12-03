@@ -201,13 +201,13 @@ def solveConstraints( doc, solver=solve_via_slsqp, random_restart_attempts = 1  
             except AttributeError, msg:
                 if str(msg).strip() == "'NoneType' object has no attribute 'Placement'":
                     flags = QtGui.QMessageBox.StandardButton.Yes | QtGui.QMessageBox.StandardButton.Abort
-                    message = "%s is refering an object which is not longer in the assembly. Delete constraint? otherwise abort solving." % obj.Name
+                    message = "%s is refering to an object no longer in the assembly. Delete constraint? otherwise abort solving." % obj.Name
                     response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Broken Constraint", message, flags )
                     if response == QtGui.QMessageBox.Yes:
                         FreeCAD.Console.PrintError("removing constraint %s" % obj.Name)
                         doc.removeObject(obj.Name)
                     else:
-                        FreeCAD.Console.PrintError("aborted solving constraints due to %s" % obj.Name)
+                        FreeCAD.Console.PrintError("aborted solving constraints due to %s refering a non-existent object" % obj.Name)
                         return
 
     violatedConstraints = [c for c in constraints if not c.satisfied() ]
