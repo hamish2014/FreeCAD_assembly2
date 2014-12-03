@@ -179,7 +179,7 @@ def objects_violating_constraints( constraints ):
     return vObjects
 
 
-def solveConstraints( doc, solver=solve_via_slsqp, random_restart_attempts = 6  ):
+def solveConstraints( doc, solver=solve_via_slsqp, random_restart_attempts = 1  ):
     '''
     - gernerate a list of variables
     - for each constraint, parse varialbe as to generate constraint error equations.
@@ -196,7 +196,19 @@ def solveConstraints( doc, solver=solve_via_slsqp, random_restart_attempts = 6  
     for obj in doc.Objects:
         if 'ConstraintInfo' in obj.Content:
             debugPrint(3, "assembly2solver parsing %s" % obj.Name )
-            constraints.append( mapper[obj.Type]( doc, obj, variableManager) )
+            try:
+                constraints.append( mapper[obj.Type]( doc, obj, variableManager) )
+            except AttributeError, msg:
+                if str(msg).strip() == "'NoneType' object has no attribute 'Placement'":
+                    flags = QtGui.QMessageBox.StandardButton.Yes | QtGui.QMessageBox.StandardButton.Abort
+                    message = "%s is refering an object which is not longer in the assembly. Delete constraint? otherwise abort solving." % obj.Name
+                    response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Broken Constraint", message, flags )
+                    if response == QtGui.QMessageBox.Yes:
+                        FreeCAD.Console.PrintError("removing constraint %s" % obj.Name)
+                        doc.removeObject(obj.Name)
+                    else:
+                        FreeCAD.Console.PrintError("aborted solving constraints due to %s" % obj.Name)
+                        return
 
     violatedConstraints = [c for c in constraints if not c.satisfied() ]
     vNames = [ vc.constraintObj.Name for vc in violatedConstraints ]
