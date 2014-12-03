@@ -25,10 +25,10 @@ Limitations
 Installation Instructions
 -------------------------
 
-To use this workbench clone this git repository under your FreeCAD MyScripts directory, and install the scipy and numpy python libraries.
+To use this workbench clone this git repository under your FreeCAD MyScripts directory, and install the pyside, numpy and scipy python libraries.
 On a Linux Debian based system such as Ubuntu, installation can be done through BASH as follows
 
-  $ sudo apt-get install git python-scipy python-numpy
+  $ sudo apt-get install git python-scipy python-numpy python-pyside
 
   $ mkdir .FreeCAD/Mod
 
