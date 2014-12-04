@@ -7,14 +7,13 @@ from assembly2lib import __dir__
 from PySide import QtGui
 import os, numpy
 
-class Proxy_importPart:
-    def execute(self, shape):
-        pass
-
 def importPart( filename, partName=None ):
     updateExistingPart = partName <> None
-    if not updateExistingPart:
+    if updateExistingPart:
+        FreeCAD.Console.PrintMessage("updating part %s from %s\n" % (partName,filename))
+    else:
         FreeCAD.Console.PrintMessage("importing part from %s\n" % filename)
+        
     doc_already_open = filename in [ d.FileName for d in FreeCAD.listDocuments().values() ] 
     debugPrint(4, "%s open already %s" % (filename, doc_already_open))
     if not doc_already_open:
@@ -23,7 +22,7 @@ def importPart( filename, partName=None ):
         FreeCAD.setActiveDocument(currentDoc)
     doc = [ d for d in FreeCAD.listDocuments().values()
             if d.FileName == filename][0]
-    debugPrint(2, '%s objects %s' % (doc.Name, doc.Objects))
+    debugPrint(3, '%s objects %s' % (doc.Name, doc.Objects))
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
                        and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
@@ -43,8 +42,9 @@ def importPart( filename, partName=None ):
         else:
             partName = findUnusedObjectName( doc.Name + '_import' )
             obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
-            obj.addProperty("App::PropertyString","sourceFile","importPart").sourceFile = filename
-            obj.setEditorMode("sourceFile",1)  
+            obj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = filename
+            obj.addProperty("App::PropertyFloat", "timeLastImport","importPart")
+            obj.setEditorMode("timeLastImport",1)  
             obj.addProperty("App::PropertyBool","fixedPosition","importPart")
             obj.fixedPosition = not any([i.fixedPosition for i in FreeCAD.ActiveDocument.Objects if hasattr(i, 'fixedPosition') ])
         obj.Shape = obj_to_copy.Shape.copy()
@@ -63,11 +63,14 @@ def importPart( filename, partName=None ):
                 obj.Placement.Base.x = 42*numpy.random.rand()
                 obj.Placement.Base.y = 42*numpy.random.rand()
                 obj.Placement.Base.z = 42*numpy.random.rand()
-
+        obj.timeLastImport = os.path.getmtime( obj.sourceFile )
     if not doc_already_open: #then close again
         FreeCAD.closeDocument(doc.Name)
         FreeCAD.setActiveDocument(currentDoc)
 
+class Proxy_importPart:
+    def execute(self, shape):
+        pass
 
 class ImportPartCommand:
     def Activated(self):
@@ -97,7 +100,14 @@ class UpdateImportedPartsCommand:
     def Activated(self):
         for obj in FreeCAD.ActiveDocument.Objects:
             if hasattr(obj, 'sourceFile'):
-                importPart( obj.sourceFile, obj.Name )
+                if not hasattr( obj, 'timeLastImport'):
+                    obj.addProperty("App::PropertyFloat", "timeLastImport","importPart") #should default to zero which will force update.
+                    obj.setEditorMode("timeLastImport",1)  
+                if not os.path.exists( obj.sourceFile ):
+                    QtGui.QMessageBox.critical(  QtGui.qApp.activeWindow(), "Source file not found", "update of %s aborted due source file being missing..." % obj.Name )
+                    obj.timeLastImport = 0 #force update if users repairs link
+                elif os.path.getmtime( obj.sourceFile ) > obj.timeLastImport:
+                    importPart( obj.sourceFile, obj.Name )
         FreeCAD.ActiveDocument.recompute()
 
        
