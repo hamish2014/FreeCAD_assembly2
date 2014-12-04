@@ -25,7 +25,8 @@ def importPart( filename, partName=None ):
             if d.FileName == filename][0]
     debugPrint(2, '%s objects %s' % (doc.Name, doc.Objects))
     visibleObjects = [ obj for obj in doc.Objects
-                       if hasattr(obj,'ViewObject') and hasattr(obj,'Shape') and obj.ViewObject.isVisible() and obj.TypeId <> 'Sketcher::SketchObject']
+                       if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
+                       and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
     if len(visibleObjects) <> 1:
         if not updateExistingPart:
             msg = "A part can only be imported from a FreeCAD document with exactly one visible part. Aborting operation"
