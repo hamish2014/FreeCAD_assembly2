@@ -12,6 +12,7 @@ import scipy.optimize
 from axialConstraint import AxialConstraint
 from planeConstraint import PlaneConstraint
 from circularEdgeConstraint import CircularEdgeConstraint
+from angleConstraint import AngleConstraint
 
 class VariableManager:
     def __init__(self, doc):
@@ -191,7 +192,8 @@ def solveConstraints( doc, solver=solve_via_slsqp, random_restart_attempts = 1  
     mapper = { 
         'axial':AxialConstraint, 
         'plane':PlaneConstraint, 
-        'circularEdge':CircularEdgeConstraint
+        'circularEdge':CircularEdgeConstraint,
+        'angle_between_planes':AngleConstraint,
         }
     for obj in doc.Objects:
         if 'ConstraintInfo' in obj.Content:
