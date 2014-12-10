@@ -34,7 +34,7 @@ On a Linux Debian based system such as Ubuntu, installation can be done through 
 
   $ cd .FreeCAD/Mod
 
-  $ git clone git@github.com:hamish2014/FreeCAD_assembly2.git
+  $ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
 
 
 Updating to the latest version
