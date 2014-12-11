@@ -1,12 +1,16 @@
 '''
 create parts list
 '''
+from assembly2lib import *
+from assembly2lib import __dir__
+try:
+    from dimensioning import getDrawingPageGUIVars, DimensioningProcessTracker
+    import previewDimension
+    dimensioning = DimensioningProcessTracker()
+    drawing_dimensioning_installed = True
+except ImportError:
+    drawing_dimensioning_installed = False
 
-from dimensioning import *
-from dimensioning import __dir__ # not imported with * directive
-import previewDimension
-
-dimensioning = DimensioningProcessTracker()
 strokeWidth = 0.4
 
 fontSize = 4.0
@@ -84,10 +88,13 @@ def hoverEvent( x, y):
 
 class AddPartsList:
     def Activated(self):
+        if not drawing_dimensioning_installed:
+            QtGui.QMessageBox.critical( QtGui.qApp.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning/network)' )
+            return
         V = getDrawingPageGUIVars() #needs to be done before dialog show, else Qt active is dialog and not freecads
         dimensioning.activate( V )
         P = PartsList()
-        for obj in App.ActiveDocument.Objects:
+        for obj in FreeCAD.ActiveDocument.Objects:
             if 'importPart' in obj.Content:
                 debugPrint(3, 'adding %s to parts list' % obj.Name)
                 P.addObject(obj)
