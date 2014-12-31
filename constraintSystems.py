@@ -59,7 +59,6 @@ class ConstraintSystemPrototype:
         pass
 
     def containtsObject( self, objName ):
-        debugPrint(4,  '%s locally contraints %s and %s' % (self.str(), self.obj1Name, self.obj2Name ))
         if self.obj1Name == objName:
             return True
         elif self.obj2Name == objName:
@@ -288,7 +287,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             elif len(matches) == 1 and isinstance(matches[0], AxisRotationDegreeOfFreedom):
                 vM = self.variableManager
                 a = vM.rotate( self.obj1Name, self.a1_r, self.X )
-                if numpy.array_equal(a, matches[0].axis):
+                if 1 - abs(numpy.dot(a, matches[0].axis)) < self.solveConstraintEq_tol: #
                     debugPrint(4, '%s Logic "%s": AxisRotationDegreeOfFreedom with same axis already exists not reducing dofs for part' % (self.label, objName))
                     self.degreesOfFreedom_updateInd = -1
                     self.degreesOfFreedom = dofs
@@ -336,7 +335,7 @@ class AxisRotationDegreeOfFreedom:
     def setAxis(self, X, axis):
         self.lenX = len(X)
         i = self.objInd
-        self.R0 = euler_ZYX_rotation_matrix( X[i+3], X[i+4], X[i+5] )
+        self.R0 = azimuth_elevation_rotation_matrix(*X[i+3:i+6])
         self.X0 = X[i+3:i+6]
         self.axis = axis
     def setValue( self, x):
@@ -344,12 +343,14 @@ class AxisRotationDegreeOfFreedom:
         self.assignedValue = True
     def X_contribution( self, X_system ):
         R_axis = axis_rotation_matrix( self.value, *self.axis)
-        X_desired = rotation_matrix_to_euler_ZYX(  numpy.dot( R_axis, self.R0 ) )
-        #X_desired = self.X0
+        R_desired = numpy.dot( R_axis, self.R0 )
+        axis, angle = rotation_matrix_axis_and_angle( R_desired )
+        azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
+        X_desired = numpy.array([azi, ela, angle])
         # X_desired = X_system + X (for rotations of interest)
         X = numpy.zeros(self.lenX)
         i = self.objInd
-        X[i+3:i+6] = numpy.array(X_desired) - X_system[i+3:i+6]
+        X[i+3:i+6] = X_desired - X_system[i+3:i+6]
         return X
     def maxStep(self):             
         return pi/5
@@ -475,7 +476,7 @@ class LinearMotionDegreeOfFreedom:
 
 class AxisDistanceUnion(ConstraintSystemPrototype):
     label = 'AxisDistanceUnion'
-    solveConstraintEq_tol = 10**-7
+    solveConstraintEq_tol = 10**-4
     def init2(self):
         vM = self.variableManager
         #get rotation r(relative) to objects initial placement.

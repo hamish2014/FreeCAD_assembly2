@@ -6,7 +6,8 @@ This relative co-ordinate system can then be transformed by object placements va
 
 6 variables per object
 - x, y, z
-- theta, phi, psi  #using euler angles instead of quaternions because i think it will make the constraint problem easier to solver...
+first tried ZYX euler angles ( theta, phi, psi ) for rotational degrees of freedom, which did not work for all scenarios, now trying
+- aximuth angle, elevation angle, rotation angle # where aximuth angle and elevation angle define the axis of rotation.
 
 
 >>> d.part2.Placement.Base.x
@@ -47,8 +48,12 @@ class VariableManager:
             self.index[objectName] = len(X)
             obj = doc.getObject(objectName)
             x, y, z = obj.Placement.Base.x, obj.Placement.Base.y, obj.Placement.Base.z
-            theta, phi, psi  = quaternion_to_euler( *obj.Placement.Rotation.Q )
-            X = X + [ x, y, z, theta, phi, psi]
+            axis, theta = quaternion_to_axis_and_angle( *obj.Placement.Rotation.Q )
+            if theta > 0:
+                azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
+            else:
+                azi, ela = 0, 0
+            X = X + [ x, y, z, azi, ela, theta]
         self.X0 = numpy.array(X)
         self.X = self.X0.copy()
 
@@ -59,7 +64,9 @@ class VariableManager:
             obj.Placement.Base.x = X[i]
             obj.Placement.Base.y = X[i+1]
             obj.Placement.Base.z = X[i+2]
-            obj.Placement.Rotation.Q = euler_to_quaternion( X[i+3], X[i+4], X[i+5] )
+            azi, ela, theta =  X[i+3:i+6]
+            axis = azimuth_and_elevation_angles_to_axis( azi, ela )
+            obj.Placement.Rotation.Q = quaternion( theta, *axis )
 
     def objectsXComponent( self, objectName, X ):
         X_obj = numpy.zeros(len(X))
@@ -73,23 +80,20 @@ class VariableManager:
     def rotate(self, objectName, p, X):
         'rotate a vector p by objectNames placement variables defined in X'
         i = self.index[objectName]
-        return euler_ZYX_rotation( p, X[i+3], X[i+4], X[i+5]) # theta, phi, psi
+        return azimuth_elevation_rotation( p, *X[i+3:i+6])
 
     def rotateUndo( self, objectName, p, X):
         i = self.index[objectName]
-        R = euler_ZYX_rotation_matrix( X[i+3], X[i+4], X[i+5] )
+        R = azimuth_elevation_rotation_matrix(*X[i+3:i+6])
         return numpy.linalg.solve(R,p)
 
     def rotateAndMove( self, objectName, p, X):
         'rotate the vector p by objectNames placement rotation and then move using objectNames placement'
         i = self.index[objectName]
-        return euler_ZYX_rotation( p, X[i+3], X[i+4], X[i+5] ) + X[i:i+3]
+        return azimuth_elevation_rotation( p, *X[i+3:i+6]) + X[i:i+3]
 
     def rotateAndMoveUndo( self, objectName, p, X): # or un(rotate_and_then_move) #synomyn to get co-ordinates relative to objects placement variables.
         i = self.index[objectName]
         v = numpy.array(p) - X[i:i+3]
-        R = euler_ZYX_rotation_matrix( X[i+3], X[i+4], X[i+5] )
+        R = azimuth_elevation_rotation_matrix(*X[i+3:i+6])
         return numpy.linalg.solve(R,v)
-
-
-        

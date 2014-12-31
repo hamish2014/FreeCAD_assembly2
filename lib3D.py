@@ -22,6 +22,24 @@ def quaternion_to_euler( q_1, q_2, q_3, q_0): #order to match FreeCads, naming t
     theta =   arctan2( 2*(q_0*q_3 + q_1*q_2), 1 - 2*(q_2**2 + q_3**2) )
     return theta, phi, psi # gives same answer as FreeCADs toEuler function
 
+def quaternion_to_axis_and_angle(  q_1, q_2, q_3, q_0): 
+    'http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions'
+    q =  numpy.array( [q_1, q_2, q_3])
+    return q/norm(q), 2*arccos(q_0)
+
+def azimuth_and_elevation_angles_to_axis( a, e):
+    u_z = sin(e)
+    u_x = cos(e)*cos(a)
+    u_y = cos(e)*sin(a)
+    return numpy.array([ u_x, u_y, u_z ])
+def axis_to_azimuth_and_elevation_angles( u_x, u_y, u_z ):
+    if -1 <= u_z and u_z <= 1: #sometime numerical errors cause u_z to be outside this range.
+        e = arcsin(u_z)
+    else:
+        e = pi/2 if u_z > 0 else -pi/2
+    a = arctan2( u_y, u_x)
+    return a, e
+
 def quaternion_multiply( q1, q2 ):
     'http://en.wikipedia.org/wiki/Quaternion#Hamilton_product'
     a_1, b_1, c_1, d_1 = q1
@@ -99,7 +117,14 @@ def axis_rotation_matrix( theta, u_x, u_y, u_z ):
 def axis_rotation( p, theta, u_x, u_y, u_z ):
     return numpy.dot(axis_rotation_matrix( theta, u_x, u_y, u_z ), p)
 
+def azimuth_elevation_rotation_matrix(azi, ela, theta ):
+    return axis_rotation_matrix( theta, *azimuth_and_elevation_angles_to_axis(azi, ela))
+
+def azimuth_elevation_rotation( p, azi, ela, theta ):
+    return numpy.dot(azimuth_elevation_rotation_matrix( azi, ela, theta ), p)
+
 def rotation_matrix_to_euler_ZYX(R, debug=False, checkAnswer=False, tol=10**-6, tol_XZ_same_axis=10**-9 ):
+    'better way available at http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions#Rotation_matrix_.E2.86.94_Euler_angles'
     if 1.0 - abs(R[2,0]) > tol_XZ_same_axis :
         s_2 = -R[2,0]
         for angle2 in [ arcsin(s_2), pi - arcsin(s_2)]:#two options
@@ -167,9 +192,34 @@ def rotation_matrix_to_euler_ZYX_check_answer( R, angle1, angle2, angle3, tol=10
         print('rotation_matrix_to_euler_ZYX_check_answer:')
         print('    norm(R - euler_ZYX_rotation_matrix( angle1, angle2, angle3)) %e' % error)
     if error > tol:
-         raise RuntimeError,'rotation_matrix_to_euler_ZYX check failed!. locals %s' % locals()    
+         raise RuntimeError,'rotation_matrix_to_euler_ZYX check failed!. locals %s' % locals()
+def rotation_matrix_to_euler_ZYX_2(R, debug=False):
+    axis, angle = rotation_matrix_axis_and_angle_2(R)
+    q_1, q_2, q_3, q_0 = quaternion(angle, *axis)
+    return quaternion_to_euler( q_1, q_2, q_3, q_0)
 
-def rotation_matrix_axis_and_angle(R, debug=False, errorThreshold=10**-8):
+def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThreshold=10**-8):
+    'http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions#Rotation_matrix_.E2.86.94_Euler_axis.2Fangle'
+    a = arccos( 0.5 * ( R[0,0]+R[1,1]+R[2,2] - 1) )
+    if a % pi <> 0:
+        for angle in [a, -a]:
+            u_x = 0.5* (R[2,1]-R[1,2]) / sin(angle) 
+            u_y = 0.5* (R[0,2]-R[2,0]) / sin(angle) 
+            u_z = 0.5* (R[1,0]-R[0,1]) / sin(angle)
+            if abs( (1-cos(angle))*u_x*u_y - u_z*sin(angle) - R[0,1] ) < 10**-6:
+                break
+        axis = numpy.array([u_x, u_y, u_z])
+    else:
+        axis, angle  = rotation_matrix_axis_and_angle_2( R )
+    if debug:
+        print('  axis %s, angle %s' % (axis, angle))
+    if checkAnswer:
+        error  = norm(axis_rotation_matrix(angle, *axis) - R)
+        if debug: print('  norm(axis_rotation_matrix(angle, *axis) - R) %1.2e' % error)
+        if error > errorThreshold:
+            axis, angle = rotation_matrix_axis_and_angle_2(R, errorThreshold=errorThreshold)
+    return axis, angle
+def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-8):
     w, v = numpy.linalg.eig(R) #this method is not used at the primary method as numpy.linalg.eig does not return answers in high enough precision
     angle, axis = None, None
     for i in range(3):
@@ -188,14 +238,8 @@ def rotation_matrix_axis_and_angle(R, debug=False, errorThreshold=10**-8):
         angle = -angle
         error = norm(axis_rotation_matrix(angle, *axis) - R)
         if error > errorThreshold:
-            raise ValueError, 'rotation_matrix_axis_and_angle: no solution found! R %s' % str(R)
+            raise ValueError, 'rotation_matrix_axis_and_angle_2: no solution found! R %s' % str(R)
     return axis, angle
-
-
-def rotation_matrix_to_euler_ZYX_2(R, debug=False):
-    axis, angle = rotation_matrix_axis_and_angle(R)
-    q_1, q_2, q_3, q_0 = quaternion(angle, *axis)
-    return quaternion_to_euler( q_1, q_2, q_3, q_0)
 
 def plane_degrees_of_freedom( normalVector, debug=False, checkAnswer=False ):
     '''determine euler angles 1&2 so that euler_ZYX_rotation_matrix*[1,0,0]=normalVector.
@@ -404,6 +448,32 @@ if __name__ == '__main__':
     p_r = euler_rotation( p, ang1, ang2, ang3)
     print('  euler_rotation2 :     %s   (norm(p) %1.3f, norm(p_rotated) %1.3f' % (p_r, numpy.linalg.norm(p), numpy.linalg.norm(p_r)))
     
+
+    print('\ntesting quaternion_to_axis_and_angle')
+    testcases = []
+    for r in numpy.eye(3):
+        testcases.append( [r, 0.1 + rand() ] )
+    for i in range(3):
+        axis = rand(3) - 0.5
+        testcases.append( [ axis/norm(axis), 0.5-rand() ] )
+    for i,testcase in enumerate(testcases):
+        axis, angle = testcase
+        q_1, q_2, q_3, q_0  = quaternion(angle, *axis)
+        axis_out, angle_out = quaternion_to_axis_and_angle(q_1, q_2, q_3, q_0)
+        if numpy.sign( angle_out ) <> numpy.sign( angle):
+            angle_out = -angle_out
+            axis_out = -axis_out
+        if norm(axis - axis_out) > 10**-12 or norm(angle - angle_out) > 10**-9:
+            raise ValueError, "norm(axis - axis_out) > 10**-12 or norm(angle - angle_out) > 10**-9. \n  in:  axis %s, angle %s\n  out: axis %s, angle %s" % (axis,angle,axis_out,angle_out) 
+    print('testing axis_to_azimuth_and_elevation_angles & azimuth_and_elevation_angles_to_axis')
+    for i,testcase in enumerate(testcases):
+        axis, angle = testcase
+        a,e = axis_to_azimuth_and_elevation_angles(*axis)
+        axis_out = azimuth_and_elevation_angles_to_axis( a, e)
+        if norm(axis - axis_out) > 10**-12:
+            raise ValueError, "norm(axis - axis_out) > 10**-12. \n  in:  axis %s \n  azimuth %f, elavation %f \n  out: axis %s" % (axis,a,e,axis_out)
+
+
     print('\nchecking distance_between_axes function')
     p1 = numpy.array( [0.0 , 0, 0 ] )
     u1 = numpy.array( [1.0 , 0, 0 ] )
@@ -461,7 +531,14 @@ if __name__ == '__main__':
         #prettyPrintArray(numpy.dot(R,R.transpose()), ' '*4)
         angle1, angle2, angle3 = rotation_matrix_to_euler_ZYX( R )
         rotation_matrix_to_euler_ZYX_check_answer(R, angle1, angle2, angle3)
+        pass
     print('all %i rotation_matrix_to_euler_ZYX tests passed.' % len(testCases)) 
+
+    print('\ntesting rotation_matrix_axis_and_angle')
+    for i, R in enumerate( testCases ):
+        #prettyPrintArray(R, ' '*4,'%1.2e')
+        rotation_matrix_axis_and_angle(R, checkAnswer=True, debug=False)
+    print('all %i tests passed.' % len(testCases))  
 
     print('\ntesting plane_degrees_of_freedom')
     testCases = []
