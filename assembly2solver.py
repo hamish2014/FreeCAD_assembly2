@@ -65,60 +65,61 @@ def solveConstraints( doc ):
     def debugInfo():
         debugPrint(3, '  resulting system %s' % constraintSystem.str(addDOFs=debugPrint.level>3))
 
+    solved = True
     for constraintObj in constraintObjectQue:
         obj1Name = constraintObj.Object1
         obj2Name = constraintObj.Object2
         debugPrint( 3, '  parsing %s, type:%s' % (constraintObj.Name, constraintObj.Type ))
-        if constraintObj.Type == 'plane':
-            constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint )
-            debugInfo()
-            constraintSystem = PlaneOffsetUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1, constraintObj.FaceInd2,  constraintObj.planeOffset)
-            debugInfo()
-        elif constraintObj.Type == 'angle_between_planes':
-            constraintSystem = AngleUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2, cos(constraintObj.degrees / 180 * pi ) )
-            debugInfo()
-        elif constraintObj.Type == 'axial':
-            constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint,'cylinder')
-            debugInfo()
-            constraintSystem = AxisDistanceUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  0 ,'cylinder')
-            debugInfo()
-        elif constraintObj.Type == 'circularEdge':
-            constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  constraintObj.directionConstraint,'circle')
-            debugInfo()
-            constraintSystem = AxisDistanceUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  0 ,'circle')
-            debugInfo()
-            constraintSystem = PlaneOffsetUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1, constraintObj.EdgeInd2,  constraintObj.offset,'circle')
-            debugInfo()                    
-        else:
-            raise RuntimeError, 'constraintType %s not supported yet' % constraintObj.Type
-    debugPrint(3,'constraintSystem.X %s' % constraintSystem.X )
-    variableManager.updateFreeCADValues( constraintSystem.X )
+        try:
+            if constraintObj.Type == 'plane':
+                constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint )
+                debugInfo()
+                constraintSystem = PlaneOffsetUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1, constraintObj.FaceInd2,  constraintObj.planeOffset)
+                debugInfo()
+            elif constraintObj.Type == 'angle_between_planes':
+                constraintSystem = AngleUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2, cos(constraintObj.degrees / 180 * pi ) )
+                debugInfo()
+            elif constraintObj.Type == 'axial':
+                constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint,'cylinder')
+                debugInfo()
+                constraintSystem = AxisDistanceUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  0 ,'cylinder')
+                debugInfo()
+            elif constraintObj.Type == 'circularEdge':
+                constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  constraintObj.directionConstraint,'circle')
+                debugInfo()
+                constraintSystem = AxisDistanceUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  0 ,'circle')
+                debugInfo()
+                constraintSystem = PlaneOffsetUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1, constraintObj.EdgeInd2,  constraintObj.offset,'circle')
+                debugInfo()                    
+            else:
+                raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
+        except ValueError, msg:
+            FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
+            FreeCAD.Console.PrintError(msg)
+            solved = False
+            break
+        
+    if solved:
+        debugPrint(4,'constraintSystem.X %s' % constraintSystem.X )
+        variableManager.updateFreeCADValues( constraintSystem.X )
+    else:
+        # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
+        flags = QtGui.QMessageBox.StandardButton.Yes 
+        flags |= QtGui.QMessageBox.StandardButton.No
+        message = """The assembly2 solver failed to satisfy the constraint "%s".
+This is due to either
+  - impossible/contridictorary constraints have be specified,   
+  - invalid constraint values being specified, or the
+  - the contraint problem being too difficult for the solver
+Either way the most likely solution is to delete the problematic constraint, and try again using a different constraint scheme.
+Delete constraint "%s"?
+""" % (constraintObj.Name, constraintObj.Name)
+        response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!", message, flags)
+        if response == QtGui.QMessageBox.Yes:
+            name = constraintObj.Name
+            doc.removeObject( name )
+            FreeCAD.Console.PrintError("removed constraint %s" % name )
     return constraintSystem
-    
-
-#    if not solved:
-#        FreeCAD.Console.PrintError("UNABLE TO SOLVE ASSEMBLY CONSTRAINTS.")
-#        # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
-#        flags = QtGui.QMessageBox.StandardButton.Yes 
-#        flags |= QtGui.QMessageBox.StandardButton.No
-#        message = """The assembly2 failed to solve the specified constraints.
-#This is due to either
-#  - the contraint problem being too difficult for the solver, or
-#  - impossible/contridictorary constraints have be specified.
-#
-#Either way, the solution is most likely to delete the problematic constraints, and try again using a different constraint scheme.
-#Delete constraints [%s]?
-# """ % ', '.join(vNames)
-#        response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!",
-#                                              message,
-#                                              flags)
-#        if response == QtGui.QMessageBox.Yes:
-#            for name in vNames:
-#                doc.removeObject(name)
-#                FreeCAD.Console.PrintError("removed constraint %s" % name)
-#        
-#    #print(xOpt)
-
 
 class Assembly2SolveConstraintsCommand:
     def Activated(self):
@@ -131,6 +132,10 @@ class Assembly2SolveConstraintsCommand:
             } 
 
 FreeCADGui.addCommand('assembly2SolveConstraints', Assembly2SolveConstraintsCommand())
+
+
+
+
 
 
 if __name__ == '__main__':

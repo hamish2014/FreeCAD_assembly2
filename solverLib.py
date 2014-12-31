@@ -120,7 +120,7 @@ def solve_via_Newtons_method( f, x0, maxStep, grad_f=None, x_tol=10**-6, f_tol=N
             if any(distances <= x_tol) :
                 if debugPrintLevel > 0: 
                     printF(' any(distances < x_tol) therefore randomPertubation...')
-                x_p = (0.5 - rand(n)) * numpy.array(maxStep)* (1 - i*1.0/maxIt)*0.1
+                x_p = (0.5 - rand(n)) * numpy.array(maxStep)* (1 - i*1.0/maxIt)
                 x = x + x_p
                 x_c = x_c + x_p
                 randomPertubationCount = randomPertubationCount - 1
