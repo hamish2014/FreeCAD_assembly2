@@ -1,3 +1,13 @@
+'''
+assembly2 constraints are stored under App::FeaturePython object (constraintObj)
+
+cName = findUnusedObjectName('axialConstraint')
+c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
+c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = '...'
+       
+see http://www.freecadweb.org/wiki/index.php?title=Scripted_objects#Available_properties for more information
+'''
+
 import numpy, os
 import FreeCAD
 import FreeCADGui
@@ -30,8 +40,6 @@ class ConstraintSelectionObserver:
          del wb_globals['selectionObserver']
          FreeCADGui.Selection.removeSelectionGate()
 
-
-
 class SelectionRecord:
     def __init__(self, docName, objName, sub):
         self.Document = FreeCAD.getDocument(docName)
@@ -47,37 +55,6 @@ def findUnusedObjectName(base, counterStart=1, fmt='%02i'):
         i = i + 1
         objName = '%s%s' % (base, fmt%i)
     return objName
-
-class ConstraintPrototype:
-    def __init__( self, doc, constraintObj, variableManager):
-        '''
-        assembly2 constraints are stored under App::FeaturePython object (constraintObj)
-
-        cName = findUnusedObjectName('axialConstraint')
-        c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
-        c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = '...'
-       
-        see http://www.freecadweb.org/wiki/index.php?title=Scripted_objects#Available_properties for more information
-        '''
-        self.doc = doc
-        self.constraintObj = constraintObj
-        self.variableManager = variableManager
-        self.registerVariables()
-
-    def registerVariables( self ):
-        raise RuntimeError, "ConstraintPrototype class not supposed to used directly"
-
-    def errors( self ):
-        'returns a list of errors, which the solver tries to reduce to 0'
-        raise RuntimeError, "ConstraintPrototype class not supposed to used directly"
-    
-    def satisfied( self, eps=10**-3 ):
-        return all( numpy.array(self.errors()) < eps )
-
-    def objectNames( self):
-        'for the general case...'
-        return [self.constraintObj.Object1, self.constraintObj.Object2 ]
-
 
 class ConstraintObjectProxy:
     def execute(self, obj):

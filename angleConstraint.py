@@ -66,24 +66,25 @@ class AngleConstraintCommand:
 FreeCADGui.addCommand('addAngleConstraint', AngleConstraintCommand())
 
 
-class AngleConstraint(ConstraintPrototype): 
-     def registerVariables( self ):
-          p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
-          p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
-          obj1 = self.doc.getObject( self.constraintObj.Object1 )
-          obj2 = self.doc.getObject( self.constraintObj.Object2 )
-          surface1 =  obj1.Shape.Faces[self.constraintObj.FaceInd1].Surface
-          surface2 =  obj2.Shape.Faces[self.constraintObj.FaceInd2].Surface
-          self.a1_r = p1.rotate_undo( surface1.Axis ) #_r = relative to objects placement
-          self.a2_r = p2.rotate_undo( surface2.Axis )
-          self.degrees = self.constraintObj.degrees
-          self.desired_dot_product = cos( self.degrees / 180 * pi )
+#class AngleConstraint(ConstraintPrototype):   
+#     n = 1
+#     def registerVariables( self ):
+#          p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
+#          p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
+#          obj1 = self.doc.getObject( self.constraintObj.Object1 )
+#          obj2 = self.doc.getObject( self.constraintObj.Object2 )
+#          surface1 =  obj1.Shape.Faces[self.constraintObj.FaceInd1].Surface
+#          surface2 =  obj2.Shape.Faces[self.constraintObj.FaceInd2].Surface
+#          self.a1_r = p1.rotate_undo( surface1.Axis ) #_r = relative to objects placement
+#          self.a2_r = p2.rotate_undo( surface2.Axis )
+#          self.degrees = self.constraintObj.degrees
+#          self.desired_dot_product = cos( self.degrees / 180 * pi )
 
-     def errors(self):
-          p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
-          p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
-          a1 = p1.rotate( self.a1_r )
-          a2 = p2.rotate( self.a2_r )          
-          return [
-               10**4 * ( self.desired_dot_product - numpy.dot(a1 , a2) )
-               ]
+#     def f(self):
+#          p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
+#          p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
+#          a1 = p1.rotate( self.a1_r )
+#          a2 = p2.rotate( self.a2_r )          
+#          return [
+#               self.desired_dot_product - numpy.dot(a1 , a2) 
+#               ]
