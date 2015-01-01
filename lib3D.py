@@ -198,7 +198,7 @@ def rotation_matrix_to_euler_ZYX_2(R, debug=False):
     q_1, q_2, q_3, q_0 = quaternion(angle, *axis)
     return quaternion_to_euler( q_1, q_2, q_3, q_0)
 
-def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThreshold=10**-8):
+def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThreshold=10**-7):
     'http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions#Rotation_matrix_.E2.86.94_Euler_axis.2Fangle'
     a = arccos( 0.5 * ( R[0,0]+R[1,1]+R[2,2] - 1) )
     if a % pi <> 0:
@@ -219,7 +219,7 @@ def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThresh
         if error > errorThreshold:
             axis, angle = rotation_matrix_axis_and_angle_2(R, errorThreshold=errorThreshold)
     return axis, angle
-def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-8):
+def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7):
     w, v = numpy.linalg.eig(R) #this method is not used at the primary method as numpy.linalg.eig does not return answers in high enough precision
     angle, axis = None, None
     for i in range(3):
@@ -238,7 +238,7 @@ def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-8):
         angle = -angle
         error = norm(axis_rotation_matrix(angle, *axis) - R)
         if error > errorThreshold:
-            raise ValueError, 'rotation_matrix_axis_and_angle_2: no solution found! R %s' % str(R)
+            raise ValueError, 'rotation_matrix_axis_and_angle_2: no solution found! locals %s' % str(locals())
     return axis, angle
 
 def plane_degrees_of_freedom( normalVector, debug=False, checkAnswer=False ):

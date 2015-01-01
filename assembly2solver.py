@@ -63,7 +63,7 @@ def solveConstraints( doc ):
     constraintSystem = FixedObjectSystem( variableManager, findBaseObject(doc, objectNames) )
     debugPrint(4, 'solveConstraints base system: %s' % constraintSystem.str() )
     def debugInfo():
-        debugPrint(3, '  resulting system %s' % constraintSystem.str(addDOFs=debugPrint.level>3))
+        debugPrint(3, '  resulting system:\n%s' % constraintSystem.str(indent=' '*4, addDOFs=debugPrint.level>3))
 
     solved = True
     for constraintObj in constraintObjectQue:
@@ -72,24 +72,24 @@ def solveConstraints( doc ):
         debugPrint( 3, '  parsing %s, type:%s' % (constraintObj.Name, constraintObj.Type ))
         try:
             if constraintObj.Type == 'plane':
-                constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint )
+                constraintSystem = AxisAlignmentUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint )
                 debugInfo()
-                constraintSystem = PlaneOffsetUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1, constraintObj.FaceInd2,  constraintObj.planeOffset)
+                constraintSystem = PlaneOffsetUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1, constraintObj.FaceInd2,  constraintObj.planeOffset)
                 debugInfo()
             elif constraintObj.Type == 'angle_between_planes':
-                constraintSystem = AngleUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2, cos(constraintObj.degrees / 180 * pi ) )
+                constraintSystem = AngleUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2, cos(constraintObj.degrees / 180 * pi ) )
                 debugInfo()
             elif constraintObj.Type == 'axial':
-                constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint,'cylinder')
+                constraintSystem = AxisAlignmentUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint,'cylinder')
                 debugInfo()
-                constraintSystem = AxisDistanceUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  0 ,'cylinder')
+                constraintSystem = AxisDistanceUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  0 ,'cylinder')
                 debugInfo()
             elif constraintObj.Type == 'circularEdge':
-                constraintSystem = AxisAlignmentUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  constraintObj.directionConstraint,'circle')
+                constraintSystem = AxisAlignmentUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  constraintObj.directionConstraint,'circle')
                 debugInfo()
-                constraintSystem = AxisDistanceUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  0 ,'circle')
+                constraintSystem = AxisDistanceUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  0 ,'circle')
                 debugInfo()
-                constraintSystem = PlaneOffsetUnion( variableManager, constraintSystem, obj1Name, obj2Name, constraintObj.EdgeInd1, constraintObj.EdgeInd2,  constraintObj.offset,'circle')
+                constraintSystem = PlaneOffsetUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1, constraintObj.EdgeInd2,  constraintObj.offset,'circle')
                 debugInfo()                    
             else:
                 raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type

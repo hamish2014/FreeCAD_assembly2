@@ -27,16 +27,17 @@ from solverLib import *
 class ConstraintSystemPrototype:
     label = '' #over-ride in inheritence
     solveConstraintEq_tol = 10**-9
-    def __init__(self, variableManager, parentSystem, obj1Name, obj2Name, feature1, feature2, constraintValue, featureType='plane' ):
-        self.variableManager = variableManager
+    def __init__(self, parentSystem, variableManager, obj1Name, obj2Name, feature1, feature2, constraintValue, featureType='plane' ):
         self.parentSystem = parentSystem
+        self.variableManager = variableManager
         self.obj1Name = obj1Name
         self.obj2Name = obj2Name
         self.feature1 = feature1
         self.feature2 = feature2
         self.constraintValue = constraintValue
         self.featureType = featureType
-        #self.X = variableManager.X0*0
+        self.childSystem = None
+        parentSystem.childSystem = self
         doc = variableManager.doc
         assert parentSystem.containtsObject( obj1Name ) or parentSystem.containtsObject( obj2Name )
         sys2ObjName = None
@@ -68,6 +69,7 @@ class ConstraintSystemPrototype:
     def solveConstraintEq( self, solve_via_newton=True ):
         X0 = self.getX()
         tol = self.solveConstraintEq_tol
+        PLO = 0 if not self.childSystem else 1 #print level offset
         if abs( self.constraintEq_value( X0 ) ) < tol: #constraint equation already satisfied.
             self.X = X0
         else:
@@ -75,15 +77,14 @@ class ConstraintSystemPrototype:
             if len(self.solveConstraintEq_dofs) > 0:
                 Y0 =      [ d.value for d in self.solveConstraintEq_dofs ]
                 maxStep = [ d.maxStep() for d in self.solveConstraintEq_dofs ]
-                debugPrint(4, '%s: solveConstraintEq maxStep %s' % (self.str(),str(maxStep)))
+                debugPrint(4+PLO, '%s: solveConstraintEq maxStep %s' % (self.str(),str(maxStep)))
                 if solve_via_newton:
-                    yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=100, randomPertubationCount=2,
-                                                     lineSearchIt=4, lineSearchIt_x0=20,
-                                                     debugPrintLevel=debugPrint.level-2, printF= lambda txt: debugPrint(2, txt ))
+                    yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=42, randomPertubationCount=2, lineSearchIt=5,
+                                                     debugPrintLevel=debugPrint.level-2-PLO, printF= lambda txt: debugPrint(2, txt ))
                     self.X = self.constraintEq_setY(yOpt)
                 else:
                     algName, warningMsg, optResults = solve_via_slsqp(self.constraintEq_f, Y0, fprime = None, f_tol=tol)
-                    debugPrint(4, 'solver info: %s, %s, %s' % ( algName, warningMsg, optResults ))
+                    debugPrint(4+PLO, 'solver info: %s, %s, %s' % ( algName, warningMsg, optResults ))
                     self.X = self.constraintEq_setY( optResults['xOpt'] )
             if not abs( self.constraintEq_value(self.X) ) < tol:
                 raise ValueError,"%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.X) ), tol, self.strSystemTree())
@@ -120,7 +121,8 @@ class ConstraintSystemPrototype:
     def constraintEq_f( self, Y ):
         X = self.constraintEq_setY(Y)
         f_X = self.constraintEq_value(X)
-        debugPrint(5, 'constraintEq_f, X %s, f(X) %s' % (X,f_X))
+        PLO = 0 if not self.childSystem else 1 #print level offset
+        debugPrint(5+PLO, 'constraintEq_f, X %s, f(X) %s' % (X,f_X))
         return f_X
     def constraintEq_value( self, X ):
         raise ValueError, 'ConstraintSystemPrototype not supposed to be called directly'
@@ -249,7 +251,7 @@ class PlacementDegreeOfFreedom:
 
 class AxisAlignmentUnion(ConstraintSystemPrototype):
     label = 'AxisAlignmentUnion'
-    solveConstraintEq_tol = 10**-12
+    solveConstraintEq_tol = 10**-9
 
     def init2(self):
         vM = self.variableManager
