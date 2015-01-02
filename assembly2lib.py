@@ -20,6 +20,8 @@ def debugPrint( level, msg ):
     if level <= debugPrint.level:
         FreeCAD.Console.PrintMessage(msg + '\n')
 debugPrint.level = 3
+def formatDictionary( d, indent):
+    return '%s{' % indent + '\n'.join(['%s%s:%s' % (indent,k,d[k]) for k in sorted(d.keys())]) + '}'
 
 class ConstraintSelectionObserver:
      def __init__(self, selectionGate, parseSelectionFunction):

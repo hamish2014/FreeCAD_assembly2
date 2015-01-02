@@ -6,6 +6,23 @@ import numpy
 from numpy import pi, sin, cos, arctan2, arcsin, arccos
 from numpy.linalg import norm
 
+def arcsin2( v, allowableNumericalError=10**-1 ):
+    if -1 <= v and v <= 1:
+        return arcsin(v)
+    elif abs(v) -1 < allowableNumericalError:
+        return pi/2 if v > 0 else -pi/2
+    else:
+        raise ValueError,"arcsin2 called with invalid input of %s" % v
+
+def arccos2( v, allowableNumericalError=10**-1 ):
+    if -1 <= v and v <= 1:
+        return arccos(v)
+    elif abs(v) -1 < allowableNumericalError:
+        return pi/2 if v > 0 else -pi/2
+    else:
+        raise ValueError,"arccos2 called with invalid input of %s" % v
+
+
 def quaternion(theta, u_x, u_y, u_z):
     '''http://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation 
     returns q_1, q_2, q_3, q_0 as to match FreeCads, if wikipedias naming is used'''
@@ -18,14 +35,14 @@ def quaternion_to_euler( q_1, q_2, q_3, q_0): #order to match FreeCads, naming t
     for conversion to 3-1-3 Euler angles (dont know about this one, seems to me to be 3-2-1...)
     '''
     psi = arctan2( 2*(q_0*q_1 + q_2*q_3), 1 - 2*(q_1**2 + q_2**2) ) 
-    phi =   arcsin( 2*(q_0*q_2 - q_3*q_1) )
+    phi =   arcsin2( 2*(q_0*q_2 - q_3*q_1) )
     theta =   arctan2( 2*(q_0*q_3 + q_1*q_2), 1 - 2*(q_2**2 + q_3**2) )
     return theta, phi, psi # gives same answer as FreeCADs toEuler function
 
 def quaternion_to_axis_and_angle(  q_1, q_2, q_3, q_0): 
     'http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions'
     q =  numpy.array( [q_1, q_2, q_3])
-    return q/norm(q), 2*arccos(q_0)
+    return q/norm(q), 2*arccos2(q_0)
 
 def azimuth_and_elevation_angles_to_axis( a, e):
     u_z = sin(e)
@@ -33,12 +50,7 @@ def azimuth_and_elevation_angles_to_axis( a, e):
     u_y = cos(e)*sin(a)
     return numpy.array([ u_x, u_y, u_z ])
 def axis_to_azimuth_and_elevation_angles( u_x, u_y, u_z ):
-    if -1 <= u_z and u_z <= 1: #sometime numerical errors cause u_z to be outside this range.
-        e = arcsin(u_z)
-    else:
-        e = pi/2 if u_z > 0 else -pi/2
-    a = arctan2( u_y, u_x)
-    return a, e
+    return arctan2( u_y, u_x), arcsin2(u_z)
 
 def quaternion_multiply( q1, q2 ):
     'http://en.wikipedia.org/wiki/Quaternion#Hamilton_product'
@@ -127,18 +139,18 @@ def rotation_matrix_to_euler_ZYX(R, debug=False, checkAnswer=False, tol=10**-6, 
     'better way available at http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions#Rotation_matrix_.E2.86.94_Euler_angles'
     if 1.0 - abs(R[2,0]) > tol_XZ_same_axis :
         s_2 = -R[2,0]
-        for angle2 in [ arcsin(s_2), pi - arcsin(s_2)]:#two options
+        for angle2 in [ arcsin2(s_2), pi - arcsin2(s_2)]:#two options
             if debug: print('         angle2 %f' % angle2)
             c_2 = cos(angle2)
             s_3 = R[2,1] / c_2
             c_3 = R[2,2] / c_2
-            for angle3 in [ arcsin(s_3),  pi - arcsin(s_3)]:
+            for angle3 in [ arcsin2(s_3),  pi - arcsin2(s_3)]:
                 if debug: print('         angle2 %f, angle3 %f' % (angle2, angle3))
                 if abs(cos(angle3) - c_3) < tol:
                     c_1 = max( min( R[0,0] / c_2, 1), -1)
                     #c_1 = R[0,0] / c_2
                     s_1 = R[1,0] / c_2
-                    for angle1 in [arccos(c_1), -arccos(c_1)]:
+                    for angle1 in [arccos2(c_1), -arccos2(c_1)]:
                         if debug: print('         angle2 %f, angle3 %f, angle1 %f' % (angle2, angle3, angle1))
                         if abs(s_1 - sin(angle1)) < tol:
                             if checkAnswer: rotation_matrix_to_euler_ZYX_check_answer( R, angle1, angle2, angle3)
@@ -148,7 +160,7 @@ def rotation_matrix_to_euler_ZYX(R, debug=False, checkAnswer=False, tol=10**-6, 
         return  rotation_matrix_to_euler_ZYX_2(R, debug)
     else:
         s_2 = -R[2,0]
-        angle2 = arcsin(s_2)
+        angle2 = arcsin2(s_2)
         c_2 = 0
         debug = False
         #return  rotation_matrix_to_euler_ZYX_2(R, debug)
@@ -178,7 +190,7 @@ def rotation_matrix_to_euler_ZYX(R, debug=False, checkAnswer=False, tol=10**-6, 
         #   [     0  , -s_1  , c_1*s_2 ],
         #   [     0  ,  c_1  , s_1*s_2 ],
         #   [ - s_2  ,    0  ,       0 ]
-        for angle1 in [ arcsin(-R[0,1]), pi - arcsin(-R[0,1]) ]:
+        for angle1 in [ arcsin2(-R[0,1]), pi - arcsin2(-R[0,1]) ]:
                 if debug: print('         angle2 %f, angle1 %f, angle3 %f' % (angle2, angle1, angle3))
                 #if debug: print('         cos(angle1) %f, R[0,2] %f' % (cos(angle1), R[0,2]))
                 if abs(cos(angle1) - R[0,2]/s_2) < tol:
@@ -200,7 +212,7 @@ def rotation_matrix_to_euler_ZYX_2(R, debug=False):
 
 def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThreshold=10**-7):
     'http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions#Rotation_matrix_.E2.86.94_Euler_axis.2Fangle'
-    a = arccos( 0.5 * ( R[0,0]+R[1,1]+R[2,2] - 1) )
+    a = arccos2( 0.5 * ( R[0,0]+R[1,1]+R[2,2] - 1) )
     if a % pi <> 0:
         for angle in [a, -a]:
             u_x = 0.5* (R[2,1]-R[1,2]) / sin(angle) 
@@ -209,15 +221,21 @@ def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThresh
             if abs( (1-cos(angle))*u_x*u_y - u_z*sin(angle) - R[0,1] ) < 10**-6:
                 break
         axis = numpy.array([u_x, u_y, u_z])
-    else:
-        axis, angle  = rotation_matrix_axis_and_angle_2( R )
+    else: #identify matrix
+        axis, angle = numpy.array([1.0,0,0]), 0.0       
+    #elif norm( R - numpy.eye(3)) < errorThreshold:
+    #    axis, angle = numpy.array([1.0,0,0]), 0.0        
+    #else:
+    #    axis, angle  = rotation_matrix_axis_and_angle_2( R, errorThreshold=errorThreshold, debug=debug)
     if debug:
         print('  axis %s, angle %s' % (axis, angle))
     if checkAnswer:
         error  = norm(axis_rotation_matrix(angle, *axis) - R)
         if debug: print('  norm(axis_rotation_matrix(angle, *axis) - R) %1.2e' % error)
         if error > errorThreshold:
-            axis, angle = rotation_matrix_axis_and_angle_2(R, errorThreshold=errorThreshold)
+            axis, angle = rotation_matrix_axis_and_angle_2(R, errorThreshold=errorThreshold, debug=debug)
+    if numpy.isnan( angle ):
+        raise RuntimeError,'locals %s' % locals() 
     return axis, angle
 def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7):
     w, v = numpy.linalg.eig(R) #this method is not used at the primary method as numpy.linalg.eig does not return answers in high enough precision
@@ -229,7 +247,7 @@ def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7):
         elif angle == None:
             c = numpy.real( w[i] )
             s = numpy.imag( w[i])
-            angle = arccos(c)
+            angle = arccos2(c)
             if debug: print('w[i] %s' % w[i])
             if debug: print('cos(angle) %f sin(angle) %f' % (cos(angle), sin(angle)))
     error  = norm(axis_rotation_matrix(angle, *axis) - R)
@@ -247,12 +265,12 @@ def plane_degrees_of_freedom( normalVector, debug=False, checkAnswer=False ):
     if numpy.array_equal( abs(normalVector), [0,0,1] ):
         return numpy.array([1,0,0]), numpy.array([0,1,0])
     s_2 = -normalVector[2]
-    for angle2 in [ arcsin(s_2), pi - arcsin(s_2)]:#two options
+    for angle2 in [ arcsin2(s_2), pi - arcsin2(s_2)]:#two options
         if debug: print('         angle2 %f' % angle2)
         c_2 = cos(angle2)
         c_1 = max( min( normalVector[0] / c_2, 1), -1)
         s_1 = normalVector[1] / c_2
-        for angle1 in [arccos(c_1), -arccos(c_1)]:
+        for angle1 in [arccos2(c_1), -arccos2(c_1)]:
             if debug: print('         angle2 %f, angle1 %f' % (angle2, angle1))
             if abs(s_1 - sin(angle1)) < 10**-6:
                 break
@@ -405,7 +423,15 @@ def distance_between_two_axes_3_points(p1,u1,p2,u2):
         dist = dist + d_sqrd ** 0.5
     return dist
 
-
+def distance_between_axis_and_point( p1,u1,p2 ):
+    assert numpy.linalg.norm( u1 ) <> 0
+    p1_x, p1_y, p1_z = p1
+    u1_x, u1_y, u1_z = u1
+    p2_x, p2_y, p2_z = p2
+    t = (-p1_x*u1_x - p1_y*u1_y - p1_z*u1_z + p2_x*u1_x + p2_y*u1_y + p2_z*u1_z)
+    # dropped the (u1_x**2 + u1_y**2 + u1_z**2) term as it should equal 1
+    d_sqrd = (p1_x - p2_x + t*u1_x)**2 + (p1_y - p2_y + t*u1_y)**2 + (p1_z - p2_z + t*u1_z)**2
+    return d_sqrd ** 0.5
 
 if __name__ == '__main__':
     print('Testing lib3D.py')
@@ -535,9 +561,12 @@ if __name__ == '__main__':
     print('all %i rotation_matrix_to_euler_ZYX tests passed.' % len(testCases)) 
 
     print('\ntesting rotation_matrix_axis_and_angle')
+    testCases.append(numpy.array([[  1.00000000e+00,  -7.56401164e-10,   1.13448265e-17],
+                                  [  7.56401164e-10,   1.00000000e+00,   1.74357771e-17],
+                                  [ -1.13448265e-17,  -1.74357771e-17,   1.00000000e+00]]))
     for i, R in enumerate( testCases ):
         #prettyPrintArray(R, ' '*4,'%1.2e')
-        rotation_matrix_axis_and_angle(R, checkAnswer=True, debug=False)
+        rotation_matrix_axis_and_angle(R, checkAnswer=True, debug=i==len(testCases)-1)
     print('all %i tests passed.' % len(testCases))  
 
     print('\ntesting plane_degrees_of_freedom')

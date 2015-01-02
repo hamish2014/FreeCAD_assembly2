@@ -26,7 +26,7 @@ from numpy.linalg import norm
 from solverLib import *
 from variableManager import VariableManager
 from constraintSystems import *
-
+import traceback
 
 def constraintsObjectsAllExist( doc ):
     objectNames = [ obj.Name for obj in doc.Objects if not 'ConstraintInfo' in obj.Content ]
@@ -56,49 +56,48 @@ def solveConstraints( doc ):
     if not constraintsObjectsAllExist(doc):
         return
     constraintObjectQue = [ obj for obj in doc.Objects if 'ConstraintInfo' in obj.Content ]
-    #doc.Objects already in tree order so no additional sorting / order checking required.
-    objectNames = list( set( sum( [ [ c.Object1, c.Object2] for c in constraintObjectQue ], [] ) ) )
+    #doc.Objects already in tree order so no additional sorting / order checking required for constraints.
+    conObjects = sum( [[ c.Object1 ] for c in constraintObjectQue], [] ) + sum( [[ c.Object2 ] for c in constraintObjectQue], [] )
+    objectNames = [ obj.Name for obj in doc.Objects if hasattr(obj,'Placement') and obj.Name in conObjects ]
     variableManager = VariableManager( doc, objectNames )
-    debugPrint(2,'variableManager.X0 %s' % variableManager.X0 )
+    debugPrint(3,' variableManager.X0 %s' % variableManager.X0 )
     constraintSystem = FixedObjectSystem( variableManager, findBaseObject(doc, objectNames) )
     debugPrint(4, 'solveConstraints base system: %s' % constraintSystem.str() )
-    def debugInfo():
-        debugPrint(3, '  resulting system:\n%s' % constraintSystem.str(indent=' '*4, addDOFs=debugPrint.level>3))
+    
 
     solved = True
     for constraintObj in constraintObjectQue:
         obj1Name = constraintObj.Object1
         obj2Name = constraintObj.Object2
         debugPrint( 3, '  parsing %s, type:%s' % (constraintObj.Name, constraintObj.Type ))
+        if hasattr(constraintObj,'FaceInd1'):
+            cArgs = [ variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2 ]
         try:
             if constraintObj.Type == 'plane':
-                constraintSystem = AxisAlignmentUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint )
-                debugInfo()
-                constraintSystem = PlaneOffsetUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1, constraintObj.FaceInd2,  constraintObj.planeOffset)
-                debugInfo()
+                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
+                constraintSystem = PlaneOffsetUnion(   constraintSystem, *cArgs,  constraintValue = constraintObj.planeOffset)
             elif constraintObj.Type == 'angle_between_planes':
-                constraintSystem = AngleUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2, cos(constraintObj.degrees / 180 * pi ) )
-                debugInfo()
+                constraintSystem = AngleUnion(  constraintSystem, *cArgs,  constraintValue = cos(constraintObj.degrees / 180 * pi ) )
             elif constraintObj.Type == 'axial':
-                constraintSystem = AxisAlignmentUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  constraintObj.directionConstraint,'cylinder')
-                debugInfo()
-                constraintSystem = AxisDistanceUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2,  0 ,'cylinder')
-                debugInfo()
+                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue = constraintObj.directionConstraint, featureType='cylinder')
+                constraintSystem =  AxisDistanceUnion( constraintSystem, *cArgs, constraintValue = 0 , featureType='cylinder')
             elif constraintObj.Type == 'circularEdge':
-                constraintSystem = AxisAlignmentUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  constraintObj.directionConstraint,'circle')
-                debugInfo()
-                constraintSystem = AxisDistanceUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2,  0 ,'circle')
-                debugInfo()
-                constraintSystem = PlaneOffsetUnion( constraintSystem, variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1, constraintObj.EdgeInd2,  constraintObj.offset,'circle')
-                debugInfo()                    
+                cArgs = [ variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2 ]
+                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue=constraintObj.directionConstraint, featureType='circle')
+                constraintSystem = AxisDistanceUnion( constraintSystem, *cArgs, constraintValue=0 , featureType='circle')
+                constraintSystem = PlaneOffsetUnion( constraintSystem,  *cArgs, constraintValue=constraintObj.offset, featureType='circle')
             else:
                 raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
-        except ValueError, msg:
+        except Assembly2SolverError, msg:
             FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
             FreeCAD.Console.PrintError(msg)
             solved = False
             break
-        
+        except:
+            FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
+            FreeCAD.Console.PrintError( traceback.format_exc())
+            solved = False
+            break
     if solved:
         debugPrint(4,'constraintSystem.X %s' % constraintSystem.X )
         variableManager.updateFreeCADValues( constraintSystem.X )

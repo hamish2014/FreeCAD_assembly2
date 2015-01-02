@@ -17,12 +17,18 @@ Y - degrees of freedom, where Y is a subspace of X, which can altered without vi
 
 '''
 
-from assembly2lib import debugPrint
+from assembly2lib import debugPrint, formatDictionary
 from lib3D import *
 import numpy
 from numpy import pi, inf
 from numpy.linalg import norm
 from solverLib import *
+
+class Assembly2SolverError(Exception):
+    def __init__(self, value):
+        self.parameter = value
+    def __str__(self):
+        return self.parameter
 
 class ConstraintSystemPrototype:
     label = '' #over-ride in inheritence
@@ -54,7 +60,8 @@ class ConstraintSystemPrototype:
             self.sys2 = EmptySystem()
         debugPrint(4, '%s - sys2 %s' % (self.label, self.sys2.str() ) )
         self.init2()
-        self.solveConstraintEq()       
+        self.solveConstraintEq()      
+        debugPrint(3, '  resulting system:\n%s' % self.str(indent=' '*4, addDOFs=debugPrint.level>3))
         
     def init2(self):
         pass
@@ -87,7 +94,7 @@ class ConstraintSystemPrototype:
                     debugPrint(4+PLO, 'solver info: %s, %s, %s' % ( algName, warningMsg, optResults ))
                     self.X = self.constraintEq_setY( optResults['xOpt'] )
             if not abs( self.constraintEq_value(self.X) ) < tol:
-                raise ValueError,"%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.X) ), tol, self.strSystemTree())
+                raise Assembly2SolverError,"%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.X) ), tol, self.strSystemTree())
             for d in self.solveConstraintEq_dofs:
                 d.assignedValue = False #cleaning up for future use
         if not hasattr( self, 'degreesOfFreedom' ):
@@ -122,16 +129,16 @@ class ConstraintSystemPrototype:
         X = self.constraintEq_setY(Y)
         f_X = self.constraintEq_value(X)
         PLO = 0 if not self.childSystem else 1 #print level offset
-        debugPrint(5+PLO, 'constraintEq_f, X %s, f(X) %s' % (X,f_X))
+        debugPrint(6+PLO, 'constraintEq_f, X %s, f(X) %s' % (X,f_X))
         return f_X
     def constraintEq_value( self, X ):
-        raise ValueError, 'ConstraintSystemPrototype not supposed to be called directly'
+        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
 
     def generateDegreesOfFreedom( self ):
-        raise ValueError, 'ConstraintSystemPrototype not supposed to be called directly'
+        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
 
     def updateDegreesOfFreedom( self ):
-        raise ValueError, 'ConstraintSystemPrototype not supposed to be called directly'                    
+        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'                    
 
     def getPos(self, objName, featureInd):
         obj =  self.variableManager.doc.getObject( objName )
@@ -182,7 +189,6 @@ class ConstraintSystemPrototype:
         return txt
         
 
-
 class FixedObjectSystem(ConstraintSystemPrototype):
     def __init__(self, variableManager, objName):
         self.variableManager = variableManager
@@ -228,14 +234,14 @@ class PlacementDegreeOfFreedom:
         self.objName = objName
         self.lenX = lenX
         self.ind = ind
-        self.value = initialValue
+        self.value = initialValue if self.rotational() else initialValue/1000
         self.assignedValue = False
     def setValue( self, x):
         self.value = x
         self.assignedValue = True
     def X_contribution( self, X_system ):
         X = numpy.zeros(self.lenX)
-        X[self.ind] = self.value
+        X[self.ind] = self.value if self.rotational() else 1000*self.value
         return X
     def maxStep(self):
         if self.ind % 6 < 3:
@@ -245,7 +251,7 @@ class PlacementDegreeOfFreedom:
     def rotational(self):
         return self.ind % 6 > 2
     def str(self, indent=''):
-        return '%s<Placement DegreeOfFreedom %s-%s value:%f>' % (indent, self.objName, ['x','y','z','theta','phi','psi'][self.ind % 6], self.value)
+        return '%s<Placement DegreeOfFreedom %s-%s value:%f>' % (indent, self.objName, ['x','y','z','azimuth','elavation','rotation'][self.ind % 6], self.value)
     def __repr__(self):
         return self.str()
 
@@ -306,7 +312,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                 self.degreesOfFreedom_updateInd = -1
                 success = True
         if not success:
-            raise ValueError, 'Panic! %s.generateDegreesOfFreedom Logic not programmed for the reduction of degrees of freedom of:\n%s' % (self.label,'\n'.join(d.str('  ') for d in dofs ))
+            raise NotImplementedError, 'Panic! %s.generateDegreesOfFreedom Logic not programmed for the reduction of degrees of freedom of:\n%s' % (self.label,'\n'.join(d.str('  ') for d in dofs ))
         self.updateDegreesOfFreedom()
         
     def updateDegreesOfFreedom( self ):
@@ -493,8 +499,16 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
         a2 = vM.rotate( self.obj2Name, self.a2_r, X )
         pos1 = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
         pos2 = vM.rotateAndMove( self.obj2Name, self.pos2_r, X )
-        #dist = distance_between_axes( pos1, a1, pos2, a2 )
-        dist = distance_between_two_axes_3_points( pos1, a1, pos2, a2 )
+        # dist = distance_between_axes( pos1, a1, pos2, a2 )
+        #   is numerically unstable creating problems, and 
+        # dist = distance_between_two_axes_3_points( pos1, a1, pos2, a2 )
+        #   is sensitive to axis misalignment, which is should not be because, axis alignment should be taken care of in the axis alignment constraint. Therefore
+        dist = distance_between_axis_and_point( pos1, a1, pos2 )
+        if numpy.isnan(dist):
+            debugPrint(1, 'numpy.isnan(dist)')
+            debugPrint(1, '  locals %s' % formatDictionary(locals(),' '*6) )
+            debugPrint(1, '  %s.__dict %s' % (self.label, formatDictionary( self.__dict__,' '*6 ) ) )   
+            raise ValueError, ' assembly2 AxisDistanceUnion numpy.isnan(dist) check console for details'
         return dist - self.constraintValue
 
     def generateDegreesOfFreedom( self ):
@@ -543,7 +557,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
                     break
                 
         if not success:
-            raise ValueError, 'Panic! PlaneOffsetUnion Logic not programmed for the reduction of degrees of freedom of:\n%s' % '\n'.join(d.str('  ') for d in dofs )
+            raise NotImplementedError, 'Panic! PlaneOffsetUnion Logic not programmed for the reduction of degrees of freedom of:\n%s' % '\n'.join(d.str('  ') for d in dofs )
         self.updateDegreesOfFreedom()
         
     def updateDegreesOfFreedom( self ):

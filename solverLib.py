@@ -120,7 +120,11 @@ def solve_via_Newtons_method( f, x0, maxStep, grad_f=None, x_tol=10**-6, f_tol=N
         if len(A.shape) == 1: #singleEq
             A = numpy.array([A])
             b = numpy.array([b])
-        x_c, residuals, rank, s = numpy.linalg.lstsq( A, b)
+        try:
+            x_c, residuals, rank, s = numpy.linalg.lstsq( A, b)
+        except ValueError, msg:
+            printF('  solve_via_Newtons_method numpy.linalg.lstsq failed: %s.  Setting x_c = x' % str(msg)) 
+            x_c = x
         if debugPrintLevel > 1:
             if singleEq:
                 printF('  grad_f : %s' % A) 
