@@ -259,24 +259,11 @@ def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7):
             raise ValueError, 'rotation_matrix_axis_and_angle_2: no solution found! locals %s' % str(locals())
     return axis, angle
 
+
 def plane_degrees_of_freedom( normalVector, debug=False, checkAnswer=False ):
-    '''determine euler angles 1&2 so that euler_ZYX_rotation_matrix*[1,0,0]=normalVector.
-    after angle1&2 known, plane dofs = euler_ZYX_rotation_matrix*y_axis, and z_axis '''
-    if numpy.array_equal( abs(normalVector), [0,0,1] ):
-        return numpy.array([1,0,0]), numpy.array([0,1,0])
-    s_2 = -normalVector[2]
-    for angle2 in [ arcsin2(s_2), pi - arcsin2(s_2)]:#two options
-        if debug: print('         angle2 %f' % angle2)
-        c_2 = cos(angle2)
-        c_1 = max( min( normalVector[0] / c_2, 1), -1)
-        s_1 = normalVector[1] / c_2
-        for angle1 in [arccos2(c_1), -arccos2(c_1)]:
-            if debug: print('         angle2 %f, angle1 %f' % (angle2, angle1))
-            if abs(s_1 - sin(angle1)) < 10**-6:
-                break
-    R = euler_ZYX_rotation_matrix( angle1, angle2, 0)
-    dof1 = numpy.dot(R, [0,1,0])
-    dof2 = numpy.dot(R, [0,0,1])
+    a,e = axis_to_azimuth_and_elevation_angles(*normalVector)
+    dof1 = azimuth_and_elevation_angles_to_axis( a, e - pi/2)
+    dof2 = azimuth_and_elevation_angles_to_axis( a+pi/2, 0)
     if checkAnswer: plane_degrees_of_freedom_check_answer( normalVector, dof1, dof2, debug )
     return dof1, dof2
 def plane_degrees_of_freedom_check_answer( normalVector, d1, d2, disp=False, tol=10**-12):
@@ -302,24 +289,6 @@ def crossProduct( u, v):
     u_1, u_2, u_3 = u
     v_1, v_2, v_3 = v
     return numpy.array( [ u_2*v_3 - u_3*v_2, u_3*v_1 - u_1*v_3, u_1*v_2 - u_2*v_1 ] )
-def planeIntersectionNumerical( normalVector1, normalVector2, debug=False, checkAnswer=False ):
-    'approach solver for 2 points satifying equation, then fit line'
-    for axisOffset in [[1,0,0],[0,1,0],[0,0,1]]:
-        try:
-            p1 = numpy.linalg.solve( numpy.array([normalVector1, normalVector2, axisOffset]), [0,0,1] )
-            p2 = numpy.linalg.solve( numpy.array([normalVector1, normalVector2, axisOffset]), [0,0,2] )
-            if debug:
-                print('  axisOffset %s' % axisOffset )
-                print('  p1 %s' % p1)
-                print('  p2 %s' % p2)
-            if norm(p2 -p1) > 0:
-                d = (p2 -p1)/norm(p2 -p1)
-                if debug: print('  norm(p2 -p1) > 0 : d = %s' % d)
-                break
-        except numpy.linalg.LinAlgError:
-            if debug: print('  ignoring axisOffset %s due to numpy.linalg.LinAlgError' % axisOffset )
-    if checkAnswer: planeIntersection_check_answer( normalVector1, normalVector2, d,  disp=False, tol=10**-12)
-    return d
 def planeIntersection_check_answer( normalVector1, normalVector2, d,  disp=False, tol=10**-12):
     if disp:
         print('checking planeIntersection result')
@@ -402,7 +371,6 @@ def distance_between_axes_fmin( p1, u1, p2, u2):
         return numpy.linalg.norm( p1 + u1*t1 - (p2 + u2*t2) )
     T_opt = fmin_bfgs( distance, [0 , 0], disp=False)
     return distance(T_opt)
-
 
 def distance_between_two_axes_3_points(p1,u1,p2,u2):
     ''' used for axial and circular edge constraints  '''
@@ -582,7 +550,7 @@ if __name__ == '__main__':
     for i,normalVector in enumerate(testCases):
         print('  testing on normal vector %s' % normalVector)
         d1, d2  = plane_degrees_of_freedom( normalVector, debug=False)
-        plane_degrees_of_freedom_check_answer( normalVector, d1, d2, disp=False) 
+        plane_degrees_of_freedom_check_answer( normalVector, d1, d2, disp=True) 
     print('all %i plane_degrees_of_freedom tests passed.' % len(testCases)) 
 
     print('\ntesting planeIntersection')
