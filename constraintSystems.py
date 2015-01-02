@@ -73,7 +73,7 @@ class ConstraintSystemPrototype:
             return True
         return self.parentSystem.containtsObject( objName )
 
-    def solveConstraintEq( self, solve_via_newton=True ):
+    def solveConstraintEq( self ):
         X0 = self.getX()
         tol = self.solveConstraintEq_tol
         PLO = 0 if not self.childSystem else 1 #print level offset
@@ -82,17 +82,16 @@ class ConstraintSystemPrototype:
         else:
             self.solveConstraintEq_dofs = [ d for d in self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom if not d.assignedValue ]
             if len(self.solveConstraintEq_dofs) > 0:
-                Y0 =      [ d.value for d in self.solveConstraintEq_dofs ]
-                maxStep = [ d.maxStep() for d in self.solveConstraintEq_dofs ]
-                debugPrint(4+PLO, '%s: solveConstraintEq maxStep %s' % (self.str(),str(maxStep)))
-                if solve_via_newton:
-                    yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=42, randomPertubationCount=2, lineSearchIt=5,
+                X_a = self.analyticalSolution()
+                if X_a <> None :
+                    self.X = X_a
+                else: #numerical solution
+                    Y0 =      [ d.value for d in self.solveConstraintEq_dofs ]
+                    maxStep = [ d.maxStep() for d in self.solveConstraintEq_dofs ]
+                    debugPrint(4+PLO, '%s: attempting to find solution numerically, solveConstraintEq maxStep %s' % (self.str(),str(maxStep)))
+                    yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=42, randomPertubationCount=2, lineSearchIt=6,
                                                      debugPrintLevel=debugPrint.level-2-PLO, printF= lambda txt: debugPrint(2, txt ))
                     self.X = self.constraintEq_setY(yOpt)
-                else:
-                    algName, warningMsg, optResults = solve_via_slsqp(self.constraintEq_f, Y0, fprime = None, f_tol=tol)
-                    debugPrint(4+PLO, 'solver info: %s, %s, %s' % ( algName, warningMsg, optResults ))
-                    self.X = self.constraintEq_setY( optResults['xOpt'] )
             if not abs( self.constraintEq_value(self.X) ) < tol:
                 raise Assembly2SolverError,"%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.X) ), tol, self.strSystemTree())
             for d in self.solveConstraintEq_dofs:
@@ -133,6 +132,9 @@ class ConstraintSystemPrototype:
         return f_X
     def constraintEq_value( self, X ):
         raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
+
+    def analyticalSolution(self):
+        return None
 
     def generateDegreesOfFreedom( self ):
         raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
@@ -219,7 +221,7 @@ class FreeObjectSystem( FixedObjectSystem ):
         self.objName = objName
         self.X = variableManager.X0*0
         i = variableManager.index[objName]
-        self.degreesOfFreedom = [ PlacementDegreeOfFreedom( self, objName, len(self.X), i+j, variableManager.X0[i+j] ) for j in range(6) ]
+        self.degreesOfFreedom = [ PlacementDegreeOfFreedom( self, objName, len(self.X), i+j, variableManager.X0[i+j], sensitivity=1000 if j < 3 else 1 ) for j in range(6) ]
     def str(self, indent='', addDOFs=False):
         txt = '%s<FreeObjectSystem %s>' % (indent, self.objName)
         if addDOFs:
@@ -227,25 +229,27 @@ class FreeObjectSystem( FixedObjectSystem ):
             txt = txt + ''.join( [ '\n%s%s' %(indent, d.str('  ')) for d in  self.degreesOfFreedom ] )
         return txt
 
-maxStep_linearDisplacement = 10
+maxStep_linearDisplacement = 10.0
 class PlacementDegreeOfFreedom:
-    def __init__(self, parentSystem, objName, lenX, ind, initialValue):
+    def __init__(self, parentSystem, objName, lenX, ind, initialValue, sensitivity=1.0 ):
         self.system = parentSystem
         self.objName = objName
         self.lenX = lenX
         self.ind = ind
-        self.value = initialValue if self.rotational() else initialValue/1000
+        self.sensitivity = sensitivity #used to improve the conditioning of the search space
+        assert sensitivity <> 0
+        self.value = initialValue / sensitivity
         self.assignedValue = False
     def setValue( self, x):
         self.value = x
         self.assignedValue = True
     def X_contribution( self, X_system ):
         X = numpy.zeros(self.lenX)
-        X[self.ind] = self.value if self.rotational() else 1000*self.value
+        X[self.ind] = self.value * self.sensitivity
         return X
     def maxStep(self):
         if self.ind % 6 < 3:
-            return maxStep_linearDisplacement
+            return maxStep_linearDisplacement / self.sensitivity
         else:
             return pi/5
     def rotational(self):
@@ -269,7 +273,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
         vM = self.variableManager
         a = vM.rotate( self.obj1Name, self.a1_r, X )
         b = vM.rotate( self.obj2Name, self.a2_r, X )
-        ax_prod = numpy.dot( a,b )
+        ax_prod = dotProduct( a,b )
         directionConstraintFlag = self.constraintValue
         if directionConstraintFlag == "none" : 
             return (1 - abs(ax_prod))
@@ -277,6 +281,43 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             return (1 - ax_prod)
         else:
             return (1 + ax_prod)
+
+    def analyticalSolution(self):
+        D = self.solveConstraintEq_dofs #degrees of freedom
+        for objName in [self.obj1Name, self.obj2Name]:
+            matches = [d for d in D if d.objName == objName and d.rotational() ]
+            if len(matches) == 3:
+                debugPrint(3, '%s analyticalSolution available: %s has free rotation.'% (self.label, objName))
+                vM = self.variableManager
+                X = self.getX()
+                if objName == self.obj1Name: #then object1 has has free rotation
+                    v = self.a1_r
+                    v_ref = vM.rotate( self.obj2Name, self.a2_r, X )
+                else:
+                    v = self.a2_r
+                    v_ref = vM.rotate( self.obj1Name, self.a1_r, X )
+                axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v_ref, v )
+                #checking angle against directionConstraintFlag
+                v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
+                ax_prod = dotProduct( v_rotated, v_ref )
+                directionConstraintFlag = self.constraintValue
+                if directionConstraintFlag == "aligned" and ax_prod < 0: #instead of ax_prod == -1 (mitigate precision errors)
+                    angle = pi - angle
+                elif directionConstraintFlag =="opposed" and ax_prod > 0:
+                    angle = pi - angle
+                elif directionConstraintFlag == "none"  and angle > pi/2:
+                    angle = pi - angle # take note that arccos's domain is [0,pi], so angle < -pi/2, not required
+                #angle = -angle
+                debugPrint(4, '    analyticalSolution:  axis %s, angle %s.'% (axis, angle))
+                azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
+                assert matches[0].ind % 6 == 3 and matches[1].ind % 6 == 4 and matches[2].ind % 6 == 5
+                matches[0].setValue(azi)
+                matches[1].setValue(ela)
+                matches[2].setValue(angle)
+                self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                self.sys2.update()
+                return self.getX()
+        return None
 
     def generateDegreesOfFreedom( self ):
         dofs = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
@@ -295,7 +336,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             elif len(matches) == 1 and isinstance(matches[0], AxisRotationDegreeOfFreedom):
                 vM = self.variableManager
                 a = vM.rotate( self.obj1Name, self.a1_r, self.X )
-                if 1 - abs(numpy.dot(a, matches[0].axis)) < self.solveConstraintEq_tol: #
+                if 1 - abs(dotProduct(a, matches[0].axis)) < self.solveConstraintEq_tol: #
                     debugPrint(4, '%s Logic "%s": AxisRotationDegreeOfFreedom with same axis already exists not reducing dofs for part' % (self.label, objName))
                     self.degreesOfFreedom_updateInd = -1
                     self.degreesOfFreedom = dofs
@@ -321,14 +362,6 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             a = vM.rotate( self.obj1Name, self.a1_r, self.X )
             self.degreesOfFreedom[ self.degreesOfFreedom_updateInd ].setAxis( self.X, a )
             
-class AngleUnion(AxisAlignmentUnion):
-    label = 'AngleUnion'
-    def constraintEq_value( self, X ):
-        vM = self.variableManager
-        a = vM.rotate( self.obj1Name, self.a1_r, X )
-        b = vM.rotate( self.obj2Name, self.a2_r, X )
-        return self.constraintValue - numpy.dot( a,b )
-
 class AxisRotationDegreeOfFreedom:
     '''
     calculate the euler angles, theta_new, phi_new and psi_new so that
@@ -343,16 +376,17 @@ class AxisRotationDegreeOfFreedom:
     def setAxis(self, X, axis):
         self.lenX = len(X)
         i = self.objInd
-        self.R0 = azimuth_elevation_rotation_matrix(*X[i+3:i+6])
-        self.X0 = X[i+3:i+6]
+        #self.R0 = azimuth_elevation_rotation_matrix(*X[i+3:i+6]) #matrix approach abandoned as slower and more unstable then quaterion approarch
+        azi, ela, angle = X[i+3:i+6]
+        self.Q1 = quaternion2( angle, *azimuth_and_elevation_angles_to_axis(azi, ela) )
         self.axis = axis
     def setValue( self, x):
         self.value = x
         self.assignedValue = True
     def X_contribution( self, X_system ):
-        R_axis = axis_rotation_matrix( self.value, *self.axis)
-        R_desired = numpy.dot( R_axis, self.R0 )
-        axis, angle = rotation_matrix_axis_and_angle( R_desired )
+        Q2 = quaternion2( self.value, *self.axis )
+        q0,q1,q2,q3 = quaternion_multiply( Q2, self.Q1 )
+        axis, angle = quaternion_to_axis_and_angle( q1, q2, q3, q0 )
         azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
         X_desired = numpy.array([azi, ela, angle])
         # X_desired = X_system + X (for rotations of interest)
@@ -369,6 +403,8 @@ class AxisRotationDegreeOfFreedom:
     def __repr__(self):
         return self.str()
 
+
+
 class PlaneOffsetUnion(ConstraintSystemPrototype):
     label = 'PlaneOffsetUnion'
     def init2(self):
@@ -383,8 +419,32 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
         a = vM.rotate( self.obj1Name, self.a1_r, X )
         pos1 = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
         pos2 = vM.rotateAndMove( self.obj2Name, self.pos2_r, X )
-        dist = numpy.dot(a, pos1 - pos2) #distance between planes
+        dist = dotProduct(a, pos1 - pos2) #distance between planes
         return dist - self.constraintValue
+
+    def analyticalSolution(self):
+        D = self.solveConstraintEq_dofs #degrees of freedom
+        for objName in [self.obj1Name, self.obj2Name]:
+            matches = [d for d in D if d.objName == objName and not d.rotational() ]
+            if len(matches) == 3:
+                debugPrint(3, '%s analyticalSolution available: %s has free movement.'% (self.label, objName))
+                vM = self.variableManager
+                X = self.getX()
+                if objName == self.obj1Name: #then object1 has has free rotation
+                    p = vM.rotate( self.obj1Name, self.pos1_r, X )
+                    p_ref = vM.rotateAndMove( self.obj2Name, self.pos2_r, X ) #rotate and then move
+                else:
+                    p = vM.rotate( self.obj2Name, self.pos2_r, X )
+                    p_ref = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
+                p_ref = p_ref + vM.rotate( self.obj1Name, self.a1_r, X )*self.constraintValue #add offset value
+                debugPrint(4, '    analyticalSolution:  %s placement position set to %s' % (objName, p_ref - p))
+                assert matches[0].ind % 6 == 0 and matches[1].ind % 6 == 1 and matches[2].ind % 6 == 2
+                for d,v in zip(matches, p_ref - p):
+                    d.setValue(  v / d.sensitivity )
+                self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                self.sys2.update()
+                return self.getX()
+        return None
 
     def generateDegreesOfFreedom( self ):
         dofs = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
@@ -421,7 +481,7 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
             elif len(matches) == 1: 
                 vM = self.variableManager
                 planeNormalVector = vM.rotate( self.obj1Name, self.a1_r, self.X )
-                if abs(numpy.dot( planeNormalVector, matches[0].directionVector)) < 10 **-6: #then constraint redudant
+                if abs(dotProduct( planeNormalVector, matches[0].directionVector)) < 10 **-6: #then constraint redudant
                     debugPrint(4, 'PlaneOffsetUnion Logic: %s - planeNormal constraint does not effect remaining dof -> no dof reduction.' % objName)
                     self.degreesOfFreedom =  dofs
                     self.dofs_removed = []
@@ -482,6 +542,47 @@ class LinearMotionDegreeOfFreedom:
     def __repr__(self):
         return self.str()
 
+
+
+class AngleUnion(AxisAlignmentUnion):
+    label = 'AngleUnion'
+    def constraintEq_value( self, X ):
+        vM = self.variableManager
+        a = vM.rotate( self.obj1Name, self.a1_r, X )
+        b = vM.rotate( self.obj2Name, self.a2_r, X )
+        return self.constraintValue - dotProduct( a,b )
+    def analyticalSolution(self):
+        D = self.solveConstraintEq_dofs #degrees of freedom
+        for objName in [self.obj1Name, self.obj2Name]:
+            matches = [d for d in D if d.objName == objName and d.rotational() ]
+            if len(matches) == 3:
+                debugPrint(3, '%s analyticalSolution available: %s has free rotation.'% (self.label, objName))
+                vM = self.variableManager
+                X = self.getX()
+                if objName == self.obj1Name: #then object1 has has free rotation
+                    v = self.a1_r
+                    v_ref = vM.rotate( self.obj2Name, self.a2_r, X )
+                else:
+                    v = self.a2_r
+                    v_ref = vM.rotate( self.obj1Name, self.a1_r, X )
+                axis, actual_angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v_ref, v )
+                desired_angle = arccos( self.constraintValue )
+                angle = desired_angle - actual_angle
+                debugPrint(4, '    analyticalSolution:  axis %s, angle %s.'% (axis, angle))
+                azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
+                assert matches[0].ind % 6 == 3 and matches[1].ind % 6 == 4 and matches[2].ind % 6 == 5
+                matches[0].setValue(azi)
+                matches[1].setValue(ela)
+                matches[2].setValue(angle)
+                self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                self.sys2.update()
+                return self.getX()
+        return None
+
+
+
+
+
 class AxisDistanceUnion(ConstraintSystemPrototype):
     label = 'AxisDistanceUnion'
     solveConstraintEq_tol = 10**-4
@@ -511,6 +612,32 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
             raise ValueError, ' assembly2 AxisDistanceUnion numpy.isnan(dist) check console for details'
         return dist - self.constraintValue
 
+    def analyticalSolution(self):
+        if  self.constraintValue == 0:
+            D = self.solveConstraintEq_dofs #degrees of freedom
+            for objName in [self.obj1Name, self.obj2Name]:
+                matches = [d for d in D if d.objName == objName and not d.rotational() ]
+                if len(matches) == 3:
+                    debugPrint(3, '%s analyticalSolution available: %s has free movement.'% (self.label, objName))
+                    vM = self.variableManager
+                    X = self.getX()
+                    if objName == self.obj1Name: #then object1 has has free rotation
+                        p = vM.rotate( self.obj1Name, self.pos1_r, X )
+                        p_ref = vM.rotateAndMove( self.obj2Name, self.pos2_r, X ) #rotate and then move
+                    else:
+                        p = vM.rotate( self.obj2Name, self.pos2_r, X )
+                        p_ref = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
+                    p_ref = p_ref + vM.rotate( self.obj1Name, self.a1_r, X )*self.constraintValue #add offset value
+                    debugPrint(4, '    analyticalSolution:  %s placement position set to %s' % (objName, p_ref - p))
+                    assert matches[0].ind % 6 == 0 and matches[1].ind % 6 == 1 and matches[2].ind % 6 == 2
+                    for d,v in zip(matches, p_ref - p):
+                        d.setValue(  v / d.sensitivity )
+                    self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                    self.sys2.update()
+                    return self.getX()
+        return None
+
+
     def generateDegreesOfFreedom( self ):
         dofs = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
         self.degreesOfFreedom = []
@@ -533,7 +660,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
             elif len(matches) == 2:
                 c = crossProduct( matches[0].directionVector, matches[1].directionVector)
                 planeNormalMatches = c/norm(c)
-                if abs(numpy.dot( axisVector, planeNormalMatches)) < 10 **-6: #then co-planar
+                if abs(dotProduct( axisVector, planeNormalMatches)) < 10 **-6: #then co-planar
                     debugPrint(4, '%s Logic: %s axis in movement plane, therefore linear degrees of freedom reduced from 2 to 1' % (self.label, objName))
                     self.degreesOfFreedom = [ d for d in dofs if not d in matches ]
                     self.degreesOfFreedom.append( LinearMotionDegreeOfFreedom( self, objName, self.variableManager.index[objName]) )
@@ -546,7 +673,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
                     success = True
                     break
             elif len(matches) == 1: 
-                if abs(numpy.dot(axisVector , matches[0].directionVector)) < 10 **-6: #then constraint redudant
+                if abs(dotProduct(axisVector , matches[0].directionVector)) < 10 **-6: #then constraint redudant
                     debugPrint(4, '%s Logic: %s - axis movement constraint does not effect remaining dof -> no dof reduction.' % (self.label, objName))
                     self.degreesOfFreedom =  dofs
                     success = True

@@ -29,7 +29,6 @@ class AnimateDOF(object):
     def __init__(self, constraintSystem, tick=50, framesPerDOF=40 ):
         self.constraintSystem = constraintSystem
         self.Y0 = numpy.array([ d.value for d in constraintSystem.degreesOfFreedom ])
-        debugPrint(2,'Y0.dtype %s' % self.Y0.dtype)
         self.framesPerDOF = framesPerDOF
         self.amplitude = 1.0
         debugPrint(2,'beginning degrees of freedom animation')
