@@ -19,7 +19,7 @@ wb_globals = {}
 def debugPrint( level, msg ):
     if level <= debugPrint.level:
         FreeCAD.Console.PrintMessage(msg + '\n')
-debugPrint.level = 2
+debugPrint.level = 4
 def formatDictionary( d, indent):
     return '%s{' % indent + '\n'.join(['%s%s:%s' % (indent,k,d[k]) for k in sorted(d.keys())]) + '}'
 

@@ -94,8 +94,8 @@ def solve_via_Newtons_method( f, x0, maxStep, grad_f=None, x_tol=10**-6, f_tol=N
     x_prev =  numpy.zeros( [ maxIt+1, n ] ) #used to check against cyclic behaviour, for randomPertubationCount
     x_prev[0,:] = x
     if grad_f == None:
-        grad_f = GradientApproximatorForwardDifference(f)
-        #grad_f = GradientApproximatorCentralDifference(f)
+        #grad_f = GradientApproximatorForwardDifference(f)
+        grad_f = GradientApproximatorCentralDifference(f)
     if lineSearchIt > 0:
         f_ls = lambda x: norm(f(x))
     for i in range(maxIt):

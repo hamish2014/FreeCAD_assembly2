@@ -89,7 +89,7 @@ class ConstraintSystemPrototype:
                     Y0 =      [ d.value for d in self.solveConstraintEq_dofs ]
                     maxStep = [ d.maxStep() for d in self.solveConstraintEq_dofs ]
                     debugPrint(4+PLO, '%s: attempting to find solution numerically, solveConstraintEq maxStep %s' % (self.str(),str(maxStep)))
-                    yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=42, randomPertubationCount=2, lineSearchIt=6,
+                    yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=42, randomPertubationCount=2, lineSearchIt=10,
                                                      debugPrintLevel=debugPrint.level-2-PLO, printF= lambda txt: debugPrint(2, txt ))
                     self.X = self.constraintEq_setY(yOpt)
             if not abs( self.constraintEq_value(self.X) ) < tol:
@@ -296,17 +296,18 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                 else:
                     v = self.a2_r
                     v_ref = vM.rotate( self.obj1Name, self.a1_r, X )
+                #debugPrint(4,'    v %s, v_ref %s, directionConstraintFlag %s' % (v, v_ref, self.constraintValue))
                 axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v_ref, v )
                 #checking angle against directionConstraintFlag
                 v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
                 ax_prod = dotProduct( v_rotated, v_ref )
                 directionConstraintFlag = self.constraintValue
                 if directionConstraintFlag == "aligned" and ax_prod < 0: #instead of ax_prod == -1 (mitigate precision errors)
-                    angle = pi - angle
+                    angle = angle - pi
                 elif directionConstraintFlag =="opposed" and ax_prod > 0:
-                    angle = pi - angle
+                    angle = angle - pi
                 elif directionConstraintFlag == "none"  and angle > pi/2:
-                    angle = pi - angle # take note that arccos's domain is [0,pi], so angle < -pi/2, not required
+                    angle = angle - pi # take note that arccos's domain is [0,pi], so angle < -pi/2, not required
                 #angle = -angle
                 debugPrint(4, '    analyticalSolution:  axis %s, angle %s.'% (axis, angle))
                 azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
@@ -329,7 +330,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             if len(matches) == 3:
                 debugPrint(4, '%s Logic "%s": reducing from 3 to 1 rotational degree of freedom (2 rotation degrees fixed in defining axis of rotation)' % (self.label, objName))
                 self.degreesOfFreedom = [ d for d in dofs if not d in matches ]
-                self.degreesOfFreedom.append( AxisRotationDegreeOfFreedom( self, objName, self.variableManager.index[objName]) )
+                self.degreesOfFreedom.append( AxisRotationDegreeOfFreedom( self, objName, self.variableManager.index[objName], sensitivity=1.0*self.numberOfParentSystems()) )
                 self.degreesOfFreedom_updateInd = len(self.degreesOfFreedom) -1
                 success = True
                 break
@@ -367,10 +368,11 @@ class AxisRotationDegreeOfFreedom:
     calculate the euler angles, theta_new, phi_new and psi_new so that
     R( theta_new, phi_new_, psi_new ) = R(axis, value) * R(theta_old, phi_old, psi_old)
     '''
-    def __init__(self, parentSystem, objName, objInd):
+    def __init__(self, parentSystem, objName, objInd, sensitivity=1.0):
         self.system = parentSystem
         self.objName = objName
         self.objInd = objInd
+        self.sensitivity = sensitivity
         self.value = 0.0
         self.assignedValue = False
     def setAxis(self, X, axis):
@@ -384,7 +386,7 @@ class AxisRotationDegreeOfFreedom:
         self.value = x
         self.assignedValue = True
     def X_contribution( self, X_system ):
-        Q2 = quaternion2( self.value, *self.axis )
+        Q2 = quaternion2( self.value*self.sensitivity, *self.axis )
         q0,q1,q2,q3 = quaternion_multiply( Q2, self.Q1 )
         axis, angle = quaternion_to_axis_and_angle( q1, q2, q3, q0 )
         azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
@@ -516,10 +518,11 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
             raise NotImplemented
 
 class LinearMotionDegreeOfFreedom:
-    def __init__(self, parentSystem, objName, objInd):
+    def __init__(self, parentSystem, objName, objInd, sensitivity=1.0):
         self.system = parentSystem
         self.objName = objName
         self.objInd = objInd
+        self.sensitivity = sensitivity
         self.value = 0.0
         self.assignedValue = False
     def setDirection(self, X, directionVector):
@@ -531,7 +534,7 @@ class LinearMotionDegreeOfFreedom:
     def X_contribution( self, X_system ):
         X = numpy.zeros(self.lenX)
         i = self.objInd
-        X[i:i+3] = self.directionVector*self.value
+        X[i:i+3] = self.directionVector*self.value*self.sensitivity
         return X
     def maxStep(self):             
         return maxStep_linearDisplacement #inf
@@ -682,9 +685,12 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
                     self.degreesOfFreedom = [ d for d in dofs if not d in matches ]
                     success = True
                     break
-                
+        if len(dofs) == 3 and all( isinstance(d, AxisRotationDegreeOfFreedom) for d in dofs ):
+            self.degreesOfFreedom = [dofs[0]]
+            debugPrint(0,'WARNING*WARNING*WARNING* forcing solution for 3 bar linkage.')
+            success = True    
         if not success:
-            raise NotImplementedError, 'Panic! PlaneOffsetUnion Logic not programmed for the reduction of degrees of freedom of:\n%s' % '\n'.join(d.str('  ') for d in dofs )
+            raise NotImplementedError, 'Panic! %s.generateDegreesOfFreedom Logic not programmed for the reduction of degrees of freedom of:\n%s' % ( self.label, '\n'.join(d.str('  ') for d in dofs) )
         self.updateDegreesOfFreedom()
         
     def updateDegreesOfFreedom( self ):

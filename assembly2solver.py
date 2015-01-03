@@ -105,19 +105,23 @@ def solveConstraints( doc ):
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
         flags = QtGui.QMessageBox.StandardButton.Yes 
         flags |= QtGui.QMessageBox.StandardButton.No
+        flags |= QtGui.QMessageBox.Ignore
         message = """The assembly2 solver failed to satisfy the constraint "%s".
 This is due to either
   - impossible/contridictorary constraints have be specified,   
   - invalid constraint values being specified, or the
   - the contraint problem being too difficult for the solver
 Either way the most likely solution is to delete the problematic constraint, and try again using a different constraint scheme.
-Delete constraint "%s"?
+Delete constraint "%s" (press ignore to show the rejected solution)?
 """ % (constraintObj.Name, constraintObj.Name)
         response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!", message, flags)
         if response == QtGui.QMessageBox.Yes:
             name = constraintObj.Name
             doc.removeObject( name )
             FreeCAD.Console.PrintError("removed constraint %s" % name )
+        elif response == QtGui.QMessageBox.Ignore:
+            variableManager.updateFreeCADValues( constraintSystem.getX() )
+
     return constraintSystem
 
 class Assembly2SolveConstraintsCommand:
