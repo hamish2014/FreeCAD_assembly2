@@ -296,19 +296,9 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                 else:
                     v = self.a2_r
                     v_ref = vM.rotate( self.obj1Name, self.a1_r, X )
-                #debugPrint(4,'    v %s, v_ref %s, directionConstraintFlag %s' % (v, v_ref, self.constraintValue))
+                debugPrint(4,'    v %s, v_ref %s, directionConstraintFlag %s' % (v, v_ref, self.constraintValue))
                 axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v_ref, v )
-                #checking angle against directionConstraintFlag
-                v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
-                ax_prod = dotProduct( v_rotated, v_ref )
-                directionConstraintFlag = self.constraintValue
-                if directionConstraintFlag == "aligned" and ax_prod < 0: #instead of ax_prod == -1 (mitigate precision errors)
-                    angle = angle - pi
-                elif directionConstraintFlag =="opposed" and ax_prod > 0:
-                    angle = angle - pi
-                elif directionConstraintFlag == "none"  and angle > pi/2:
-                    angle = angle - pi # take note that arccos's domain is [0,pi], so angle < -pi/2, not required
-                #angle = -angle
+                angle = self.analyticalSolutionAdjustAngle( angle, axis, v, v_ref )
                 debugPrint(4, '    analyticalSolution:  axis %s, angle %s.'% (axis, angle))
                 azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
                 assert matches[0].ind % 6 == 3 and matches[1].ind % 6 == 4 and matches[2].ind % 6 == 5
@@ -318,7 +308,49 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                 self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
                 self.sys2.update()
                 return self.getX()
+            elif len(matches) == 1 and isinstance( matches[0], AxisRotationDegreeOfFreedom ):
+                d = matches[0]
+                q_0, q_1, q_2, q_3 =  d.Q1 
+                vM = self.variableManager
+                X = self.getX()
+                if objName == self.obj1Name: #then object1 has has free rotation
+                    v = quaternion_rotation( self.a1_r, q_1, q_2, q_3, q_0 )
+                    v_ref = vM.rotate( self.obj2Name, self.a2_r, X )
+                else:
+                    v = quaternion_rotation( self.a2_r, q_1, q_2, q_3, q_0 )
+                    v_ref = vM.rotate( self.obj1Name, self.a1_r, X )
+                axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v_ref, v )
+                alignmentError = 1 - abs(dotProduct(axis, d.axis))
+                if abs(angle) < 10**-6 or abs(angle -pi) < 10**-6: #then v == v_ref, so random perpendicular axis returned 2 lines up
+                    debugPrint(4, '%s-%s analyticalSolution correcting error on account of v and v_ref being on same axis'% (self.label, objName))
+                    axis = d.axis
+                    alignmentError = 0
+                debugPrint(4, '%s-%s analyticalSolution available alignment error %e, angle %f'% (self.label, objName, alignmentError, angle))
+                if alignmentError < self.solveConstraintEq_tol:
+                    debugPrint(3, '%s analyticalSolution available: %s has free rotation about the required axis.'% (self.label, objName))
+                    if dotProduct(axis, d.axis) < 0:
+                        axis = -axis
+                        angle = -angle
+                    angle = self.analyticalSolutionAdjustAngle( angle, axis, v, v_ref )
+                    debugPrint(4, '    analyticalSolution:  axis %s, angle %s.'% (axis, angle))
+                    d.value = angle / d.sensitivity
+                    self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                    self.sys2.update()
+                    return self.getX()
         return None
+
+    def analyticalSolutionAdjustAngle( self, angle, axis, v, v_ref ):
+        #checking angle against directionConstraintFlag
+        v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
+        ax_prod = dotProduct( v_rotated, v_ref )
+        directionConstraintFlag = self.constraintValue
+        if directionConstraintFlag == "aligned" and ax_prod < 0: #instead of ax_prod == -1 (mitigate precision errors)
+            angle = angle - pi
+        elif directionConstraintFlag =="opposed" and ax_prod > 0:
+            angle = angle - pi
+        elif directionConstraintFlag == "none"  and angle > pi/2:
+            angle = angle - pi
+        return angle
 
     def generateDegreesOfFreedom( self ):
         dofs = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
@@ -553,37 +585,12 @@ class AngleUnion(AxisAlignmentUnion):
         vM = self.variableManager
         a = vM.rotate( self.obj1Name, self.a1_r, X )
         b = vM.rotate( self.obj2Name, self.a2_r, X )
-        return self.constraintValue - dotProduct( a,b )
-    def analyticalSolution(self):
-        D = self.solveConstraintEq_dofs #degrees of freedom
-        for objName in [self.obj1Name, self.obj2Name]:
-            matches = [d for d in D if d.objName == objName and d.rotational() ]
-            if len(matches) == 3:
-                debugPrint(3, '%s analyticalSolution available: %s has free rotation.'% (self.label, objName))
-                vM = self.variableManager
-                X = self.getX()
-                if objName == self.obj1Name: #then object1 has has free rotation
-                    v = self.a1_r
-                    v_ref = vM.rotate( self.obj2Name, self.a2_r, X )
-                else:
-                    v = self.a2_r
-                    v_ref = vM.rotate( self.obj1Name, self.a1_r, X )
-                axis, actual_angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v_ref, v )
-                desired_angle = arccos( self.constraintValue )
-                angle = desired_angle - actual_angle
-                debugPrint(4, '    analyticalSolution:  axis %s, angle %s.'% (axis, angle))
-                azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
-                assert matches[0].ind % 6 == 3 and matches[1].ind % 6 == 4 and matches[2].ind % 6 == 5
-                matches[0].setValue(azi)
-                matches[1].setValue(ela)
-                matches[2].setValue(angle)
-                self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
-                self.sys2.update()
-                return self.getX()
-        return None
+        return cos(self.constraintValue) - dotProduct( a,b )
 
-
-
+    def analyticalSolutionAdjustAngle( self, actual_angle, axis, v, v_ref ):
+        desired_angle = self.constraintValue
+        correction = desired_angle - actual_angle
+        return correction
 
 
 class AxisDistanceUnion(ConstraintSystemPrototype):

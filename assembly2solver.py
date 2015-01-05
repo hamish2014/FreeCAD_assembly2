@@ -77,7 +77,7 @@ def solveConstraints( doc ):
                 constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
                 constraintSystem = PlaneOffsetUnion(   constraintSystem, *cArgs,  constraintValue = constraintObj.planeOffset)
             elif constraintObj.Type == 'angle_between_planes':
-                constraintSystem = AngleUnion(  constraintSystem, *cArgs,  constraintValue = cos(constraintObj.degrees / 180 * pi ) )
+                constraintSystem = AngleUnion(  constraintSystem, *cArgs,  constraintValue = constraintObj.degrees*pi/180 )
             elif constraintObj.Type == 'axial':
                 constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue = constraintObj.directionConstraint, featureType='cylinder')
                 constraintSystem =  AxisDistanceUnion( constraintSystem, *cArgs, constraintValue = 0 , featureType='cylinder')

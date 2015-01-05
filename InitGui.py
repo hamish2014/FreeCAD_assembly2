@@ -4,7 +4,7 @@ class Assembly2Workbench (Workbench):
     def Initialize(self):
         from assembly2lib import __dir__
         import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation
-        commandslist = ['importPart', 'updateImportedPartsCommand', 'addCircularEdgeConstraint', 'addAngleConstraint', 'addPlaneConstraint', 'addAxialConstraint', 
+        commandslist = ['importPart', 'updateImportedPartsCommand', 'addCircularEdgeConstraint', 'addPlaneConstraint', 'addAxialConstraint', 'addAngleConstraint', 
                         'degreesOfFreedomAnimation', 'assembly2SolveConstraints','muxAssembly','addPartsList']
         self.appendToolbar('Assembly 2', commandslist)
 
