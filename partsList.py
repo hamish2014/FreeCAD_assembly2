@@ -84,7 +84,7 @@ def clickEvent( x, y):
     return viewName, XML
 
 def hoverEvent( x, y):
-    return dimensioning.partsList.svg( x, y, **dimensioning.svg_preview_KWs )
+    return dimensioning.partsList.svg( x, y,svgTag=dimensioning.svg_preview_KWs['svgTag'], svgParms=dimensioning.svg_preview_KWs['svgParms'] )
 
 class AddPartsList:
     def Activated(self):
