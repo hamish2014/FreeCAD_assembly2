@@ -34,39 +34,36 @@ def importPart( filename, partName=None ):
             msg = "Error updating part from %s: A part can only be imported from a FreeCAD document with exactly one visible part. Aborting update of %s" % (partName, filename)
             QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Value Error", msg )
         #QtGui.QMessageBox.warning( QtGui.qApp.activeWindow(), "Value Error!", msg, QtGui.QMessageBox.StandardButton.Ok )
+        return
+    obj_to_copy = visibleObjects[0]
+    if updateExistingPart:
+        obj = FreeCAD.ActiveDocument.getObject(partName)
+        prevPlacement = obj.Placement
     else:
-        obj_to_copy = visibleObjects[0]
-        if updateExistingPart:
-            obj = FreeCAD.ActiveDocument.getObject(partName)
-            prevPlacement = obj.Placement
-        else:
-            partName = findUnusedObjectName( doc.Name + '_import' )
-            obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
-            obj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = filename
-            obj.addProperty("App::PropertyFloat", "timeLastImport","importPart")
-            obj.setEditorMode("timeLastImport",1)  
-            obj.addProperty("App::PropertyBool","fixedPosition","importPart")
-            obj.fixedPosition = not any([i.fixedPosition for i in FreeCAD.ActiveDocument.Objects if hasattr(i, 'fixedPosition') ])
-        obj.Shape = obj_to_copy.Shape.copy()
-        # would this work?:   obj.ViewObject = visibleObjects[0].ViewObject  
-        if updateExistingPart:
-            obj.Placement = prevPlacement
-            obj.touch()
-        else:
-            #obj.ViewObject.Proxy = ViewProviderProxy_importPart()
-            obj.ViewObject.Proxy = 0
-            for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
-                if hasattr(obj.ViewObject, p):
-                    setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
-            obj.Proxy = Proxy_importPart()
-            if not updateExistingPart and not obj.fixedPosition: #then offset new part slightly
-                obj.Placement.Base.x = 42*numpy.random.rand()
-                obj.Placement.Base.y = 42*numpy.random.rand()
-                obj.Placement.Base.z = 42*numpy.random.rand()
-        obj.timeLastImport = os.path.getmtime( obj.sourceFile )
+        partName = findUnusedObjectName( doc.Name + '_import' )
+        obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
+        obj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = filename
+        obj.addProperty("App::PropertyFloat", "timeLastImport","importPart")
+        obj.setEditorMode("timeLastImport",1)  
+        obj.addProperty("App::PropertyBool","fixedPosition","importPart")
+        obj.fixedPosition = not any([i.fixedPosition for i in FreeCAD.ActiveDocument.Objects if hasattr(i, 'fixedPosition') ])
+    obj.Shape = obj_to_copy.Shape.copy()
+    # would this work?:   obj.ViewObject = visibleObjects[0].ViewObject  
+    if updateExistingPart:
+        obj.Placement = prevPlacement
+        obj.touch()
+    else:
+        #obj.ViewObject.Proxy = ViewProviderProxy_importPart()
+        obj.ViewObject.Proxy = 0
+        for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
+            if hasattr(obj.ViewObject, p):
+                setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
+    obj.Proxy = Proxy_importPart()
+    obj.timeLastImport = os.path.getmtime( obj.sourceFile )
     if not doc_already_open: #then close again
         FreeCAD.closeDocument(doc.Name)
         FreeCAD.setActiveDocument(currentDoc)
+    return obj
 
 class Proxy_importPart:
     def execute(self, shape):
@@ -74,6 +71,7 @@ class Proxy_importPart:
 
 class ImportPartCommand:
     def Activated(self):
+        view = FreeCADGui.activeDocument().activeView()
         filename, filetype = QtGui.QFileDialog.getOpenFileName( 
             QtGui.qApp.activeWindow(),
             "Select FreeCAD document to import part from",
@@ -82,9 +80,9 @@ class ImportPartCommand:
             )
         if filename == '':
             return
-        importPart( filename )
+        importedObject = importPart( filename )
         FreeCAD.ActiveDocument.recompute()
-
+        PartMover( view, importedObject )
        
     def GetResources(self): 
         return {
@@ -94,6 +92,21 @@ class ImportPartCommand:
             } 
 
 FreeCADGui.addCommand('importPart', ImportPartCommand())
+
+
+class PartMover:
+    def __init__(self, view, obj):
+        self.obj = obj
+        self.view = view
+        self.callbackMove = self.view.addEventCallback("SoLocation2Event",self.moveMouse)
+        self.callbackClick = self.view.addEventCallback("SoMouseButtonEvent",self.clickMouse)
+    def moveMouse(self, info):
+        newPos = self.view.getPoint( *info['Position'] )
+        debugPrint(5, 'new position %s' % str(newPos))
+        self.obj.Placement.Base = newPos
+    def clickMouse(self, info):
+        self.view.removeEventCallback("SoLocation2Event",self.callbackMove)
+        self.view.removeEventCallback("SoMouseButtonEvent",self.callbackClick)
 
 
 class UpdateImportedPartsCommand:
