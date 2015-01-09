@@ -68,32 +68,3 @@ class PlaneConstraintCommand:
 FreeCADGui.addCommand('addPlaneConstraint', PlaneConstraintCommand())
 
 
-#class PlaneConstraint(ConstraintPrototype): 
-#     n = 2 #number of constraint equations
-#
-#     def registerVariables( self ):
-#          p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
-#          p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
-#          obj1 = self.doc.getObject( self.constraintObj.Object1 )
-#          obj2 = self.doc.getObject( self.constraintObj.Object2 )
- #         surface1 =  obj1.Shape.Faces[self.constraintObj.FaceInd1].Surface
- #         surface2 =  obj2.Shape.Faces[self.constraintObj.FaceInd2].Surface
- #         self.a1_r = p1.rotate_undo( surface1.Axis ) #_r = relative to objects placement
- #         self.a2_r = p2.rotate_undo( surface2.Axis )
- #         self.pos1_r = p1.rotate_and_then_move_undo( surface1.Position )
- #         self.pos2_r = p2.rotate_and_then_move_undo( surface2.Position )
- #         self.planeOffset = self.constraintObj.planeOffset
- #         self.directionConstraint = self.constraintObj.directionConstraint
-#
- #    def f(self):
- #         p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
- #         p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
- #         a1 = p1.rotate( self.a1_r )
- #         a2 = p2.rotate( self.a2_r )
- #         pos1 = p1.rotate_and_then_move( self.pos1_r )
- #         pos2 = p2.rotate_and_then_move( self.pos2_r )
- #         dist = numpy.dot(a1, pos1 - pos2) #distance between planes
-  #        #debugPrint(2, 'dist %f' % dist) 
-  #        return [
-   #            dist - self.planeOffset 
-   #            ] + self.directionalConstraint_f_value( a1, a2, self.directionConstraint )

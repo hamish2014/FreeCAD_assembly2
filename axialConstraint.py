@@ -65,35 +65,3 @@ class AxialConstraintCommand:
                } 
 
 FreeCADGui.addCommand('addAxialConstraint', AxialConstraintCommand())
-
-#class AxialConstraint(ConstraintPrototype): 
-#     n = 2
-#
-#     def registerVariables( self ):
-#          p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
-#          p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
-#          obj1 = self.doc.getObject( self.constraintObj.Object1 )
-#          obj2 = self.doc.getObject( self.constraintObj.Object2 )
-#          surface1 =  obj1.Shape.Faces[self.constraintObj.FaceInd1].Surface
-#          surface2 =  obj2.Shape.Faces[self.constraintObj.FaceInd2].Surface
-#          self.a1_r = p1.rotate_undo( surface1.Axis ) #_r = relative to objects placement
-#          self.a2_r = p2.rotate_undo( surface2.Axis )
-#          self.c1_r = p1.rotate_and_then_move_undo( surface1.Center )
-#          #debugPrint(4, 'surface1.center %s, rotate_and_then_move_undo %s' % (surface1.Center, self.c1_r))
-#          self.c2_r = p2.rotate_and_then_move_undo( surface2.Center )
-#          self.directionConstraint = self.constraintObj.directionConstraint
-
-#     def f(self):
-#          p1 = self.variableManager.getPlacementValues( self.constraintObj.Object1 )
-#          p2 = self.variableManager.getPlacementValues( self.constraintObj.Object2 )
-#          a1 = p1.rotate( self.a1_r )
-#          a2 = p2.rotate( self.a2_r )
-#          c1 = p1.rotate_and_then_move( self.c1_r )
-#          c2 = p2.rotate_and_then_move( self.c2_r )
-          #debugPrint(4, 'a1 %s' % a1.__repr__())
-          #debugPrint(4, 'a2 %s' % a2.__repr__())
-          #debugPrint(4, 'c1 %s' % c1.__repr__())
-          #debugPrint(4, 'c2 %s' % c2.__repr__())
-#          return [
-#               distance_between_two_axes_3_points(c1,a1,c2,a2)
-#               ] + self.directionalConstraint_f_value( a1, a2, self.directionConstraint )
