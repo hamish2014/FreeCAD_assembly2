@@ -118,19 +118,25 @@ FreeCADGui.addCommand('updateImportedPartsCommand', UpdateImportedPartsCommand()
 class PartMover:
     def __init__(self, view, obj):
         self.obj = obj
+        self.initialPostion = self.obj.Placement.Base 
+        self.copiedObject = False
         self.view = view
         self.callbackMove = self.view.addEventCallback("SoLocation2Event",self.moveMouse)
         self.callbackClick = self.view.addEventCallback("SoMouseButtonEvent",self.clickMouse)
+        self.callbackKey = self.view.addEventCallback("SoKeyboardEvent",self.KeyboardEvent)
     def moveMouse(self, info):
         newPos = self.view.getPoint( *info['Position'] )
         debugPrint(5, 'new position %s' % str(newPos))
         self.obj.Placement.Base = newPos
+    def removeCallbacks(self):
+        self.view.removeEventCallback("SoLocation2Event",self.callbackMove)
+        self.view.removeEventCallback("SoMouseButtonEvent",self.callbackClick)
+        self.view.removeEventCallback("SoKeyboardEvent",self.callbackKey)
     def clickMouse(self, info):
-        #debugPrint(3, 'clickMouse info %s' % str(info))
+        debugPrint(4, 'clickMouse info %s' % str(info))
         if info['Button'] == 'BUTTON1' and info['State'] == 'DOWN':
             if not info['ShiftDown']:
-                self.view.removeEventCallback("SoLocation2Event",self.callbackMove)
-                self.view.removeEventCallback("SoMouseButtonEvent",self.callbackClick)
+                self.removeCallbacks()
             else: #copy object
                 partName = findUnusedObjectName( self.obj.Name[:self.obj.Name.find('_import') + len('_import')] )
                 newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
@@ -147,6 +153,17 @@ class PartMover:
                 newObj.Placement.Base = self.obj.Placement.Base
                 newObj.Placement.Rotation = self.obj.Placement.Rotation
                 self.obj = newObj
+                self.copiedObject = True
+    def KeyboardEvent(self, info):
+        debugPrint(4, 'KeyboardEvent info %s' % str(info))
+        if info['State'] == 'UP' and info['Key'] == 'ESCAPE':
+            if not self.copiedObject:
+                self.obj.Placement.Base = self.initialPostion
+            else:
+                FreeCAD.ActiveDocument.removeObject(self.obj.Name)
+            self.removeCallbacks()
+
+    
 
 class PartMoverSelectionObserver:
      def __init__(self):
