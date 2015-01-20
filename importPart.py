@@ -146,6 +146,7 @@ class PartMover:
                 newObj.Proxy = Proxy_importPart()
                 newObj.Placement.Base = self.obj.Placement.Base
                 newObj.Placement.Rotation = self.obj.Placement.Rotation
+                self.obj = newObj
 
 class PartMoverSelectionObserver:
      def __init__(self):
