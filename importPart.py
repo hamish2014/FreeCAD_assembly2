@@ -91,24 +91,7 @@ class ImportPartCommand:
             'MenuText': 'Import a part from another FreeCAD document', 
             'ToolTip': 'Import a part from another FreeCAD document'
             } 
-
 FreeCADGui.addCommand('importPart', ImportPartCommand())
-
-
-class PartMover:
-    def __init__(self, view, obj):
-        self.obj = obj
-        self.view = view
-        self.callbackMove = self.view.addEventCallback("SoLocation2Event",self.moveMouse)
-        self.callbackClick = self.view.addEventCallback("SoMouseButtonEvent",self.clickMouse)
-    def moveMouse(self, info):
-        newPos = self.view.getPoint( *info['Position'] )
-        debugPrint(5, 'new position %s' % str(newPos))
-        self.obj.Placement.Base = newPos
-    def clickMouse(self, info):
-        self.view.removeEventCallback("SoLocation2Event",self.callbackMove)
-        self.view.removeEventCallback("SoMouseButtonEvent",self.callbackClick)
-
 
 class UpdateImportedPartsCommand:
     def Activated(self):
@@ -123,13 +106,73 @@ class UpdateImportedPartsCommand:
                 elif os.path.getmtime( obj.sourceFile ) > obj.timeLastImport:
                     importPart( obj.sourceFile, obj.Name )
         FreeCAD.ActiveDocument.recompute()
-
-       
     def GetResources(self): 
         return {
             'Pixmap' : os.path.join( __dir__ , 'importPart_update.svg' ) , 
             'MenuText': 'Update parts imported into the assembly', 
             'ToolTip': 'Update parts imported into the assembly'
             } 
-
 FreeCADGui.addCommand('updateImportedPartsCommand', UpdateImportedPartsCommand())
+
+
+class PartMover:
+    def __init__(self, view, obj):
+        self.obj = obj
+        self.view = view
+        self.callbackMove = self.view.addEventCallback("SoLocation2Event",self.moveMouse)
+        self.callbackClick = self.view.addEventCallback("SoMouseButtonEvent",self.clickMouse)
+    def moveMouse(self, info):
+        newPos = self.view.getPoint( *info['Position'] )
+        debugPrint(5, 'new position %s' % str(newPos))
+        self.obj.Placement.Base = newPos
+    def clickMouse(self, info):
+        #debugPrint(3, 'clickMouse info %s' % str(info))
+        if info['Button'] == 'BUTTON1' and info['State'] == 'DOWN':
+            if not info['ShiftDown']:
+                self.view.removeEventCallback("SoLocation2Event",self.callbackMove)
+                self.view.removeEventCallback("SoMouseButtonEvent",self.callbackClick)
+            else: #copy object
+                partName = findUnusedObjectName( self.obj.Name[:self.obj.Name.find('_import') + len('_import')] )
+                newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
+                newObj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = self.obj.sourceFile
+                newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  self.obj.timeLastImport
+                newObj.setEditorMode("timeLastImport",1)  
+                newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = self.obj.fixedPosition
+                newObj.Shape = self.obj.Shape.copy()
+                newObj.ViewObject.Proxy = 0
+                for p in self.obj.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
+                    if hasattr(newObj.ViewObject, p):
+                        setattr(newObj.ViewObject, p, getattr(self.obj.ViewObject, p))
+                newObj.Proxy = Proxy_importPart()
+                newObj.Placement.Base = self.obj.Placement.Base
+                newObj.Placement.Rotation = self.obj.Placement.Rotation
+
+class PartMoverSelectionObserver:
+     def __init__(self):
+          FreeCADGui.Selection.addObserver(self)  
+          FreeCADGui.Selection.removeSelectionGate()
+     def addSelection( self, docName, objName, sub, pnt ):
+         debugPrint(4,'addSelection: docName,objName,sub = %s,%s,%s' % (docName, objName, sub))
+         FreeCADGui.Selection.removeObserver(self) 
+         obj = FreeCAD.ActiveDocument.getObject(objName)
+         view = FreeCADGui.activeDocument().activeView()
+         PartMover( view, obj )
+
+
+class MovePartCommand:
+    def Activated(self):
+        selection = FreeCADGui.Selection.getSelectionEx()
+        if len(selection) == 1:
+            PartMover(  FreeCADGui.activeDocument().activeView(), selection[0].Object )
+        else:
+            PartMoverSelectionObserver()
+       
+    def GetResources(self): 
+        return {
+            'Pixmap' : os.path.join( __dir__ , 'Draft_Move.svg' ) , 
+            'MenuText': 'move a part (hold shift to copy)', 
+            'ToolTip': 'move a part (hold shift to copy)'
+            } 
+
+FreeCADGui.addCommand('assembly2_movepart', MovePartCommand())
+
