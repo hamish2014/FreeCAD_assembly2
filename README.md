@@ -22,28 +22,39 @@ Limitations
   * undo and other similar features not supported
 
 
-Installation Instructions
--------------------------
+Linux Installation Instructions
+-------------------------------
 
 To use this workbench clone this git repository under your FreeCAD MyScripts directory, and install the pyside and numpy python libraries.
 On a Linux Debian based system such as Ubuntu, installation can be done through BASH as follows
 
   $ sudo apt-get install git python-numpy python-pyside
 
-  $ mkdir .FreeCAD/Mod
+  $ mkdir ~/.FreeCAD/Mod
 
-  $ cd .FreeCAD/Mod
+  $ cd ~/.FreeCAD/Mod
 
   $ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
 
-
-Updating to the latest version
-------------------------------
+Once installed, use git to easily update to the latest version:
 
   $ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
 
   $ git pull
 
+Windows Installation Instructions
+---------------------------------
+
+  * download the git repository as ZIP
+  * assuming FreeCAD is installed in "C:\PortableApps\FreeCAD 0_15",  go to "C:\PortableApps\FreeCAD 0_15\Mod" within Windows Explorer
+  * create new directory named "assembly2"
+  * unzip downloaded repository in "C:\PortableApps\FreeCAD 0_15\Mod\assembly2"
+  
+FreeCAD you will now have a new workbench-entry called "Assembly 2".
+
+*Pyside and Numpy are integrated in the FreeCAD 0.15 dev-Snapshots, so these Python packages do not need to be installed individually*
+
+To update to the latest version, redownload the git repository and overwrite the contents of the assembly2 folder.
 
 Bugs
 ----
