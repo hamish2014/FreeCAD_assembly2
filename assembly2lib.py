@@ -19,7 +19,8 @@ wb_globals = {}
 def debugPrint( level, msg ):
     if level <= debugPrint.level:
         FreeCAD.Console.PrintMessage(msg + '\n')
-debugPrint.level = 4
+debugPrint.level = 4 if hasattr(os,'uname') and os.uname()[1].startswith('antoine') else 2
+
 def formatDictionary( d, indent):
     return '%s{' % indent + '\n'.join(['%s%s:%s' % (indent,k,d[k]) for k in sorted(d.keys())]) + '}'
 

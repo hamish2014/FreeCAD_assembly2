@@ -82,7 +82,8 @@ class ImportPartCommand:
             return
         importedObject = importPart( filename )
         FreeCAD.ActiveDocument.recompute()
-        PartMover( view, importedObject )
+        if not importedObject.fixedPosition:
+            PartMover( view, importedObject )
        
     def GetResources(self): 
         return {

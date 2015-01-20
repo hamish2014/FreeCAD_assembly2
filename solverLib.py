@@ -137,7 +137,7 @@ def solve_via_Newtons_method( f, x0, maxStep, grad_f=None, x_tol=10**-6, f_tol=N
             x_c = x_c / r.max()
         if lineSearchIt > 0:
             #x_next = goldenSectionSearch( f_ls, x, norm(b), x_c, lineSearchIt, lineSearchIt_x0, debugPrintLevel, printF )
-            x_next =  quadraticLineSearch( f_ls, x, norm(b), x_c, 5, debugPrintLevel-2, printF, tol_x=x_tol )
+            x_next =  quadraticLineSearch( f_ls, x, norm(b), x_c, lineSearchIt, debugPrintLevel-2, printF, tol_x=x_tol )
             x_c = x_next - x
         x = x + x_c
         if randomPertubationCount > 0 : #then peturb as to avoid lock-up [i.e jam which occurs when trying to solve axis direction constraint]
