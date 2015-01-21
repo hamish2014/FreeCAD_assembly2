@@ -14,7 +14,7 @@ class CircularEdgeSelectionGate:
         edgeInd = int( sub[4:]) -1 
         return hasattr( obj.Shape.Edges[edgeInd].Curve, 'Radius' )
 
-def parseSelection(selection):
+def parseSelection(selection, objectToUpdate=None):
     msg = 'To add a circular edge constraint select two circular edges, each from a different part. Both of these parts need to be imported using the assembly 2 work bench.'
     if len(selection) <> 2:
         QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage",  msg )
@@ -31,25 +31,34 @@ def parseSelection(selection):
             return 
         cParms.append([s.ObjectName, edgeInd])
 
-    cName = findUnusedObjectName('circularEdgeConstraint')
-    debugPrint(2, "creating %s" % cName )
-    c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
+    if objectToUpdate == None:
+        cName = findUnusedObjectName('circularEdgeConstraint')
+        debugPrint(2, "creating %s" % cName )
+        c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
                 
-    c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = 'circularEdge'
-    c.addProperty("App::PropertyString","Object1","ConstraintInfo","Object 1").Object1 = cParms[0][0]
-    c.addProperty("App::PropertyInteger","EdgeInd1","ConstraintInfo","Object 1 face index").EdgeInd1 = cParms[0][1]
-    c.addProperty("App::PropertyString","Object2","ConstraintInfo","Object 2").Object2 = cParms[1][0]
-    c.addProperty("App::PropertyInteger","EdgeInd2","ConstraintInfo","Object 2 face index").EdgeInd2 = cParms[1][1]
+        c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = 'circularEdge'
+        c.addProperty("App::PropertyString","Object1","ConstraintInfo","Object 1").Object1 = cParms[0][0]
+        c.addProperty("App::PropertyInteger","EdgeInd1","ConstraintInfo","Object 1 face index").EdgeInd1 = cParms[0][1]
+        c.addProperty("App::PropertyString","Object2","ConstraintInfo","Object 2").Object2 = cParms[1][0]
+        c.addProperty("App::PropertyInteger","EdgeInd2","ConstraintInfo","Object 2 face index").EdgeInd2 = cParms[1][1]
     
-    c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
-    c.directionConstraint = ["none","aligned","opposed"]
-    c.addProperty("App::PropertyFloat","offset","ConstraintInfo")
+        c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
+        c.directionConstraint = ["none","aligned","opposed"]
+        c.addProperty("App::PropertyFloat","offset","ConstraintInfo")
     
-    c.setEditorMode('Type',1)
-    for prop in ["Object1","Object2","EdgeInd1","EdgeInd2"]:
-        c.setEditorMode(prop, 1) 
+        c.setEditorMode('Type',1)
+        for prop in ["Object1","Object2","EdgeInd1","EdgeInd2"]:
+            c.setEditorMode(prop, 1) 
         
-    c.Proxy = ConstraintObjectProxy()
+        c.Proxy = ConstraintObjectProxy()
+    else:
+        debugPrint(2, "redefining %s" % objectToUpdate.Name )
+        c = objectToUpdate
+        c.Object1 = cParms[0][0]
+        c.EdgeInd1 = cParms[0][1]
+        c.Object2 = cParms[1][0]
+        c.EdgeInd2 = cParms[1][1]
+
     c.Proxy.callSolveConstraints()    
     #FreeCADGui.Selection.clearSelection()
     #FreeCADGui.Selection.addSelection(c)
@@ -75,3 +84,19 @@ class CircularEdgeConstraintCommand:
 
 FreeCADGui.addCommand('addCircularEdgeConstraint', CircularEdgeConstraintCommand())
 
+
+class RedefineCircularEdgeConstraintCommand:
+    def Activated(self):
+        self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
+        debugPrint(3,'redefining %s' % self.constObject.Name)
+        FreeCADGui.Selection.clearSelection()
+        if wb_globals.has_key('selectionObserver'): 
+            wb_globals['selectionObserver'].stopSelectionObservation()
+        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( CircularEdgeSelectionGate(), self.UpdateConstraint  )
+
+    def UpdateConstraint(self, selection):
+        parseSelection( selection, self.constObject)
+
+    def GetResources(self): 
+        return { 'MenuText': 'Redefine' } 
+FreeCADGui.addCommand('redefineCircularEdgeConstraint', RedefineCircularEdgeConstraintCommand())

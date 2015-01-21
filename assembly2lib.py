@@ -66,3 +66,16 @@ class ConstraintObjectProxy:
     def callSolveConstraints(self):
         from assembly2solver import solveConstraints
         solveConstraints( FreeCAD.ActiveDocument )
+
+
+
+class SelectConstraintObjectsCommand:
+    def Activated(self):
+        constraintObj = FreeCADGui.Selection.getSelectionEx()[0].Object
+        obj1Name = constraintObj.Object1
+        obj2Name = constraintObj.Object2
+        FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj1Name) )
+        FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj2Name) )
+    def GetResources(self): 
+        return { 'MenuText': 'Select Objects' } 
+FreeCADGui.addCommand('selectConstraintObjects', SelectConstraintObjectsCommand())

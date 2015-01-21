@@ -107,12 +107,17 @@ def solveConstraints( doc ):
         flags |= QtGui.QMessageBox.StandardButton.No
         flags |= QtGui.QMessageBox.Ignore
         message = """The assembly2 solver failed to satisfy the constraint "%s".
-This is due to either
-  - impossible/contridictorary constraints have be specified,   
-  - invalid constraint values being specified, or the
-  - the contraint problem being too difficult for the solver
-Either way the most likely solution is to delete the problematic constraint, and try again using a different constraint scheme.
-Delete constraint "%s" (press ignore to show the rejected solution)?
+
+possible causes
+  - impossible/contridictorary constraints have be specified, or  
+  - the contraint problem is too difficult for the solver, or a 
+  - bug in the assembly 2 workbench
+
+potential solutions
+  - redefine the constraint (popup menu item in the treeView)
+  - delete constraint, and try again using a different constraint scheme.
+
+Delete constraint "%s"? (press ignore to show the rejected solution)?
 """ % (constraintObj.Name, constraintObj.Name)
         response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!", message, flags)
         if response == QtGui.QMessageBox.Yes:

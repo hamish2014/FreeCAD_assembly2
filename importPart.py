@@ -82,8 +82,10 @@ class ImportPartCommand:
             return
         importedObject = importPart( filename )
         FreeCAD.ActiveDocument.recompute()
-        if not importedObject.fixedPosition:
+        if not importedObject.fixedPosition: #will be true for the first imported part 
             PartMover( view, importedObject )
+        else:
+            FreeCADGui.SendMsgToActiveView("ViewFit")
        
     def GetResources(self): 
         return {

@@ -7,6 +7,22 @@ class Assembly2Workbench (Workbench):
         commandslist = ['importPart', 'updateImportedPartsCommand', 'assembly2_movepart', 'addCircularEdgeConstraint', 'addPlaneConstraint', 'addAxialConstraint', 'addAngleConstraint', 
                         'degreesOfFreedomAnimation', 'assembly2SolveConstraints','muxAssembly','addPartsList']
         self.appendToolbar('Assembly 2', commandslist)
+        self.treecmdList = ['importPart', 'updateImportedPartsCommand']
+        #self.appendMenu('Assembly 2', commandslist)
+
+    def ContextMenu(self, recipient):
+        selection = FreeCADGui.Selection.getSelection()
+        if len(selection) == 1:
+            obj = selection[0]
+            if hasattr(obj,'Content'):
+                if 'ConstraintInfo' in obj.Content:
+                    redefineCmd = {
+                        'plane':'redefinePlaneConstraint',
+                        'angle_between_planes':'redefineAngleConstraint',
+                        'axial': 'redefineAxialConstraint',
+                        'circularEdge' : 'redefineCircularEdgeConstraint'
+                        }[ obj.Type ]
+                    self.appendContextMenu( "Constraint Utilities", [redefineCmd,'selectConstraintObjects'])
 
     # Icon generated using by converting svg to xpm format using Gimp
     Icon = '''
