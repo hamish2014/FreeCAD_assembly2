@@ -30,13 +30,22 @@ class AnimateDOF(object):
         self.constraintSystem = constraintSystem
         self.Y0 = numpy.array([ d.value for d in constraintSystem.degreesOfFreedom ])
         self.framesPerDOF = framesPerDOF
-        self.amplitude = 1.0
         debugPrint(2,'beginning degrees of freedom animation')
         self.count = 0
         self.dof_count = 0
+        self.updateAmplitude()
         self.timer = QtCore.QTimer()
         QtCore.QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.renderFrame)
         self.timer.start( tick )
+
+    def updateAmplitude( self) :
+        D = self.constraintSystem.degreesOfFreedom
+        if D[self.dof_count].rotational():
+            self.amplitude = 1.0
+        else:
+            obj = FreeCAD.ActiveDocument.getObject( D[self.dof_count].objName )
+            self.amplitude = obj.Shape.BoundBox.DiagonalLength / 2
+
 
     def renderFrame(self):
         debugPrint(5,'timer loop running')
@@ -46,7 +55,7 @@ class AnimateDOF(object):
         debugPrint(4,'dof %i, dof frame %i' % (self.dof_count, self.count))
         Y = self.Y0.copy()
         r = 2*numpy.pi*( 1.0*self.count/self.framesPerDOF)
-        Y[self.dof_count] = self.Y0[self.dof_count] + self.amplitude * numpy.sin(r) / D[self.dof_count].sensitivity
+        Y[self.dof_count] = self.Y0[self.dof_count] + self.amplitude * numpy.sin(r)/D[self.dof_count].sensitivity
         debugPrint(5,'Y frame %s, sin(r) %1.2f' % (Y,numpy.sin(r)))
         try:
             for d,y in zip( D, Y):
@@ -61,6 +70,7 @@ class AnimateDOF(object):
         if self.count == self.framesPerDOF:
             self.count = 0
             self.dof_count = self.dof_count + 1
+            self.updateAmplitude()
         if self.dof_count + 1 > len( self.constraintSystem.degreesOfFreedom ):
             self.timer.stop()
             return

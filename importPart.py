@@ -85,7 +85,14 @@ class ImportPartCommand:
         if not importedObject.fixedPosition: #will be true for the first imported part 
             PartMover( view, importedObject )
         else:
-            FreeCADGui.SendMsgToActiveView("ViewFit")
+            from PySide import QtCore
+            self.timer = QtCore.QTimer()
+            QtCore.QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.GuiViewFit)
+            self.timer.start( 500 ) #0.5 seconds
+
+    def GuiViewFit(self):
+        FreeCADGui.SendMsgToActiveView("ViewFit") #dont know why this does not work
+        self.timer.stop()
        
     def GetResources(self): 
         return {
