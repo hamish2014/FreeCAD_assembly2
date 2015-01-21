@@ -27,15 +27,22 @@ Linux Installation Instructions
 
 To use this workbench clone this git repository under your FreeCAD MyScripts directory, and install the pyside and numpy python libraries.
 On a Linux Debian based system such as Ubuntu, installation can be done through BASH as follows
-  * sudo apt-get install git python-numpy python-pyside
-  * mkdir ~/.FreeCAD/Mod
-  * cd ~/.FreeCAD/Mod
-  * git clone https://github.com/hamish2014/FreeCAD_assembly2.git
+
+  $ sudo apt-get install git python-numpy python-pyside
+
+  $ mkdir ~/.FreeCAD/Mod
+
+  $ cd ~/.FreeCAD/Mod
+
+  $ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
+
 FreeCAD you will now have a new workbench-entry called "Assembly 2".
 
 Once installed, use git to upgrade to the latest version through BASH as follows
-  * cd ~/.FreeCAD/Mod/FreeCAD_assembly2
-  * git pull
+
+  $ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
+
+  $ git pull
 
 Windows Installation Instructions
 ---------------------------------
