@@ -240,6 +240,9 @@ class PlacementDegreeOfFreedom:
         assert sensitivity <> 0
         self.value = initialValue / sensitivity
         self.assignedValue = False
+        if self.ind % 6 < 3:
+            self.directionVector = numpy.zeros(3)
+            self.directionVector[ self.ind % 6 ] = 1
     def setValue( self, x):
         self.value = x
         self.assignedValue = True
@@ -460,7 +463,7 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
         D = self.solveConstraintEq_dofs #degrees of freedom
         for objName in [self.obj1Name, self.obj2Name]:
             matches = [d for d in D if d.objName == objName and not d.rotational() ]
-            if len(matches) == 3:
+            if len(matches) == 3 and False:
                 debugPrint(3, '%s analyticalSolution available: %s has free movement.'% (self.label, objName))
                 vM = self.variableManager
                 X = self.getX()
@@ -478,6 +481,36 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
                 self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
                 self.sys2.update()
                 return self.getX()
+            if len(matches) > 0:
+                debugPrint(4, '    %s %s has linear displacement degrees of freedom, checking for analyticalSolution.'% (self.label, objName))
+                vM = self.variableManager
+                X = self.getX()
+                if objName == self.obj1Name: #then object1 has has free rotation
+                    p = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
+                    p_ref = vM.rotateAndMove( self.obj2Name, self.pos2_r, X ) #rotate and then move
+                else:
+                    p = vM.rotateAndMove( self.obj2Name, self.pos2_r, X )
+                    p_ref = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
+                planeNorm = vM.rotate( self.obj1Name, self.a1_r, X )
+                p_ref = p_ref + planeNorm*self.constraintValue #add offset value
+                requiredDisp = planeNorm*dot(planeNorm, p_ref - p ) #Disp = linear displacemnt
+                debugPrint(4,'requiredDisp %s' % requiredDisp )
+                V = [ dot( m.directionVector, requiredDisp ) for m in matches ]
+
+                for m,v in zip(matches,V):
+                    print(m,v)
+
+                debugPrint(4,str(V))
+                actualDisp = sum( v*m.directionVector for m,v in zip(matches,V) )
+                if norm(requiredDisp - actualDisp) < 10**-9:
+                    debugPrint(3, '    %s analyticalSolution available by moving %s.'% (self.label, objName))
+                    for m,v in zip(matches,V):
+                        m.setValue( m.value + v / m.sensitivity )
+                        #print(m)
+                    self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                    self.sys2.update()
+                    return self.getX()
+
         return None
 
     def generateDegreesOfFreedom( self ):
