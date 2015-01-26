@@ -67,12 +67,11 @@ class AnimateDOF(object):
         except:
             FreeCAD.Console.PrintError('AnimateDegreeOfFreedom (dof %i, dof frame %i) unable to update constraint system'  % (self.dof_count, self.count))
 
-        if self.count == self.framesPerDOF:
+        if self.count >= self.framesPerDOF:
             self.count = 0
             self.dof_count = self.dof_count + 1
+            if self.dof_count + 1 > len( self.constraintSystem.degreesOfFreedom ):
+                self.timer.stop()
+                return
             self.updateAmplitude()
-        if self.dof_count + 1 > len( self.constraintSystem.degreesOfFreedom ):
-            self.timer.stop()
-            return
-            
         debugPrint(5,'finished timer loop')
