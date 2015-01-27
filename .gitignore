@@ -57,3 +57,4 @@ target/
 
 spea2.py
 .syncthing.*
+*.fcstd1

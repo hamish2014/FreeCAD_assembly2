@@ -20,7 +20,7 @@ def arccos2( v, allowableNumericalError=10**-1 ):
     if -1 <= v and v <= 1:
         return arccos(v)
     elif abs(v) -1 < allowableNumericalError:
-        return pi/2 if v > 0 else -pi/2
+        return 0 if v > 0 else pi
     else:
         raise ValueError,"arccos2 called with invalid input of %s" % v
 
@@ -134,12 +134,14 @@ def axis_rotation_matrix( theta, u_x, u_y, u_z ):
     return numpy.array( [
             [ cos(theta) + u_x**2 * ( 1 - cos(theta)) , u_x*u_y*(1-cos(theta)) - u_z*sin(theta) ,  u_x*u_z*(1-cos(theta)) + u_y*sin(theta) ] ,
             [ u_y*u_x*(1-cos(theta)) + u_z*sin(theta) , cos(theta) + u_y**2 * (1-cos(theta))    ,  u_y*u_z*(1-cos(theta)) - u_x*sin(theta )] ,
-            [ u_z*u_x*(1-cos(theta)) - u_y*sin(theta) , u_z*u_y*(1-cos(theta)) + u_x*sin(theta)  ,  cos(theta) + u_z**2 * (1-cos(theta))   ]
+            [ u_z*u_x*(1-cos(theta)) - u_y*sin(theta) , u_z*u_y*(1-cos(theta)) + u_x*sin(theta) ,              cos(theta) + u_z**2*(1-cos(theta))   ]
             ])
+
 def axis_rotation( p, theta, u_x, u_y, u_z ):
     return dotProduct(axis_rotation_matrix( theta, u_x, u_y, u_z ), p)
 
 def azimuth_elevation_rotation_matrix(azi, ela, theta ):
+    #print('azimuth_and_elevation_angles_to_axis(azi, ela) %s' % azimuth_and_elevation_angles_to_axis(azi, ela))
     return axis_rotation_matrix( theta, *azimuth_and_elevation_angles_to_axis(azi, ela))
 
 def azimuth_elevation_rotation( p, azi, ela, theta ):
@@ -601,13 +603,16 @@ if __name__ == '__main__':
         print('    quaternion approach error  %1.2e' % error )
 
     print('\nTesting rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector')
+    testCases.append( [[ 1.00000000e+00, -1.51981276e-16, -1.12027056e-17], [1.0, 0.0, 0.0 ]] )
+    testCases.append( [[ -8.66025404e-01, 5.00000000e-01, -6.16297582e-33], [ -3.45126646e-31,   1.00000000e+00,  -1.22464680e-16]] )
+    testCases.append( [[  6.79598526e-13,  -1.21896543e-12, 1.00000000e+00], [ 0.,  0.,  1.]] )
     for i,axes in enumerate(testCases):
         v, v_ref = axes
         axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector(v, v_ref)
-        #print('  rotation axes: v_ref %s, v %s, axis %s, angle %1.3f rad' % (v_ref, v, axis, angle) )
+        print('  rotation axes: v_ref %s, v %s, axis %s, angle %1.3f rad' % (v_ref, v, axis, angle) )
         v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
         #print('             v_rotated %s' % (v_rotated) )
         error = norm( v_ref - v_rotated )
-        if error > 10**-14 :
+        if error > 10**-9 :
             raise ValueError, 'Failure for v_ref %s, v %s, error %1.3e' % ( v, v_ref, error )
     print('all test case passed')

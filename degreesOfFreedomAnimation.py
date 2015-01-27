@@ -50,12 +50,21 @@ class AnimateDOF(object):
     def renderFrame(self):
         debugPrint(5,'timer loop running')
         self.count = self.count + 1
+        if self.count > self.framesPerDOF: #placed here so that if is error timer still exits
+            self.count = 0
+            self.dof_count = self.dof_count + 1
+            if self.dof_count + 1 > len( self.constraintSystem.degreesOfFreedom ):
+                self.timer.stop()
+                return
+            self.updateAmplitude()
+
+
         D = self.constraintSystem.degreesOfFreedom
         if self.count == 1: debugPrint(3,'animating %s' % D[self.dof_count])
         debugPrint(4,'dof %i, dof frame %i' % (self.dof_count, self.count))
         Y = self.Y0.copy()
         r = 2*numpy.pi*( 1.0*self.count/self.framesPerDOF)
-        Y[self.dof_count] = self.Y0[self.dof_count] + self.amplitude * numpy.sin(r)/D[self.dof_count].sensitivity
+        Y[self.dof_count] = self.Y0[self.dof_count] + self.amplitude * numpy.sin(r)
         debugPrint(5,'Y frame %s, sin(r) %1.2f' % (Y,numpy.sin(r)))
         try:
             for d,y in zip( D, Y):
@@ -67,11 +76,4 @@ class AnimateDOF(object):
         except:
             FreeCAD.Console.PrintError('AnimateDegreeOfFreedom (dof %i, dof frame %i) unable to update constraint system'  % (self.dof_count, self.count))
 
-        if self.count >= self.framesPerDOF:
-            self.count = 0
-            self.dof_count = self.dof_count + 1
-            if self.dof_count + 1 > len( self.constraintSystem.degreesOfFreedom ):
-                self.timer.stop()
-                return
-            self.updateAmplitude()
         debugPrint(5,'finished timer loop')

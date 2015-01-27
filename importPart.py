@@ -6,6 +6,7 @@ from assembly2lib import *
 from assembly2lib import __dir__
 from PySide import QtGui
 import os, numpy
+import lib3D
 
 def importPart( filename, partName=None ):
     updateExistingPart = partName <> None
@@ -144,9 +145,9 @@ class PartMover:
     def clickMouse(self, info):
         debugPrint(4, 'clickMouse info %s' % str(info))
         if info['Button'] == 'BUTTON1' and info['State'] == 'DOWN':
-            if not info['ShiftDown']:
+            if not info['ShiftDown'] and not info['CtrlDown']:
                 self.removeCallbacks()
-            else: #copy object
+            elif info['ShiftDown']: #copy object
                 partName = findUnusedObjectName( self.obj.Name[:self.obj.Name.find('_import') + len('_import')] )
                 newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
                 newObj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = self.obj.sourceFile
@@ -163,6 +164,13 @@ class PartMover:
                 newObj.Placement.Rotation = self.obj.Placement.Rotation
                 self.obj = newObj
                 self.copiedObject = True
+            elif info['CtrlDown']:
+                azi   =  ( numpy.random.rand() - 0.5 )*numpy.pi*2
+                ela   =  ( numpy.random.rand() - 0.5 )*numpy.pi
+                theta =  ( numpy.random.rand() - 0.5 )*numpy.pi
+                axis = lib3D.azimuth_and_elevation_angles_to_axis( azi, ela )
+                self.obj.Placement.Rotation.Q = lib3D.quaternion( theta, *axis )
+            
     def KeyboardEvent(self, info):
         debugPrint(4, 'KeyboardEvent info %s' % str(info))
         if info['State'] == 'UP' and info['Key'] == 'ESCAPE':

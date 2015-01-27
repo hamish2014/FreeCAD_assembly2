@@ -101,7 +101,7 @@ def solveConstraints( doc ):
     if solved:
         debugPrint(4,'constraintSystem.X %s' % constraintSystem.X )
         variableManager.updateFreeCADValues( constraintSystem.X )
-    else:
+    elif QtGui.qApp <> None: #i.e. GUI active
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
         flags = QtGui.QMessageBox.StandardButton.Yes 
         flags |= QtGui.QMessageBox.StandardButton.No
@@ -126,8 +126,7 @@ Delete constraint "%s"? (press ignore to show the rejected solution)?
             FreeCAD.Console.PrintError("removed constraint %s" % name )
         elif response == QtGui.QMessageBox.Ignore:
             variableManager.updateFreeCADValues( constraintSystem.getX() )
-
-    return constraintSystem
+    return constraintSystem if solved else None
 
 class Assembly2SolveConstraintsCommand:
     def Activated(self):
@@ -147,65 +146,15 @@ FreeCADGui.addCommand('assembly2SolveConstraints', Assembly2SolveConstraintsComm
 
 
 if __name__ == '__main__':
-    print('Testing assembly 2 solver')
-    import Part
-    doc = FreeCAD.newDocument("testCase")
+    import glob
+    print('Testing assembly 2 solver on assemblies under tests/')
     debugPrint.level = 4
-    
-    obj1 = doc.addObject("Part::FeaturePython","part1")
-    obj1.addProperty("App::PropertyBool","fixedPosition","importPart")
-    obj1.fixedPosition = True
-    obj1.Shape = Part.makeBox(2,3,2)
-
-    obj2 = doc.addObject("Part::FeaturePython","part2")
-    obj2.addProperty("App::PropertyBool","fixedPosition","importPart")
-    obj2.Shape = Part.makeBox(1,1,1)
-    obj2.Placement.Base.x = 6
-    obj2.Placement.Base.y = 1
-    obj2.Placement.Base.z = 2
-    
-    if False: #test to to make sure that the placement update works without FreeCADGui
-        print('obj2.Placement.Base %s \t obj2.Placement.Rotation %s' % (obj2.Placement.Base, obj2.Placement.Rotation))
-        print('obj2.Shape.Faces[5].Surface: Position %s' % repr(obj2.Shape.Faces[5].Surface.Position))
-        print('obj2.Shape.Faces[5].Surface: Axis %s' % repr(obj2.Shape.Faces[5].Surface.Axis))
-        obj2.Placement.Base.x = 4
-        print('obj2.Placement.Base %s \t obj2.Placement.Rotation %s' % (obj2.Placement.Base, obj2.Placement.Rotation))
-        print('obj2.Shape.Faces[5].Surface: Position %s' % repr(obj2.Shape.Faces[5].Surface.Position))
-        print('obj2.Shape.Faces[5].Surface: Axis %s' % repr(obj2.Shape.Faces[5].Surface.Axis))
-        obj2.Placement.Rotation.Q = euler_to_quaternion( 0, pi/2, 0 )
-        print('obj2.Placement.Base %s \t obj2.Placement.Rotation %s' % (obj2.Placement.Base, obj2.Placement.Rotation))
-        print('obj2.Shape.Faces[5].Surface: Position %s' % repr(obj2.Shape.Faces[5].Surface.Position))
-        print('obj2.Shape.Faces[5].Surface: Axis %s' % repr(obj2.Shape.Faces[5].Surface.Axis))
-        exit()
-
-    saveTo = '/tmp/assembly_test_case_1_unassembled.fcstd'
-    print('saving %s' % saveTo)
-    doc.saveAs(saveTo)
-    
-    print('adding a plane constraints')
-    def addPlaneConstraint(document, name, objName1, face1, objName2, face2, directionOption):
-        c = document.addObject("App::FeaturePython", name)
-        c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = 'plane'
-        c.addProperty("App::PropertyString","Object1","ConstraintInfo","Object 1").Object1 = objName1
-        c.addProperty("App::PropertyInteger","FaceInd1","ConstraintInfo","Object 1 face index").FaceInd1 = face1
-        c.addProperty("App::PropertyString","Object2","ConstraintInfo","Object 2").Object2 = objName2
-        c.addProperty("App::PropertyInteger","FaceInd2","ConstraintInfo","Object 2 face index").FaceInd2 = face2
-        c.addProperty("App::PropertyFloat","planeOffset","ConstraintInfo")
-        c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
-        c.directionConstraint = ["none","aligned","opposed"]
-        c.directionConstraint = ["none","aligned","opposed"][directionOption]
-        c.Proxy = ConstraintObjectProxy()
-        
-    addPlaneConstraint( doc, 'planeConstraint1', 'part1',1, 'part2',5, 2)
-    addPlaneConstraint( doc, 'planeConstraint2', 'part2',1, 'part1',3, 0)
-    addPlaneConstraint( doc, 'planeConstraint3', 'part2',2, 'part1',5, 0)
-
-    solveConstraints( doc )
-
-    saveTo = '/tmp/assembly_test_case_1_assembled.fcstd'
-    print('saving %s' % saveTo)
-    doc.saveAs(saveTo)
-
-    print('\n')
-    #doc.recompute() #recompute not required for position updates.!
-    solveConstraints( doc )
+    testFiles = sorted(glob.glob('tests/*.fcstd')) 
+    for testFile in testFiles:
+        print(testFile)
+        doc =  FreeCAD.open(testFile)
+        constraintSystem = solveConstraints( doc )
+        if constraintSystem == None:
+            exit()
+        print('\n\n\n')
+    print('All %i tests passed' % len(testFiles))
