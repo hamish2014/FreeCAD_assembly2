@@ -11,50 +11,64 @@ class PlaneSelectionGate:
           ind = int( sub[4:]) -1 
           return str( obj.Shape.Faces[ind].Surface ) == '<Plane object>'
 
+class PlaneSelectionGate2:
+     def allow(self, doc, obj, sub):
+          if sub.startswith('Face'):
+               ind = int( sub[4:]) -1 
+               return str( obj.Shape.Faces[ind].Surface ) == '<Plane object>'
+          elif sub.startswith('Vertex'):
+               return True
+          else:
+               return False
+
+
 def parseSelection(selection, objectToUpdate=None):
-     msg = 'To add a plane constraint select two flat surfaces, each from a different part. Both of these parts should be imported using the assembly 2 work bench.'
-     if len(selection) <> 2:
-          QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage",  msg )
-          return
-     cParms = [] # constraint parameters
-     for s in selection:
-          if not 'importPart' in s.Object.Content or len(s.SubElementNames) <> 1 or not s.SubElementNames[0].startswith('Face'):
-               QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
-               return 
-          faceInd = int( s.SubElementNames[0][4:]) -1 
-          face = s.Object.Shape.Faces[faceInd]
-          if str(face.Surface) <> '<Plane object>':
-               QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
-               return 
-          cParms.append([s.ObjectName, faceInd])
+     validSelection = False
+     if len(selection) == 2:
+          s1, s2 = selection
+          if s1.ObjectName <> s2.ObjectName:
+               if not planeSelected(s1):
+                    s2, s1 = s1, s2
+               if planeSelected(s1) and (planeSelected(s2) or vertexSelected(s2)):
+                    validSelection = True
+                    cParms = [ [s1.ObjectName, s1.SubElementNames[0] ],
+                               [s2.ObjectName, s2.SubElementNames[0] ] ]
+     if not validSelection:
+          msg = '''Plane constraint requires a selection of either
+- 2 planes, or
+- 1 plane and 1 vertex 
+
+Selection made:
+%s'''  % printSelection(selection)
+          QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
+          return 
 
      if objectToUpdate == None:
           cName = findUnusedObjectName('planeConstraint')
           debugPrint(2, "creating %s" % cName )
           c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
-          c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = 'plane'
-          c.addProperty("App::PropertyString","Object1","ConstraintInfo","Object 1").Object1 = cParms[0][0]
-          c.addProperty("App::PropertyInteger","FaceInd1","ConstraintInfo","Object 1 face index").FaceInd1 = cParms[0][1]
-          c.addProperty("App::PropertyString","Object2","ConstraintInfo","Object 2").Object2 = cParms[1][0]
-          c.addProperty("App::PropertyInteger","FaceInd2","ConstraintInfo","Object 2 face index").FaceInd2 = cParms[1][1]
-          c.addProperty("App::PropertyFloat","planeOffset","ConstraintInfo")
+          c.addProperty("App::PropertyString","Type","ConstraintInfo").Type = 'plane'
+          c.addProperty("App::PropertyString","Object1","ConstraintInfo")
+          c.addProperty("App::PropertyString","SubElement1","ConstraintInfo")
+          c.addProperty("App::PropertyString","Object2","ConstraintInfo")
+          c.addProperty("App::PropertyString","SubElement2","ConstraintInfo")
+          c.addProperty('App::PropertyDistance','offset',"ConstraintInfo")
      
           c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
           c.directionConstraint = ["none","aligned","opposed"]
 
           c.setEditorMode('Type',1)
-          for prop in ["Object1","Object2","FaceInd1","FaceInd2"]:
+          for prop in ["Object1","Object2","SubElement1","SubElement2"]:
                c.setEditorMode(prop, 1) 
-
           c.Proxy = ConstraintObjectProxy()
      else:
           debugPrint(2, "redefining %s" % objectToUpdate.Name )
           c = objectToUpdate
-          c.Object1 = cParms[0][0]
-          c.FaceInd1 = cParms[0][1]
-          c.Object2 = cParms[1][0]
-          c.FaceInd2 = cParms[1][1]
-
+          updateObjectProperties(c)
+     c.Object1 = cParms[0][0]
+     c.SubElement1 = cParms[0][1]
+     c.Object2 = cParms[1][0]
+     c.SubElement2 = cParms[1][1]
 
      c.Proxy.callSolveConstraints()
          
@@ -67,7 +81,7 @@ class PlaneConstraintCommand:
                FreeCADGui.Selection.clearSelection()
                if wb_globals.has_key('selectionObserver'): 
                     wb_globals['selectionObserver'].stopSelectionObservation()
-               wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), parseSelection  )
+               wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), parseSelection, PlaneSelectionGate2() )
                
      def GetResources(self): 
           return {
@@ -86,7 +100,7 @@ class RedefineConstraintCommand:
         FreeCADGui.Selection.clearSelection()
         if wb_globals.has_key('selectionObserver'): 
             wb_globals['selectionObserver'].stopSelectionObservation()
-        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), self.UpdateConstraint  )
+        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), self.UpdateConstraint, PlaneSelectionGate2()  )
 
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)

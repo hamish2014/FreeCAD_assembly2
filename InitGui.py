@@ -10,6 +10,12 @@ class Assembly2Workbench (Workbench):
         self.treecmdList = ['importPart', 'updateImportedPartsCommand']
         #self.appendMenu('Assembly 2', commandslist)
 
+    def Activated(self):
+        from assembly2lib import FreeCAD, updateOldStyleConstraintProperties
+        doc = FreeCAD.activeDocument()
+        if hasattr(doc, 'Objects'):
+            updateOldStyleConstraintProperties(doc)
+
     def ContextMenu(self, recipient):
         selection = FreeCADGui.Selection.getSelection()
         if len(selection) == 1:

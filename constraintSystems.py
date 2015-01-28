@@ -17,7 +17,7 @@ Y - degrees of freedom, where Y is a subspace of X, which can altered without vi
 
 '''
 
-from assembly2lib import debugPrint, formatDictionary
+from assembly2lib import *
 from lib3D import *
 import numpy
 from numpy import pi, inf
@@ -33,15 +33,14 @@ class Assembly2SolverError(Exception):
 class ConstraintSystemPrototype:
     label = '' #over-ride in inheritence
     solveConstraintEq_tol = 10**-9
-    def __init__(self, parentSystem, variableManager, obj1Name, obj2Name, feature1, feature2, constraintValue, featureType='plane' ):
+    def __init__(self, parentSystem, variableManager, obj1Name, obj2Name, subElement1, subElement2, constraintValue ):
         self.parentSystem = parentSystem
         self.variableManager = variableManager
         self.obj1Name = obj1Name
         self.obj2Name = obj2Name
-        self.feature1 = feature1
-        self.feature2 = feature2
+        self.subElement1 = subElement1
+        self.subElement2 = subElement2
         self.constraintValue = constraintValue
-        self.featureType = featureType
         self.childSystem = None
         parentSystem.childSystem = self
         doc = variableManager.doc
@@ -142,35 +141,44 @@ class ConstraintSystemPrototype:
     def updateDegreesOfFreedom( self ):
         raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'                    
 
-    def getPos(self, objName, featureInd):
+    def getPos(self, objName, subElement):
         obj =  self.variableManager.doc.getObject( objName )
-        if self.featureType == 'plane':
-            return obj.Shape.Faces[featureInd].Surface.Position
-        elif self.featureType == 'cylinder':
-            return obj.Shape.Faces[featureInd].Surface.Center
-        elif self.featureType == 'circle':
-            return obj.Shape.Edges[featureInd].Curve.Center
+        if subElement.startswith('Face'):
+            surface = getObjectFaceFromName(obj, subElement).Surface
+            if str(surface) == '<Plane object>':
+                return surface.Position
+            elif all( hasattr(surface,a) for a in ['Axis','Center','Radius'] ):
+                return surface.Center
+            else:
+                raise NotImplementedError,"getPos %s" % str(surface)
+        elif subElement.startswith('Edge'):
+            edge = getObjectEdgeFromName(obj, subElement)
+            if isinstance(edge.Curve, Part.Line):
+                return edge.Curve.StartPoint
+            else: #circular curve
+                return edge.Curve.Center    
+        elif subElement.startswith('Vertex'):
+            return  getObjectVertexFromName(obj, subElement).Point
         else:
-            raise NotImplementedError,"%s not programmed in yet" % self.featureType
+            raise NotImplementedError,"subElement %s" % subElement
+        #elif self.featureType == 'circle':
+        #     return obj.Shape.Edges[featureInd].Curve.Center
 
-    def getAxis(self, objName, featureInd):
+    def getAxis(self, objName, subElement):
         obj =  self.variableManager.doc.getObject( objName )
-        if self.featureType == 'plane' or self.featureType == 'cylinder':
-            axis = obj.Shape.Faces[featureInd].Surface.Axis
-        elif self.featureType == 'circle':
-            axis = obj.Shape.Edges[featureInd].Curve.Axis
+        if subElement.startswith('Face'):
+            return getObjectFaceFromName(obj, subElement).Surface.Axis
+        elif subElement.startswith('Edge'):
+            edge = getObjectEdgeFromName(obj, subElement)
+            if isinstance(edge.Curve, Part.Line):
+                return edge.Curve.tangent(0)[0]
+            else: #circular curve
+                return edge.Curve.Axis
         else:
-            raise NotImplementedError,"%s not programmed in yet" % self.featureType
-        #norm_axis = norm(axis) #axis is not a numpy vector, but a FreeCAD axis thing ...
-        #if norm_axis == 0:
-        #    raise Assembly2SolverError, 'getAxis: object %s, featureInd %i has a zero norm!' % (objName, featureInd)
-        #elif norm_axis <> 1:
-        #    debugPrint(4,'getAxis: object %s, featureInd %i axis norm <> 1, norm actually equal to %s.' % (objName, featureInd, norm_axis))
-        #    axis = axis / norm_axis
-        return axis
+            raise NotImplementedError,"subElement %s" % subElement
 
     def str(self, indent='', addDOFs=False):
-        txt = '%s<%s System %s:%s-%s:%s heirachy %i>' % (indent, self.label, self.obj1Name, self.feature1, self.obj2Name, self.feature2, self.numberOfParentSystems())
+        txt = '%s<%s System %s:%s-%s:%s heirachy %i>' % (indent, self.label, self.obj1Name, self.subElement1, self.obj2Name, self.subElement2, self.numberOfParentSystems())
         if addDOFs and hasattr( self, 'degreesOfFreedom'):
             txt = txt + ' %i degrees of freedom:' % len(self.degreesOfFreedom)
             txt = txt + ''.join( [ '\n%s%s' %(indent, d.str('  ')) for d in  self.degreesOfFreedom ] )
@@ -273,8 +281,8 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
     def init2(self):
         vM = self.variableManager
         #get rotation r(relative) to objects initial placement.
-        self.a1_r = vM.rotateUndo( self.obj1Name, self.getAxis(self.obj1Name, self.feature1), vM.X0 )
-        self.a2_r = vM.rotateUndo( self.obj2Name, self.getAxis(self.obj2Name, self.feature2), vM.X0 )
+        self.a1_r = vM.rotateUndo( self.obj1Name, self.getAxis(self.obj1Name, self.subElement1), vM.X0 )
+        self.a2_r = vM.rotateUndo( self.obj2Name, self.getAxis(self.obj2Name, self.subElement2), vM.X0 )
         #debugPrint(4,'    a1_r %s, a2_r %s, directionConstraintFlag %s' % (self.a1_r, self.a2_r, self.constraintValue))
 
     def constraintEq_value( self, X ):
@@ -335,7 +343,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                     debugPrint(4, '%s-%s analyticalSolution correcting error on account of v and v_ref being on same axis'% (self.label, objName))
                     axis = d.axis
                     alignmentError = 0
-                debugPrint(4, '%s-%s analyticalSolution available alignment error %e, angle %f'% (self.label, objName, alignmentError, angle))
+                debugPrint(4, '%s-%s analyticalSolution alignment error %e, angle %f'% (self.label, objName, alignmentError, angle))
                 if alignmentError < self.solveConstraintEq_tol:
                     debugPrint(3, '%s analyticalSolution available: %s has free rotation about the required axis.'% (self.label, objName))
                     if dotProduct(axis, d.axis) < 0:
@@ -454,9 +462,9 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
     def init2(self):
         vM = self.variableManager
         #get rotation r(relative) to objects initial placement.
-        self.a1_r =   vM.rotateUndo( self.obj1Name, self.getAxis(self.obj1Name, self.feature1), vM.X0 )
-        self.pos1_r = vM.rotateAndMoveUndo( self.obj1Name, self.getPos(self.obj1Name, self.feature1), vM.X0 )
-        self.pos2_r = vM.rotateAndMoveUndo( self.obj2Name, self.getPos(self.obj2Name, self.feature2), vM.X0 )
+        self.a1_r =   vM.rotateUndo( self.obj1Name, self.getAxis(self.obj1Name, self.subElement1), vM.X0 )
+        self.pos1_r = vM.rotateAndMoveUndo( self.obj1Name, self.getPos(self.obj1Name, self.subElement1), vM.X0 )
+        self.pos2_r = vM.rotateAndMoveUndo( self.obj2Name, self.getPos(self.obj2Name, self.subElement2), vM.X0 )
         
     def constraintEq_value( self, X ):
         vM = self.variableManager
@@ -487,7 +495,7 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
                 #    print(m,v)
                 #debugPrint(4,str(V))
                 actualDisp = sum( v*m.directionVector for m,v in zip(matches,V) )
-                if norm(requiredDisp - actualDisp) < 10**-9:
+                if abs(dot(a,requiredDisp) - dot(a,actualDisp)) < 10**-9:
                     debugPrint(3, '    %s analyticalSolution available by moving %s.'% (self.label, objName))
                     for m,v in zip(matches,V):
                         m.setValue( m.value + v  )
@@ -616,10 +624,10 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
     def init2(self):
         vM = self.variableManager
         #get rotation r(relative) to objects initial placement.
-        self.a1_r =   vM.rotateUndo( self.obj1Name, self.getAxis(self.obj1Name, self.feature1), vM.X0 )
-        self.a2_r =   vM.rotateUndo( self.obj2Name, self.getAxis(self.obj2Name, self.feature2), vM.X0 )
-        self.pos1_r = vM.rotateAndMoveUndo( self.obj1Name, self.getPos(self.obj1Name, self.feature1), vM.X0 )
-        self.pos2_r = vM.rotateAndMoveUndo( self.obj2Name, self.getPos(self.obj2Name, self.feature2), vM.X0 )
+        self.a1_r =   vM.rotateUndo( self.obj1Name, self.getAxis(self.obj1Name, self.subElement1), vM.X0 )
+        self.a2_r =   vM.rotateUndo( self.obj2Name, self.getAxis(self.obj2Name, self.subElement2), vM.X0 )
+        self.pos1_r = vM.rotateAndMoveUndo( self.obj1Name, self.getPos(self.obj1Name, self.subElement1), vM.X0 )
+        self.pos2_r = vM.rotateAndMoveUndo( self.obj2Name, self.getPos(self.obj2Name, self.subElement2), vM.X0 )
 
     def constraintEq_value( self, X ):
         vM = self.variableManager
@@ -644,24 +652,55 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
             D = self.solveConstraintEq_dofs #degrees of freedom
             for objName in [self.obj1Name, self.obj2Name]:
                 matches = [d for d in D if d.objName == objName and not d.rotational() ]
-                if len(matches) == 3:
-                    debugPrint(3, '%s analyticalSolution available: %s has free movement.'% (self.label, objName))
+                #if len(matches) == 3:
+                #    debugPrint(3, '%s analyticalSolution available: %s has free movement.'% (self.label, objName))
+                #    vM = self.variableManager
+                #    X = self.getX()
+                #    if objName == self.obj1Name: #then object1 has has free rotation
+                #        p = vM.rotate( self.obj1Name, self.pos1_r, X )
+                #        p_ref = vM.rotateAndMove( self.obj2Name, self.pos2_r, X ) #rotate and then move
+                #    else:
+                #        p = vM.rotate( self.obj2Name, self.pos2_r, X )
+                #        p_ref = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
+                #    p_ref = p_ref + vM.rotate( self.obj1Name, self.a1_r, X )*self.constraintValue #add offset value
+                #    debugPrint(4, '    analyticalSolution:  %s placement position set to %s' % (objName, p_ref - p))
+                #    assert matches[0].ind % 6 == 0 and matches[1].ind % 6 == 1 and matches[2].ind % 6 == 2
+                #    for d,v in zip(matches, p_ref - p):
+                #        d.setValue(  v )
+                #    self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                #    self.sys2.update()
+                #    return self.getX()
+                if len(matches) > 0:
+                    debugPrint(4, '    %s %s has linear displacement degrees of freedom, checking for analyticalSolution.'% (self.label, objName))
                     vM = self.variableManager
                     X = self.getX()
-                    if objName == self.obj1Name: #then object1 has has free rotation
-                        p = vM.rotate( self.obj1Name, self.pos1_r, X )
-                        p_ref = vM.rotateAndMove( self.obj2Name, self.pos2_r, X ) #rotate and then move
-                    else:
-                        p = vM.rotate( self.obj2Name, self.pos2_r, X )
-                        p_ref = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
-                    p_ref = p_ref + vM.rotate( self.obj1Name, self.a1_r, X )*self.constraintValue #add offset value
-                    debugPrint(4, '    analyticalSolution:  %s placement position set to %s' % (objName, p_ref - p))
-                    assert matches[0].ind % 6 == 0 and matches[1].ind % 6 == 1 and matches[2].ind % 6 == 2
-                    for d,v in zip(matches, p_ref - p):
-                        d.setValue(  v )
-                    self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
-                    self.sys2.update()
-                    return self.getX()
+                    a = vM.rotate( self.obj1Name, self.a1_r, X )
+                    pos1 = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
+                    pos2 = vM.rotateAndMove( self.obj2Name, self.pos2_r, X )
+                    a2, a3 = plane_degrees_of_freedom(a)
+                    error_a2 = dotProduct(a2, pos1 - pos2)
+                    error_a3 = dotProduct(a3, pos1 - pos2)
+                    error_v = a2*error_a2 + a3*error_a3
+                    a_v = normalize(error_v)
+                    error =  norm( error_v ) - self.constraintValue
+                    requiredDisp = a_v*error
+                    if objName == self.obj1Name:
+                        requiredDisp = -requiredDisp
+                    debugPrint(4,'    requiredDisp %s' % requiredDisp )
+                    V = [ dot( m.directionVector, requiredDisp ) for m in matches ]
+                    #for m,v in zip(matches,V):
+                    #    print(m,v)
+                    #debugPrint(4,str(V))
+                    actualDisp = sum( v*m.directionVector for m,v in zip(matches,V) )
+                    if abs(dot(a_v,requiredDisp) - dot(a_v,actualDisp)) < 10**-9:
+                        debugPrint(3, '    %s analyticalSolution available by moving %s.'% (self.label, objName))
+                        for m,v in zip(matches,V):
+                            m.setValue( m.value + v  )
+                        #print(m)
+                        self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
+                        self.sys2.update()
+                        return self.getX()
+
         return None
 
 

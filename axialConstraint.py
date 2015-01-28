@@ -6,53 +6,59 @@ from PySide import QtGui
 
 class AxialSelectionGate:
      def allow(self, doc, obj, sub):
-          if not sub.startswith('Face'):
+          if sub.startswith('Face'):
+               face = getObjectFaceFromName( obj, sub)
+               return hasattr( face.Surface, 'Radius' )
+          elif sub.startswith('Edge'):
+               edge = getObjectEdgeFromName( obj, sub)
+               return isinstance(edge.Curve, Part.Line)
+               #return str(edge.Curve).startswith('<Line')
+          else:
                return False
-          ind = int( sub[4:]) -1 
-          return hasattr( obj.Shape.Faces[ind].Surface, 'Radius' )
 
 def parseSelection(selection, objectToUpdate=None):
-     msg = 'To add an axial constraint select two cylindrical surfaces, each from a different part. Both of these parts should be imported using the assembly 2 work bench.'
-     if len(selection) <> 2:
-          QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage",  msg )
-          return
-     cParms = [] # constraint parameters
-     for s in selection:
-          if not 'importPart' in s.Object.Content or len(s.SubElementNames) <> 1 or not s.SubElementNames[0].startswith('Face'):
-               QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
-               return 
-          faceInd = int( s.SubElementNames[0][4:]) -1 
-          face = s.Object.Shape.Faces[faceInd]
-          if not all( hasattr(face.Surface,a) for a in ['Axis','Center','Radius'] ):
-               QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
-               return 
-          cParms.append([s.ObjectName, faceInd])
+     validSelection = False
+     if len(selection) == 2:
+          s1, s2 = selection
+          if s1.ObjectName <> s2.ObjectName:
+               if (cylindricalPlaneSelected(s1) or LinearEdgeSelected(s1)) \
+                        and (cylindricalPlaneSelected(s2) or LinearEdgeSelected(s2)):
+                    validSelection = True
+                    cParms = [ [s1.ObjectName, s1.SubElementNames[0] ],
+                               [s2.ObjectName, s2.SubElementNames[0] ] ]
+     if not validSelection:
+          msg = '''To add an axial constraint select two cylindrical surfaces or two straight lines, each from a different part. Selection made:
+%s'''  % printSelection(selection)
+          QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
+          return 
 
      if objectToUpdate == None:
           cName = findUnusedObjectName('axialConstraint')
           debugPrint(2, "creating %s" % cName )
           c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
           c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = 'axial'
-          c.addProperty("App::PropertyString","Object1","ConstraintInfo","Object 1").Object1 = cParms[0][0]
-          c.addProperty("App::PropertyInteger","FaceInd1","ConstraintInfo","Object 1 face index").FaceInd1 = cParms[0][1]
-          c.addProperty("App::PropertyString","Object2","ConstraintInfo","Object 2").Object2 = cParms[1][0]
-          c.addProperty("App::PropertyInteger","FaceInd2","ConstraintInfo","Object 2 face index").FaceInd2 = cParms[1][1]
+          c.addProperty("App::PropertyString","Object1","ConstraintInfo")
+          c.addProperty("App::PropertyString","SubElement1","ConstraintInfo")
+          c.addProperty("App::PropertyString","Object2","ConstraintInfo")
+          c.addProperty("App::PropertyString","SubElement2","ConstraintInfo")
      
           c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
           c.directionConstraint = ["none","aligned","opposed"]
                          
           c.setEditorMode('Type',1)
-          for prop in ["Object1","Object2","FaceInd1","FaceInd2"]:
+          for prop in ["Object1","Object2","SubElement1","SubElement2"]:
                c.setEditorMode(prop, 1) 
 
           c.Proxy = ConstraintObjectProxy()
      else:
           debugPrint(2, "redefining %s" % objectToUpdate.Name )
           c = objectToUpdate
-          c.Object1 = cParms[0][0]
-          c.FaceInd1 = cParms[0][1]
-          c.Object2 = cParms[1][0]
-          c.FaceInd2 = cParms[1][1]
+          updateObjectProperties(c)
+
+     c.Object1 = cParms[0][0]
+     c.SubElement1 = cParms[0][1]
+     c.Object2 = cParms[1][0]
+     c.SubElement2 = cParms[1][1]
 
      c.Proxy.callSolveConstraints()
          

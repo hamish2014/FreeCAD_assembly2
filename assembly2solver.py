@@ -52,9 +52,11 @@ def findBaseObject( doc, objectNames  ):
         raise ValueError, "the constraint solver requires at least 1 object with fixedPosition=True inorder to solve the system"    
     return objectNames[ fixed.index(True) ]
 
+
 def solveConstraints( doc ):
     if not constraintsObjectsAllExist(doc):
         return
+    updateOldStyleConstraintProperties(doc)
     constraintObjectQue = [ obj for obj in doc.Objects if 'ConstraintInfo' in obj.Content ]
     #doc.Objects already in tree order so no additional sorting / order checking required for constraints.
     conObjects = sum( [[ c.Object1 ] for c in constraintObjectQue], [] ) + sum( [[ c.Object2 ] for c in constraintObjectQue], [] )
@@ -70,22 +72,21 @@ def solveConstraints( doc ):
         obj1Name = constraintObj.Object1
         obj2Name = constraintObj.Object2
         debugPrint( 3, '  parsing %s, type:%s' % (constraintObj.Name, constraintObj.Type ))
-        if hasattr(constraintObj,'FaceInd1'):
-            cArgs = [ variableManager, obj1Name, obj2Name, constraintObj.FaceInd1,  constraintObj.FaceInd2 ]
+        cArgs = [ variableManager, obj1Name, obj2Name, constraintObj.SubElement1,  constraintObj.SubElement2 ]
         try:
             if constraintObj.Type == 'plane':
-                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
-                constraintSystem = PlaneOffsetUnion(   constraintSystem, *cArgs,  constraintValue = constraintObj.planeOffset)
+                if constraintObj.SubElement2.startswith('Face'): #otherwise vertext
+                    constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
+                constraintSystem = PlaneOffsetUnion(   constraintSystem, *cArgs,  constraintValue = constraintObj.offset.Value)
             elif constraintObj.Type == 'angle_between_planes':
-                constraintSystem = AngleUnion(  constraintSystem, *cArgs,  constraintValue = constraintObj.degrees*pi/180 )
+                constraintSystem = AngleUnion(  constraintSystem, *cArgs,  constraintValue = constraintObj.angle.Value*pi/180 )
             elif constraintObj.Type == 'axial':
-                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue = constraintObj.directionConstraint, featureType='cylinder')
-                constraintSystem =  AxisDistanceUnion( constraintSystem, *cArgs, constraintValue = 0 , featureType='cylinder')
+                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue = constraintObj.directionConstraint)
+                constraintSystem =  AxisDistanceUnion( constraintSystem, *cArgs, constraintValue = 0)
             elif constraintObj.Type == 'circularEdge':
-                cArgs = [ variableManager, obj1Name, obj2Name, constraintObj.EdgeInd1,  constraintObj.EdgeInd2 ]
-                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue=constraintObj.directionConstraint, featureType='circle')
-                constraintSystem = AxisDistanceUnion( constraintSystem, *cArgs, constraintValue=0 , featureType='circle')
-                constraintSystem = PlaneOffsetUnion( constraintSystem,  *cArgs, constraintValue=constraintObj.offset, featureType='circle')
+                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue=constraintObj.directionConstraint)
+                constraintSystem = AxisDistanceUnion( constraintSystem, *cArgs, constraintValue=0)
+                constraintSystem = PlaneOffsetUnion( constraintSystem,  *cArgs, constraintValue=constraintObj.offset.Value)
             else:
                 raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
         except Assembly2SolverError, msg:
@@ -146,10 +147,16 @@ FreeCADGui.addCommand('assembly2SolveConstraints', Assembly2SolveConstraintsComm
 
 
 if __name__ == '__main__':
-    import glob
+    import glob, argparse
     print('Testing assembly 2 solver on assemblies under tests/')
+    parser = argparse.ArgumentParser(description="Test assembly 2 solver.")
+    parser.add_argument('--lastTestCaseOnly', action='store_true')
+    args = parser.parse_args()
+
     debugPrint.level = 4
     testFiles = sorted(glob.glob('tests/*.fcstd')) 
+    if args.lastTestCaseOnly:
+        testFiles = testFiles[-1:]
     for testFile in testFiles:
         print(testFile)
         doc =  FreeCAD.open(testFile)
