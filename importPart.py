@@ -41,7 +41,7 @@ def importPart( filename, partName=None ):
         obj = FreeCAD.ActiveDocument.getObject(partName)
         prevPlacement = obj.Placement
     else:
-        partName = findUnusedObjectName( doc.Name + '_import' )
+        partName = findUnusedObjectName( doc.Label + '_import' )
         obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
         obj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = filename
         obj.addProperty("App::PropertyFloat", "timeLastImport","importPart")
