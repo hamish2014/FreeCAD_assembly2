@@ -48,10 +48,14 @@ def constraintsObjectsAllExist( doc ):
 def findBaseObject( doc, objectNames  ):
     debugPrint( 4,'solveConstraints: searching for fixed object to begin solving constraints from.' )
     fixed = [ getattr( doc.getObject( name ), 'fixedPosition', False ) for name in objectNames ]
+    if sum(fixed) > 0:
+        return objectNames[ fixed.index(True) ]        
     if sum(fixed) == 0:
-        raise ValueError, "the constraint solver requires at least 1 object with fixedPosition=True inorder to solve the system"    
-    return objectNames[ fixed.index(True) ]
-
+        debugPrint( 1, 'It is recommended that the assembly 2 module is used with parts imported using theassembly 2 module.')
+        debugPrint( 1, 'This allows for part updating, parts list support, object copying (shift + assembly2 move) and also tells the solver which objects to treat as fixed.')
+        debugPrint( 1, 'since no objects have the fixedPosition attribute, fixing the postion of the first object in the first constraint')
+        debugPrint( 1, 'assembly 2 solver: assigning %s a fixed position' % objectNames[0])
+        return objectNames[0]
 
 def solveConstraints( doc ):
     if not constraintsObjectsAllExist(doc):
