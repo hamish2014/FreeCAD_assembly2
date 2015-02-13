@@ -33,13 +33,16 @@ class Assembly2SolverError(Exception):
 class ConstraintSystemPrototype:
     label = '' #over-ride in inheritence
     solveConstraintEq_tol = 10**-9
-    def __init__(self, parentSystem, variableManager, obj1Name, obj2Name, subElement1, subElement2, constraintValue ):
+    def __init__(self, parentSystem, variableManager, constraintObj, constraintValue ):
         self.parentSystem = parentSystem
         self.variableManager = variableManager
+        self.constraintObj = constraintObj
+        obj1Name = constraintObj.Object1
+        obj2Name = constraintObj.Object2
         self.obj1Name = obj1Name
         self.obj2Name = obj2Name
-        self.subElement1 = subElement1
-        self.subElement2 = subElement2
+        self.subElement1 = constraintObj.SubElement1
+        self.subElement2 = constraintObj.SubElement2
         self.constraintValue = constraintValue
         self.childSystem = None
         parentSystem.childSystem = self
@@ -404,6 +407,14 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                 self.degreesOfFreedom = dofs
                 self.degreesOfFreedom_updateInd = -1
                 success = True
+        if len(matches) > 0 and self.constraintValue == "none": #then assign direction, to make users and solvers life easier, #outside loop due to break
+            #len(matches) > 0 required as assigning a direction flag to a rotationally fixed object, will lock a previous direction flag
+            vM = self.variableManager
+            a = vM.rotate( self.obj1Name, self.a1_r, self.X )
+            b = vM.rotate( self.obj2Name, self.a2_r, self.X )
+            self.constraintValue = "aligned"  if dotProduct( a,b ) > 0 else "opposed"
+            self.constraintObj.directionConstraint = ["aligned","opposed"]
+            self.constraintObj.directionConstraint = self.constraintValue    
         if not success:
             raise NotImplementedError, 'Panic! %s.generateDegreesOfFreedom Logic not programmed for the reduction of degrees of freedom of:\n%s' % (self.label,'\n'.join(d.str('  ') for d in dofs ))
         self.updateDegreesOfFreedom()

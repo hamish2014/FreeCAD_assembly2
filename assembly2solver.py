@@ -77,24 +77,22 @@ def solveConstraints( doc ):
 
     solved = True
     for constraintObj in constraintObjectQue:
-        obj1Name = constraintObj.Object1
-        obj2Name = constraintObj.Object2
         debugPrint( 3, '  parsing %s, type:%s' % (constraintObj.Name, constraintObj.Type ))
-        cArgs = [ variableManager, obj1Name, obj2Name, constraintObj.SubElement1,  constraintObj.SubElement2 ]
         try:
+            cArgs = [variableManager, constraintObj]
             if constraintObj.Type == 'plane':
                 if constraintObj.SubElement2.startswith('Face'): #otherwise vertext
-                    constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
-                constraintSystem = PlaneOffsetUnion(   constraintSystem, *cArgs,  constraintValue = constraintObj.offset.Value)
+                    constraintSystem = AxisAlignmentUnion(constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
+                constraintSystem = PlaneOffsetUnion(constraintSystem,  *cArgs, constraintValue = constraintObj.offset.Value)
             elif constraintObj.Type == 'angle_between_planes':
-                constraintSystem = AngleUnion(  constraintSystem, *cArgs,  constraintValue = constraintObj.angle.Value*pi/180 )
+                constraintSystem = AngleUnion(constraintSystem,  *cArgs, constraintValue = constraintObj.angle.Value*pi/180 )
             elif constraintObj.Type == 'axial':
-                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue = constraintObj.directionConstraint)
-                constraintSystem =  AxisDistanceUnion( constraintSystem, *cArgs, constraintValue = 0)
+                constraintSystem = AxisAlignmentUnion(constraintSystem,  *cArgs, constraintValue = constraintObj.directionConstraint)
+                constraintSystem =  AxisDistanceUnion(constraintSystem,  *cArgs, constraintValue = 0)
             elif constraintObj.Type == 'circularEdge':
-                constraintSystem = AxisAlignmentUnion( constraintSystem, *cArgs, constraintValue=constraintObj.directionConstraint)
-                constraintSystem = AxisDistanceUnion( constraintSystem, *cArgs, constraintValue=0)
-                constraintSystem = PlaneOffsetUnion( constraintSystem,  *cArgs, constraintValue=constraintObj.offset.Value)
+                constraintSystem = AxisAlignmentUnion(constraintSystem,  *cArgs, constraintValue=constraintObj.directionConstraint)
+                constraintSystem = AxisDistanceUnion(constraintSystem,  *cArgs, constraintValue=0)
+                constraintSystem = PlaneOffsetUnion(constraintSystem,  *cArgs, constraintValue=constraintObj.offset.Value)
             else:
                 raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
         except Assembly2SolverError, msg:
