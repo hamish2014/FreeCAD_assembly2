@@ -63,8 +63,12 @@ def solveConstraints( doc ):
     updateOldStyleConstraintProperties(doc)
     constraintObjectQue = [ obj for obj in doc.Objects if 'ConstraintInfo' in obj.Content ]
     #doc.Objects already in tree order so no additional sorting / order checking required for constraints.
-    conObjects = sum( [[ c.Object1 ] for c in constraintObjectQue], [] ) + sum( [[ c.Object2 ] for c in constraintObjectQue], [] )
-    objectNames = [ obj.Name for obj in doc.Objects if hasattr(obj,'Placement') and obj.Name in conObjects ]
+    objectNames = []
+    for c in constraintObjectQue:
+        for attr in ['Object1','Object2']:
+            objectName = getattr(c, attr, None)
+            if objectName <> None and not objectName in objectNames:
+                objectNames.append( objectName )
     variableManager = VariableManager( doc, objectNames )
     debugPrint(3,' variableManager.X0 %s' % variableManager.X0 )
     constraintSystem = FixedObjectSystem( variableManager, findBaseObject(doc, objectNames) )
