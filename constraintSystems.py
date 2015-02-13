@@ -94,14 +94,21 @@ class ConstraintSystemPrototype:
                     yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=42, randomPertubationCount=2, lineSearchIt=10,
                                                      debugPrintLevel=debugPrint.level-2-PLO, printF= lambda txt: debugPrint(2, txt ))
                     self.X = self.constraintEq_setY(yOpt)
+            else: #no degrees of freedom, so 
+                self.X = X0
             if not abs( self.constraintEq_value(self.X) ) < tol:
                 raise Assembly2SolverError,"%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.X) ), tol, self.strSystemTree())
             for d in self.solveConstraintEq_dofs:
                 d.assignedValue = False #cleaning up for future use
         if not hasattr( self, 'degreesOfFreedom' ):
-            self.generateDegreesOfFreedom( )
+            self.dof_updated_analytically = self.generateDegreesOfFreedomAnalytically( ) #Analytical, as in preprogrammed  solution available.
+            if not self.dof_updated_analytically:
+                self.generateDegreesOfFreedomNumerically( )
         else:
-            self.updateDegreesOfFreedom( )
+            if self.dof_updated_analytically:
+                self.updateDegreesOfFreedomAnalytically( )
+            else:
+                self.updateDegreesOfFreedomNumerically( )
 
     def constraintEq_setY(self, Y):
         for d,y in zip( self.solveConstraintEq_dofs, Y):
@@ -138,10 +145,10 @@ class ConstraintSystemPrototype:
     def analyticalSolution(self):
         return None
 
-    def generateDegreesOfFreedom( self ):
+    def generateDegreesOfFreedomAnalytically( self ):
         raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
 
-    def updateDegreesOfFreedom( self ):
+    def updateDegreesOfFreedomAnalytically( self ):
         raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'                    
 
     def getPos(self, objName, subElement):
@@ -206,6 +213,39 @@ class ConstraintSystemPrototype:
             txt = txt + '\n' + sys.parentSystem.str(indent, addDOFs=dofs)
             sys = sys.parentSystem
         return txt
+
+    def generateDegreesOfFreedomNumerically(self ):
+        D = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
+        self.solveConstraintEq_dofs = D #if not d.assignedValue check unnessary as generateDegreesOfFreedomNumerically is only called on top level
+        if len(D) == 0:
+            self.generateDegreesOfFreedomNumerically_case = 0 #system has no degrees of freedom, so nothing to do
+            self.degreesOfFreedom = D    
+            return
+        else:
+            yOpt = [ d.value for d in self.solveConstraintEq_dofs ] #values update in solve equation.
+            df_dy = GradientApproximatorForwardDifference(self.constraintEq_f)(numpy.array(yOpt))
+            for d in self.solveConstraintEq_dofs:
+                d.assignedValue = False #unlock dofs, where dof locking will happen when GradientApproximatorForwardDifference assign different value to degrees-of-freedom 
+            if all(df_dy == 0):
+                debugPrint(4, '  generateDegreesOfFreedomNumerically, all(df_dy == 0), so assuming constraint to be obsolete.')
+                self.generateDegreesOfFreedomNumerically_case = 0
+                self.degreesOfFreedom = D
+                return
+            elif len(df_dy) - sum(df_dy == 0) == 1:
+                debugPrint(4, '  generateDegreesOfFreedomNumerically, len(df_dy) - sum(df_dy == 0) == 1, removing dof with gradient <> 0')
+                self.generateDegreesOfFreedomNumerically_case = 0
+                removeInd = list(df_dy == 0).index(False)
+                debugPrint(4, '    removing %s' % D[removeInd])
+                self.degreesOfFreedom = [ d for i,d in enumerate(D) if i <> removeInd ]
+                return
+                
+        raise NotImplementedError,'generateDegreesOfFreedomNumerically Logic not programmed for the reduction of degrees of freedom with df_dy=%s, self.solveConstraintEq_dofs:\n%s' % (df_dy,'\n'.join(d.str('  ') for d in self.solveConstraintEq_dofs ))
+
+    def updateDegreesOfFreedomNumerically( self ):
+        if self.generateDegreesOfFreedomNumerically_case == 0:
+            return 
+        raise NotImplementedError
+    
         
 
 class FixedObjectSystem(ConstraintSystemPrototype):
@@ -374,7 +414,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             angle = angle - pi
         return angle
 
-    def generateDegreesOfFreedom( self ):
+    def generateDegreesOfFreedomAnalytically( self ):
         dofs = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
         self.degreesOfFreedom = []
         success = False
@@ -415,11 +455,13 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             self.constraintValue = "aligned"  if dotProduct( a,b ) > 0 else "opposed"
             self.constraintObj.directionConstraint = ["aligned","opposed"]
             self.constraintObj.directionConstraint = self.constraintValue    
-        if not success:
-            raise NotImplementedError, 'Panic! %s.generateDegreesOfFreedom Logic not programmed for the reduction of degrees of freedom of:\n%s' % (self.label,'\n'.join(d.str('  ') for d in dofs ))
-        self.updateDegreesOfFreedom()
+        if success:
+            self.updateDegreesOfFreedomAnalytically()
+        #else:
+        #    debugPrint(3, '%s.generateDegreesOfFreedomAnalytical Logic not programmed for the reduction of degrees of freedom of:\n%s' % (self.label,'\n'.join(d.str('  ') for d in dofs ))
+        return success
         
-    def updateDegreesOfFreedom( self ):
+    def updateDegreesOfFreedomAnalytically( self ):
         if self.degreesOfFreedom_updateInd > -1:
             vM = self.variableManager
             a = vM.rotate( self.obj1Name, self.a1_r, self.X )
@@ -517,7 +559,7 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
 
         return None
 
-    def generateDegreesOfFreedom( self ):
+    def generateDegreesOfFreedomAnalytically( self ):
         dofs = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
         self.degreesOfFreedom = []
         #first try to look for an object which has 3 linear motion degrees of freedom'
@@ -563,12 +605,15 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
                     self.dofs_removed = matches
                     success = True
                     break
-                
-        if not success:
-            raise NotImplementedError, 'Panic! PlaneOffsetUnion Logic not programmed for the reduction of degrees of freedom of:\n%s' % '\n'.join(d.str('  ') for d in dofs )
-        self.updateDegreesOfFreedom()
+         
+        if success:
+            self.updateDegreesOfFreedomAnalytically()
+        return success
+        #if not success:
+        #    raise NotImplementedError, 'Panic! PlaneOffsetUnion Logic not programmed for the reduction of degrees of freedom of:\n%s' % '\n'.join(d.str('  ') for d in dofs )
+
         
-    def updateDegreesOfFreedom( self ):
+    def updateDegreesOfFreedomAnalytically( self ):
         vM = self.variableManager
         planeNormalVector = vM.rotate( self.obj1Name, self.a1_r, self.X )
         if len(self.dofs_removed) == 3:
@@ -706,8 +751,9 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
                     if abs(dot(a_v,requiredDisp) - dot(a_v,actualDisp)) < 10**-9:
                         debugPrint(3, '    %s analyticalSolution available by moving %s.'% (self.label, objName))
                         for m,v in zip(matches,V):
+                            print(m)
                             m.setValue( m.value + v  )
-                        #print(m)
+                            print(m)
                         self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
                         self.sys2.update()
                         return self.getX()
@@ -715,7 +761,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
         return None
 
 
-    def generateDegreesOfFreedom( self ):
+    def generateDegreesOfFreedomAnalytically( self ):
         dofs = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
         self.degreesOfFreedom = []
         #first try to look for an object which has 3 linear motion degrees of freedom'
@@ -759,15 +805,17 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
                     self.degreesOfFreedom = [ d for d in dofs if not d in matches ]
                     success = True
                     break
-        if len(dofs) == 3 and all( isinstance(d, AxisRotationDegreeOfFreedom) for d in dofs ):
-            self.degreesOfFreedom = [dofs[0]]
-            debugPrint(0,'WARNING*WARNING*WARNING* forcing solution for 3 bar linkage.')
-            success = True    
-        if not success:
-            raise NotImplementedError, 'Panic! %s.generateDegreesOfFreedom Logic not programmed for the reduction of degrees of freedom of:\n%s' % ( self.label, '\n'.join(d.str('  ') for d in dofs) )
-        self.updateDegreesOfFreedom()
+        #if len(dofs) == 3 and all( isinstance(d, AxisRotationDegreeOfFreedom) for d in dofs ):
+        #    self.degreesOfFreedom = [dofs[0]]
+        #    debugPrint(0,'WARNING*WARNING*WARNING* forcing solution for 3 bar linkage.')
+        #    success = True    
+        if success:
+            self.updateDegreesOfFreedomAnalytically()
+        #if not success:
+        #    raise NotImplementedError, 'Panic! %s.generateDegreesOfFreedomAnalytical Logic not programmed for the reduction of degrees of freedom of:\n%s' % ( self.label, '\n'.join(d.str('  ') for d in dofs) )
+        return success
         
-    def updateDegreesOfFreedom( self ):
+    def updateDegreesOfFreedomAnalytically( self ):
         if self.dof_added:
             vM = self.variableManager
             axisVector = vM.rotate( self.obj1Name, self.a1_r, self.X )

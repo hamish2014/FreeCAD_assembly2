@@ -55,7 +55,7 @@ class GradientApproximatorForwardDifference:
     def __call__(self, x, eps=10**-7, f0=None):
         n = len(x)
         if f0 == None:
-            f0 = self.f(X)
+            f0 = self.f(x)
         f0 = numpy.array(f0)
         if f0.shape == () or f0.shape == (1,):
             grad_f = numpy.zeros(n)
