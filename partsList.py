@@ -2,7 +2,6 @@
 create parts list
 '''
 from assembly2lib import *
-from assembly2lib import __dir__
 try:
     from dimensioning import getDrawingPageGUIVars, DimensioningProcessTracker
     import previewDimension
@@ -104,6 +103,7 @@ class AddPartsList:
         
     def GetResources(self): 
         tip = 'create a parts list from the objects imported using the assembly 2 workbench'
+        from assembly2lib import __dir__
         return {
             'Pixmap' : os.path.join( __dir__ , 'partsList.svg' ) , 
             'MenuText': tip, 
