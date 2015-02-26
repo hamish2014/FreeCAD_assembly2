@@ -28,7 +28,12 @@ class Assembly2Workbench (Workbench):
                         'axial': 'redefineAxialConstraint',
                         'circularEdge' : 'redefineCircularEdgeConstraint'
                         }[ obj.Type ]
-                    self.appendContextMenu( "Constraint Utilities", [redefineCmd,'selectConstraintObjects'])
+                    self.appendContextMenu( "Assembly2", [redefineCmd,'selectConstraintObjects'])
+                if 'sourceFile' in  obj.Content:
+                    self.appendContextMenu( "Assembly2", 
+                        ['assembly2_movepart',
+                         'assembly2_editImportedPart',
+                         'assembly2_forkImportedPart'])
 
     # Icon generated using by converting svg to xpm format using Gimp
     Icon = '''

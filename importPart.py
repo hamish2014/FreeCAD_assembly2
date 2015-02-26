@@ -5,7 +5,7 @@ When update parts is executed, this library import or updates the parts in the a
 from assembly2lib import *
 from assembly2lib import __dir__
 from PySide import QtGui
-import os, numpy
+import os, numpy, shutil
 import lib3D
 
 def importPart( filename, partName=None ):
@@ -184,8 +184,8 @@ class PartMover:
 
 class PartMoverSelectionObserver:
      def __init__(self):
-          FreeCADGui.Selection.addObserver(self)  
-          FreeCADGui.Selection.removeSelectionGate()
+         FreeCADGui.Selection.addObserver(self)  
+         FreeCADGui.Selection.removeSelectionGate()
      def addSelection( self, docName, objName, sub, pnt ):
          debugPrint(4,'addSelection: docName,objName,sub = %s,%s,%s' % (docName, objName, sub))
          FreeCADGui.Selection.removeObserver(self) 
@@ -206,8 +206,56 @@ class MovePartCommand:
         return {
             'Pixmap' : os.path.join( __dir__ , 'Draft_Move.svg' ) , 
             'MenuText': 'move a part (hold shift to copy)', 
-            'ToolTip': 'move a part (hold shift to copy)'
+            'ToolTip': 'move (hold shift to copy, ctrl to rotate)'
             } 
 
 FreeCADGui.addCommand('assembly2_movepart', MovePartCommand())
+
+class EditPartCommand:
+    def Activated(self):
+        selection = FreeCADGui.Selection.getSelection()
+        obj = selection[0]
+        docs = FreeCAD.listDocuments().values()
+        docFilenames = [ d.FileName for d in docs ]
+        if not obj.sourceFile in docFilenames :
+            FreeCAD.open(obj.sourceFile)
+            debugPrint(2, 'Openning %s' % str(obj.sourceFile))
+        else:
+            name = docs[docFilenames.index(obj.sourceFile)].Name
+            debugPrint(2, 'Trying to set focus on %s, not working for some reason!' % str(obj.sourceFile))
+            FreeCAD.setActiveDocument( name )
+            FreeCAD.ActiveDocument=FreeCAD.getDocument( name )
+            FreeCADGui.ActiveDocument=FreeCADGui.getDocument( name )
+    def GetResources(self): 
+        return { 
+            'MenuText': 'edit', 
+            } 
+FreeCADGui.addCommand('assembly2_editImportedPart', EditPartCommand())
+
+class ForkPartCommand:
+    def Activated(self):
+        selection = FreeCADGui.Selection.getSelection()
+        obj = selection[0]
+        filename, filetype = QtGui.QFileDialog.getSaveFileName( 
+            QtGui.qApp.activeWindow(),
+            "Specify the filename for the fork of '%s'" % obj.Label[:obj.Label.find('_import')],
+            os.path.dirname(FreeCAD.ActiveDocument.FileName),
+            "FreeCAD Document (*.fcstd)"
+            )
+        if filename == '':
+            return
+        if not os.path.exists(filename):
+            debugPrint(2, 'copying %s -> %s' % (obj.sourceFile, filename))
+            shutil.copyfile(obj.sourceFile, filename)
+            obj.sourceFile = filename
+            FreeCAD.open(obj.sourceFile)
+        else:
+            QtGui.QMessageBox.critical(  QtGui.qApp.activeWindow(), "Bad filename", "Specify a new filename!")
+
+    def GetResources(self): 
+        return { 
+            'MenuText': 'fork', 
+            } 
+FreeCADGui.addCommand('assembly2_forkImportedPart', ForkPartCommand())
+
 
