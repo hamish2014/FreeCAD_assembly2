@@ -87,6 +87,9 @@ class ConstraintSystemPrototype:
                 X_a = self.analyticalSolution()
                 if X_a <> None :
                     self.X = X_a
+                    if not abs( self.constraintEq_value(self.X) ) < tol:
+                        debugPrint(4+PLO, '  **numerical round off error in analytical solution repeating')
+                        self.X = self.analyticalSolution()
                 else: #numerical solution
                     Y0 =      [ d.value for d in self.solveConstraintEq_dofs ]
                     maxStep = [ d.maxStep() for d in self.solveConstraintEq_dofs ]
@@ -676,7 +679,7 @@ class AngleUnion(AxisAlignmentUnion):
 
 class AxisDistanceUnion(ConstraintSystemPrototype):
     label = 'AxisDistanceUnion'
-    solveConstraintEq_tol = 10**-4
+    solveConstraintEq_tol = 10**-5
     def init2(self):
         vM = self.variableManager
         #get rotation r(relative) to objects initial placement.
@@ -708,24 +711,6 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
             D = self.solveConstraintEq_dofs #degrees of freedom
             for objName in [self.obj1Name, self.obj2Name]:
                 matches = [d for d in D if d.objName == objName and not d.rotational() ]
-                #if len(matches) == 3:
-                #    debugPrint(3, '%s analyticalSolution available: %s has free movement.'% (self.label, objName))
-                #    vM = self.variableManager
-                #    X = self.getX()
-                #    if objName == self.obj1Name: #then object1 has has free rotation
-                #        p = vM.rotate( self.obj1Name, self.pos1_r, X )
-                #        p_ref = vM.rotateAndMove( self.obj2Name, self.pos2_r, X ) #rotate and then move
-                #    else:
-                #        p = vM.rotate( self.obj2Name, self.pos2_r, X )
-                #        p_ref = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
-                #    p_ref = p_ref + vM.rotate( self.obj1Name, self.a1_r, X )*self.constraintValue #add offset value
-                #    debugPrint(4, '    analyticalSolution:  %s placement position set to %s' % (objName, p_ref - p))
-                #    assert matches[0].ind % 6 == 0 and matches[1].ind % 6 == 1 and matches[2].ind % 6 == 2
-                #    for d,v in zip(matches, p_ref - p):
-                #        d.setValue(  v )
-                #    self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
-                #    self.sys2.update()
-                #    return self.getX()
                 if len(matches) > 0:
                     debugPrint(4, '    %s %s has linear displacement degrees of freedom, checking for analyticalSolution.'% (self.label, objName))
                     vM = self.variableManager
@@ -733,10 +718,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
                     a = vM.rotate( self.obj1Name, self.a1_r, X )
                     pos1 = vM.rotateAndMove( self.obj1Name, self.pos1_r, X )
                     pos2 = vM.rotateAndMove( self.obj2Name, self.pos2_r, X )
-                    a2, a3 = plane_degrees_of_freedom(a)
-                    error_a2 = dotProduct(a2, pos1 - pos2)
-                    error_a3 = dotProduct(a3, pos1 - pos2)
-                    error_v = a2*error_a2 + a3*error_a3
+                    error_v =  (pos1-pos2) - dotProduct(a,pos1-pos2)*a
                     a_v = normalize(error_v)
                     error =  norm( error_v ) - self.constraintValue
                     requiredDisp = a_v*error
@@ -751,9 +733,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
                     if abs(dot(a_v,requiredDisp) - dot(a_v,actualDisp)) < 10**-9:
                         debugPrint(3, '    %s analyticalSolution available by moving %s.'% (self.label, objName))
                         for m,v in zip(matches,V):
-                            print(m)
                             m.setValue( m.value + v  )
-                            print(m)
                         self.parentSystem.update() # required else degrees of freedom whose systems are more then 1 level up the constraint system tree do not update
                         self.sys2.update()
                         return self.getX()

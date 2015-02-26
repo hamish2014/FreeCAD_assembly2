@@ -401,6 +401,13 @@ def distance_between_two_axes_3_points(p1,u1,p2,u2):
 
 def distance_between_axis_and_point( p1,u1,p2 ):
     assert numpy.linalg.norm( u1 ) <> 0
+    d = p2 - p1
+    offset = d - dotProduct(u1,d)*u1
+    #print(norm(offset))
+    return norm(offset)
+
+def distance_between_axis_and_point_old( p1, u1, p2 ):
+    assert numpy.linalg.norm( u1 ) <> 0
     p1_x, p1_y, p1_z = p1
     u1_x, u1_y, u1_z = u1
     p2_x, p2_y, p2_z = p2
@@ -408,6 +415,8 @@ def distance_between_axis_and_point( p1,u1,p2 ):
     # dropped the (u1_x**2 + u1_y**2 + u1_z**2) term as it should equal 1
     d_sqrd = (p1_x - p2_x + t*u1_x)**2 + (p1_y - p2_y + t*u1_y)**2 + (p1_z - p2_z + t*u1_z)**2
     return d_sqrd ** 0.5
+
+
 
 def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v, v_ref ):
     c = crossProduct( v, v_ref)
@@ -609,10 +618,24 @@ if __name__ == '__main__':
     for i,axes in enumerate(testCases):
         v, v_ref = axes
         axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector(v, v_ref)
-        print('  rotation axes: v_ref %s, v %s, axis %s, angle %1.3f rad' % (v_ref, v, axis, angle) )
+        #print('  rotation axes: v_ref %s, v %s, axis %s, angle %1.3f rad' % (v_ref, v, axis, angle) )
         v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
         #print('             v_rotated %s' % (v_rotated) )
         error = norm( v_ref - v_rotated )
         if error > 10**-9 :
             raise ValueError, 'Failure for v_ref %s, v %s, error %1.3e' % ( v, v_ref, error )
     print('all test case passed')
+
+    print('distance between axis and point')
+    testCases = []
+    for i in range(6):
+        p1 = 10*rand(3)-5
+        p2 = 10*rand(3)-5
+        u1 = rand(3)
+        testCases.append([p1, normalize(u1), p2])
+
+    for i,D in enumerate(testCases):
+        p1,u1,p2 = D
+        d_old = distance_between_axis_and_point( p1, u1, p2 )
+        d_new = distance_between_axis_and_point_old( p1, u1, p2 )
+        print('test case %i, distance old %f, distance new %f, diff %e' % (i+1, d_old, d_new, abs(d_old - d_new)))

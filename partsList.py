@@ -98,7 +98,6 @@ class AddPartsList:
                 debugPrint(3, 'adding %s to parts list' % obj.Name)
                 P.addObject(obj)
         dimensioning.partsList = P
-        P.svg(0,0) #calling here as once inside previewRect, error trapping difficult...
         previewDimension.initializePreview( V, clickEvent, hoverEvent )
         
     def GetResources(self): 
