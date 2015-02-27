@@ -383,7 +383,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                 else:
                     v = quaternion_rotation( self.a2_r, q_1, q_2, q_3, q_0 )
                     v_ref = vM.rotate( self.obj1Name, self.a1_r, X )
-                axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v, v_ref )
+                axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v, v_ref, d.axis)
                 alignmentError = 1 - abs(dotProduct(axis, d.axis))
                 if abs(angle) < 10**-6 or abs(angle -pi) < 10**-6: #then v == v_ref, so random perpendicular axis returned 2 lines up
                     debugPrint(4, '%s-%s analyticalSolution correcting error on account of v and v_ref being on same axis'% (self.label, objName))
@@ -392,9 +392,9 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                 debugPrint(4, '%s-%s analyticalSolution alignment error %e, angle %f'% (self.label, objName, alignmentError, angle))
                 if alignmentError < self.solveConstraintEq_tol:
                     debugPrint(3, '%s analyticalSolution available: %s has free rotation about the required axis.'% (self.label, objName))
-                    if dotProduct(axis, d.axis) < 0:
-                        axis = -axis
-                        angle = -angle
+                    #if dotProduct(axis, d.axis) < 0: #no longer required since d.axis added to rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector()
+                    #    axis = -axis
+                    #    angle = -angle
                     angle = self.analyticalSolutionAdjustAngle( angle, axis, v, v_ref )
                     debugPrint(4, '    analyticalSolution:  axis %s, angle %s.'% (axis, angle))
                     d.value = angle

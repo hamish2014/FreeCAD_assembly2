@@ -418,13 +418,19 @@ def distance_between_axis_and_point_old( p1, u1, p2 ):
 
 
 
-def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v, v_ref ):
+def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v, v_ref, dof_axis=None ):
     c = crossProduct( v, v_ref)
     if norm(c) > 0:
         axis = normalize(c)
     else:
         axis, notUsed = plane_degrees_of_freedom( v )
-    angle = arccos2( dotProduct( v, v_ref ))
+    if dof_axis == None:
+        angle = arccos2( dotProduct( v, v_ref ))
+    else:
+        axis3 = normalize ( crossProduct(v_ref, dof_axis) )
+        a = dotProduct( v, v_ref ) #adjacent
+        o = dotProduct( v, axis3 ) #oppersite
+        angle = numpy.arctan2( o, a )
     return axis, angle
 
 if __name__ == '__main__':
