@@ -92,10 +92,20 @@ class ConstraintSystemPrototype:
                         self.X = self.analyticalSolution()
                 else: #numerical solution
                     Y0 =      [ d.value for d in self.solveConstraintEq_dofs ]
-                    maxStep = [ d.maxStep() for d in self.solveConstraintEq_dofs ]
-                    debugPrint(4+PLO, '%s: attempting to find solution numerically, solveConstraintEq maxStep %s' % (self.str(),str(maxStep)))
-                    yOpt = solve_via_Newtons_method( self.constraintEq_f, Y0, maxStep, f_tol=tol, x_tol=0, maxIt=42, randomPertubationCount=2, lineSearchIt=10,
-                                                     debugPrintLevel=debugPrint.level-2-PLO, printF= lambda txt: debugPrint(2, txt ))
+                    debugPrint(4+PLO, '%s: attempting to find solution numerically' % (self.str()))
+                    yOpt = solve_via_Newtons_method( 
+                        self.constraintEq_f, 
+                        [ d.value for d in self.solveConstraintEq_dofs ], #Y0, 
+                        [ d.maxStep() for d in self.solveConstraintEq_dofs ], #maxStep, while not really, more like recommended max step...
+                        f_tol=tol, 
+                        x_tol=0, 
+                        maxIt=42, 
+                        randomPertubationCount=2, 
+                        lineSearchIt=10,
+                        debugPrintLevel=debugPrint.level-2-PLO, 
+                        printF= lambda txt: debugPrint(2, txt ),
+                        record = not self.childSystem #only record top level optimization.
+                        )
                     self.X = self.constraintEq_setY(yOpt)
             else: #no degrees of freedom, so 
                 self.X = X0
@@ -670,6 +680,17 @@ class AngleUnion(AxisAlignmentUnion):
         a = vM.rotate( self.obj1Name, self.a1_r, X )
         b = vM.rotate( self.obj2Name, self.a2_r, X )
         return cos(self.constraintValue) - dotProduct( a,b )
+        # for another day
+        #c = crossProduct( a, b)
+        #if norm(c) > 0:
+        #    axis = normalize(c)
+        #    axis3 = normalize ( crossProduct(a, c) )
+        #    adj = dotProduct( b, a ) #adjacent
+        #    opp = dotProduct( b, axis3 ) #oppersite
+        #    angle = numpy.arctan2( opp, adj )
+        #else: #either 0 or 180 degrees
+        #    angle = 0 if dotProduct( a,b ) == 1 else pi
+        #return self.constraintValue - angle
 
     def analyticalSolutionAdjustAngle( self, actual_angle, axis, v, v_ref ):
         desired_angle = self.constraintValue

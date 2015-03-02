@@ -53,6 +53,7 @@ class GradientApproximatorForwardDifference:
     def __init__(self, f):
         self.f = f
     def __call__(self, x, eps=10**-7, f0=None):
+        if hasattr(self.f,'addNote'): self.f.addNote('starting gradient approximation')
         n = len(x)
         if f0 == None:
             f0 = self.f(x)
@@ -64,6 +65,7 @@ class GradientApproximatorForwardDifference:
         for i in range(n):
             f_c = self.f( addEps(x,i,eps) )
             grad_f[i] = (f_c - f0)/eps
+        if hasattr(self.f,'addNote'): self.f.addNote('finished gradient approximation')
         return grad_f.transpose()
 
 class GradientApproximatorCentralDifference:
@@ -71,6 +73,7 @@ class GradientApproximatorCentralDifference:
         self.f = f
     def __call__(self, x, eps=10**-6):
         n = len(x)
+        if hasattr(self.f,'addNote'): self.f.addNote('starting gradient approximation')
         grad_f = None
         for i in range(n):
             f_a = self.f( addEps(x,i, eps) )
@@ -81,13 +84,15 @@ class GradientApproximatorCentralDifference:
                 else:
                     grad_f = numpy.zeros([n,len(f_a)])
             grad_f[i] = (f_a - f_b)/(2*eps)
+        if hasattr(self.f,'addNote'): self.f.addNote('finished gradient approximation')
         return grad_f.transpose()
 
-def solve_via_Newtons_method( f, x0, maxStep, grad_f=None, x_tol=10**-6, f_tol=None, maxIt=100, randomPertubationCount=2, 
-                              debugPrintLevel=0, printF=toStdOut, lineSearchIt=5):
+def solve_via_Newtons_method( f_org, x0, maxStep, grad_f=None, x_tol=10**-6, f_tol=None, maxIt=100, randomPertubationCount=2, 
+                              debugPrintLevel=0, printF=toStdOut, lineSearchIt=5, record=False):
     '''
-    solve a system of non-linear equation using netwons method.
+    determine the routes of a non-linear equation using netwons method.
     '''
+    f = SearchAnalyticsWrapper(f_org) if record else f_org
     n = len(x0)
     x = numpy.array(x0)
     x_c = numpy.zeros(n) * numpy.nan
@@ -153,6 +158,54 @@ def solve_via_Newtons_method( f, x0, maxStep, grad_f=None, x_tol=10**-6, f_tol=N
             x_prev[i,:] = x
     return x
 
+analytics = {}
+class SearchAnalyticsWrapper:
+    def __init__(self, f):
+        self.f = f
+        self.x = []
+        self.f_x = []
+        self.notes = {}
+        analytics['lastSearch'] = self
+    def __call__(self, x):
+        self.x.append(x)
+        self.f_x.append( self.f(x) )
+        return self.f_x[-1]
+    def addNote(self, note):
+        key = len(self.x)
+        assert not self.notes.has_key(key)
+        self.notes[key] = note
+    def __repr__(self):
+        return '<SearchAnalyticsWrapper %i calls made>' % len(self.x)
+    def plot(self):
+        from matplotlib import pyplot
+        pyplot.figure()
+        it_ls = [] #ls = lineseach
+        y_ls = []
+        it_ga = [] #gradient approximation
+        y_ga = []
+        gradApprox = False
+        for i in range(len(self.x)):
+            y = norm( self.f_x[i] ) + 10**-9
+            if self.notes.has_key(i):
+                if self.notes[i] == 'starting gradient approximation':
+                    gradApprox = True
+                if self.notes[i] == 'finished gradient approximation':
+                    gradApprox = False
+            if gradApprox:
+                it_ga.append( i )
+                y_ga.append( y ) 
+            else:
+                it_ls.append( i )
+                y_ls.append( y )
+        pyplot.semilogy( it_ls, y_ls, 'go') 
+        pyplot.semilogy( it_ga, y_ga, 'bx') 
+        pyplot.xlabel('function evaluation')
+        pyplot.ylabel('norm(f(x)) + 10**-9')
+        pyplot.legend(['line searches', 'gradient approx' ])
+                      
+        pyplot.show()
+        
+
 
 if __name__ == '__main__':
     print('testing solver lib')
@@ -213,3 +266,6 @@ if __name__ == '__main__':
         print('  error rp %e' % norm(grad_f1(X) - grad_f_rp(X))) 
 
     xRoots = solve_via_Newtons_method(f2, rand(2)+3, maxStep, x_tol=0, debugPrintLevel=3, f_tol=10**-12)
+
+    print(analytics['lastSearch'])
+    analytics['lastSearch'].plot()
