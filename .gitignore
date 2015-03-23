@@ -58,3 +58,10 @@ target/
 spea2.py
 .syncthing.*
 *.fcstd1
+
+docs/assembly2_docs.aux  
+docs/assembly2_docs.bbl
+docs/assembly2_docs.blg
+docs/assembly2_docs.log  
+docs/assembly2_docs.tex.backup  
+docs/assembly2_docs.toc

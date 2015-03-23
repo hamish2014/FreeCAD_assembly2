@@ -68,12 +68,6 @@ class VariableManager:
             axis = azimuth_and_elevation_angles_to_axis( azi, ela )
             obj.Placement.Rotation.Q = quaternion( theta, *axis )
 
-    def objectsXComponent( self, objectName, X ):
-        X_obj = numpy.zeros(len(X))
-        i = self.index[objectName]
-        X_obj[i:i+6] = X[i:i+6]
-        return X_obj
-
     def bounds(self):
         return [ [ -inf, inf], [ -inf, inf], [ -inf, inf], [-pi,pi], [-pi,pi], [-pi,pi] ] * len(self.index)
 
@@ -97,3 +91,7 @@ class VariableManager:
         v = numpy.array(p) - X[i:i+3]
         R = azimuth_elevation_rotation_matrix(*X[i+3:i+6])
         return numpy.linalg.solve(R,v)
+
+
+
+

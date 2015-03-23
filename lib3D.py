@@ -234,7 +234,12 @@ def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThresh
                 break
         axis = numpy.array([u_x, u_y, u_z])
     else: #identify matrix
-        axis, angle = numpy.array([1.0,0,0]), 0.0       
+        for angle in [-pi,0]:
+            for axis in numpy.eye(3): #x-axis, y-axis, z-axis
+                error  = norm(axis_rotation_matrix(angle, *axis) - R)
+                if error < errorThreshold:
+                    return axis, angle
+        msg = 'a % pi == 0 solution failed!!!' #will crash at check answer...
     #elif norm( R - numpy.eye(3)) < errorThreshold:
     #    axis, angle = numpy.array([1.0,0,0]), 0.0        
     #else:
@@ -418,20 +423,59 @@ def distance_between_axis_and_point_old( p1, u1, p2 ):
 
 
 
-def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v, v_ref, dof_axis=None ):
+def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector( v, v_ref ):
     c = crossProduct( v, v_ref)
     if norm(c) > 0:
         axis = normalize(c)
-    else:
+    else: #dont think this ever happens.
+        axis, notUsed = plane_degrees_of_freedom( v )
+    #if dof_axis == None:
+    angle = arccos2( dotProduct( v, v_ref ))
+    #else:
+    #    axis3 = normalize ( crossProduct(v_ref, dof_axis) )
+    #    a = dotProduct( v, v_ref ) #adjacent
+    #    o = dotProduct( v, axis3 ) #oppersite
+    #    angle = numpy.arctan2( o, a )
+    return axis, angle
+
+def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector2( v, v_ref, dof_axis=None ):
+    '''
+    calculate the axis in a method other then a crossduct.
+    finding axis, so that dot(axis, v) == 0 and dot(axis, v_ref) == 0, using linear alegebra.
+
+    '''
+    A_matrixs = []
+    for i in range(3):
+        A_matrixs.append([ 
+                [v[j] for j in range(3) if j <> i],
+                [v_ref[j] for j in range(3) if j <> i]] )
+        #prettyPrintArray( A_matrixs[-1] )
+    cond_number = map( numpy.linalg.cond,  A_matrixs)
+    minloc = cond_number.index(min(cond_number)) 
+    b = numpy.array([ -v[minloc], -v_ref[minloc] ])
+    c = numpy.linalg.solve( A_matrixs[minloc], b).tolist()
+    c.insert(minloc,1)
+    c = numpy.array(c) #* numpy.sign(crossProduct( v, v_ref))
+    if norm(c) > 0:
+        axis = normalize(c)
+    else: #dont think this ever happens.
         axis, notUsed = plane_degrees_of_freedom( v )
     if dof_axis == None:
         angle = arccos2( dotProduct( v, v_ref ))
+        #checking if negative angle should be used
+        v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
+        #print('             v_rotated %s' % (v_rotated) )
+        error = norm( v_ref - v_rotated )
+        if error > 1:
+            angle = -angle
     else:
         axis3 = normalize ( crossProduct(v_ref, dof_axis) )
         a = dotProduct( v, v_ref ) #adjacent
         o = dotProduct( v, axis3 ) #oppersite
         angle = numpy.arctan2( o, a )
     return axis, angle
+
+
 
 if __name__ == '__main__':
     print('Testing lib3D.py')
@@ -564,6 +608,9 @@ if __name__ == '__main__':
     testCases.append(numpy.array([[  1.00000000e+00,  -7.56401164e-10,   1.13448265e-17],
                                   [  7.56401164e-10,   1.00000000e+00,   1.74357771e-17],
                                   [ -1.13448265e-17,  -1.74357771e-17,   1.00000000e+00]]))
+    testCases.append(numpy.array([[ -1.00000000e+00,   1.58333754e-16,   8.65956056e-17],
+                                  [  1.58333754e-16,   1.00000000e+00,  -8.49830835e-16],
+                                  [ -8.65956056e-17,  -1.29392004e-15,  -1.00000000e+00]]))
     for i, R in enumerate( testCases ):
         #prettyPrintArray(R, ' '*4,'%1.2e')
         rotation_matrix_axis_and_angle(R, checkAnswer=True, debug=i==len(testCases)-1)
@@ -623,11 +670,22 @@ if __name__ == '__main__':
     testCases.append( [[  6.79598526e-13,  -1.21896543e-12, 1.00000000e+00], [ 0.,  0.,  1.]] )
     for i,axes in enumerate(testCases):
         v, v_ref = axes
+        v = normalize(v)
+        v_ref = normalize(v_ref)
         axis, angle = rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector(v, v_ref)
         #print('  rotation axes: v_ref %s, v %s, axis %s, angle %1.3f rad' % (v_ref, v, axis, angle) )
         v_rotated = dotProduct( axis_rotation_matrix( angle, *axis), v)
         #print('             v_rotated %s' % (v_rotated) )
         error = norm( v_ref - v_rotated )
+        #print(norm(v)-1, norm(v_ref)-1)
+        print('  matrix  v_ref %s, v %s, error %1.3e' % ( v, v_ref, error ) )
+
+
+        v_rotated = quaternion_rotation(v, *quaternion(angle, *axis))
+        #print('             v_rotated %s' % (v_rotated) )
+        error = norm( v_ref - v_rotated )
+        print('  quatrian  v_ref %s, v %s, error %1.3e' % ( v, v_ref, error ) )
+
         if error > 10**-9 :
             raise ValueError, 'Failure for v_ref %s, v %s, error %1.3e' % ( v, v_ref, error )
     print('all test case passed')
@@ -645,3 +703,13 @@ if __name__ == '__main__':
         d_old = distance_between_axis_and_point( p1, u1, p2 )
         d_new = distance_between_axis_and_point_old( p1, u1, p2 )
         print('test case %i, distance old %f, distance new %f, diff %e' % (i+1, d_old, d_new, abs(d_old - d_new)))
+
+
+    print('investigating trigonmetric function precion loss')
+    angles = pi*(rand(12)-0.5)
+    for angle in angles:
+        print('   arccos(  cos(angle) ) - angle    %1.1e' % abs( arccos(  cos(angle) ) * numpy.sign(angle) - angle ) )
+    for angle in angles:
+        print('   arctan2( sin(angle), cos(angle)) - angle    %1.1e' % abs( arctan2( sin(angle), cos(angle)) - angle ) )
+    for angle in angles:
+        print('   1  - (sin(angle)**2 + cos(angle)**2)     %1.1e' % abs( 1  - (sin(angle)**2 + cos(angle)**2 ) ) )

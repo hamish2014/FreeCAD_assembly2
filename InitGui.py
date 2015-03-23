@@ -3,9 +3,21 @@ class Assembly2Workbench (Workbench):
     MenuText = 'Assembly 2'
     def Initialize(self):
         from assembly2lib import __dir__
-        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation
-        commandslist = ['importPart', 'updateImportedPartsCommand', 'assembly2_movepart', 'addCircularEdgeConstraint', 'addPlaneConstraint', 'addAxialConstraint', 'addAngleConstraint', 
-                        'degreesOfFreedomAnimation', 'assembly2SolveConstraints','muxAssembly','addPartsList']
+        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, sphericalSurfaceConstraint
+        commandslist = [
+            'importPart', 
+            'updateImportedPartsCommand', 
+            'assembly2_movepart', 
+            'addCircularEdgeConstraint', 
+            'addPlaneConstraint', 
+            'addAxialConstraint', 
+            'addAngleConstraint', 
+            'addSphericalSurfaceConstraint',
+            'degreesOfFreedomAnimation', 
+            'assembly2SolveConstraints',
+            'muxAssembly',
+            'addPartsList'
+            ]
         self.appendToolbar('Assembly 2', commandslist)
         self.treecmdList = ['importPart', 'updateImportedPartsCommand']
         #self.appendMenu('Assembly 2', commandslist)
@@ -26,7 +38,8 @@ class Assembly2Workbench (Workbench):
                         'plane':'redefinePlaneConstraint',
                         'angle_between_planes':'redefineAngleConstraint',
                         'axial': 'redefineAxialConstraint',
-                        'circularEdge' : 'redefineCircularEdgeConstraint'
+                        'circularEdge' : 'redefineCircularEdgeConstraint',
+                        'sphericalSurface' : 'redefineSphericalSurfaceConstraint'
                         }[ obj.Type ]
                     self.appendContextMenu( "Assembly2", [redefineCmd,'selectConstraintObjects'])
                 if 'sourceFile' in  obj.Content:

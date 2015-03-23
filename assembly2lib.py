@@ -185,3 +185,12 @@ def getObjectVertexFromName( obj, name ):
     assert name.startswith('Vertex')
     ind = int( name[6:]) -1 
     return obj.Shape.Vertexes[ind]
+
+def sphericalSurfaceSelected( selection ):
+    if len( selection.SubElementNames ) == 1:
+        subElement = selection.SubElementNames[0]
+        if subElement.startswith('Face'):
+            face = getObjectFaceFromName( selection.Object, subElement)
+            return str( face.Surface ).startswith('Sphere ')
+    return False
+

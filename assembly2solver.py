@@ -93,6 +93,8 @@ def solveConstraints( doc ):
                 constraintSystem = AxisAlignmentUnion(constraintSystem,  *cArgs, constraintValue=constraintObj.directionConstraint)
                 constraintSystem = AxisDistanceUnion(constraintSystem,  *cArgs, constraintValue=0)
                 constraintSystem = PlaneOffsetUnion(constraintSystem,  *cArgs, constraintValue=constraintObj.offset.Value)
+            elif constraintObj.Type == 'sphericalSurface':
+                constraintSystem = VertexUnion(constraintSystem,  *cArgs, constraintValue=0)
             else:
                 raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
         except Assembly2SolverError, msg:
@@ -106,33 +108,33 @@ def solveConstraints( doc ):
             solved = False
             break
     if solved:
-        debugPrint(4,'constraintSystem.X %s' % constraintSystem.X )
-        variableManager.updateFreeCADValues( constraintSystem.X )
+        debugPrint(4,'placement X %s' % constraintSystem.variableManager.X )
+        variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
     elif QtGui.qApp <> None: #i.e. GUI active
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
         flags = QtGui.QMessageBox.StandardButton.Yes 
         flags |= QtGui.QMessageBox.StandardButton.No
-        flags |= QtGui.QMessageBox.Ignore
+        #flags |= QtGui.QMessageBox.Ignore
         message = """The assembly2 solver failed to satisfy the constraint "%s".
 
 possible causes
   - impossible/contridictorary constraints have be specified, or  
-  - the contraint problem is too difficult for the solver, or a 
-  - bug in the assembly 2 workbench
+  - the contraint problem is too difficult for the solver, or 
+  - a bug in the assembly 2 workbench
 
 potential solutions
   - redefine the constraint (popup menu item in the treeView)
   - delete constraint, and try again using a different constraint scheme.
 
-Delete constraint "%s"? (press ignore to show the rejected solution)?
+Delete constraint "%s"?
 """ % (constraintObj.Name, constraintObj.Name)
         response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!", message, flags)
         if response == QtGui.QMessageBox.Yes:
             name = constraintObj.Name
             doc.removeObject( name )
             FreeCAD.Console.PrintError("removed constraint %s" % name )
-        elif response == QtGui.QMessageBox.Ignore:
-            variableManager.updateFreeCADValues( constraintSystem.getX() )
+        #elif response == QtGui.QMessageBox.Ignore:
+        #    variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
     return constraintSystem if solved else None
 
 class Assembly2SolveConstraintsCommand:
@@ -168,6 +170,7 @@ if __name__ == '__main__':
         doc =  FreeCAD.open(testFile)
         constraintSystem = solveConstraints( doc )
         if constraintSystem == None:
+            print('Failed on %s' % testFile)
             exit()
         print('\n\n\n')
     print('All %i tests passed' % len(testFiles))
