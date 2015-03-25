@@ -2,7 +2,7 @@
 library for 3D operations such as rotations.
 '''
 
-import numpy
+import numpy, pickle
 from numpy import pi, sin, cos, arctan2, arcsin, arccos, dot
 from numpy.linalg import norm
 dotProduct = numpy.dot
@@ -226,7 +226,7 @@ def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThresh
     'http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions#Rotation_matrix_.E2.86.94_Euler_axis.2Fangle'
     a = arccos2( 0.5 * ( R[0,0]+R[1,1]+R[2,2] - 1) )
     if abs(a % pi) > angle_pi_tol and abs(pi - (a % pi)) > angle_pi_tol:
-        msg='checking angles sing, angle %f' % a
+        msg='checking angles sign, angle %f' % a
         for angle in [a, -a]:
             u_x = 0.5* (R[2,1]-R[1,2]) / sin(angle) 
             u_y = 0.5* (R[0,2]-R[2,0]) / sin(angle) 
@@ -235,47 +235,35 @@ def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThresh
                 msg = 'abs( (1-cos(angle))*u_x*u_y - u_z*sin(angle) - R[0,1] ) < 10**-6 check passed' 
                 break
         axis = numpy.array([u_x, u_y, u_z])
-    else: #identify matrix
-        for angle in [0, pi]:
-            for axis in numpy.eye(3): #x-axis, y-axis, z-axis
-                error  = norm(axis_rotation_matrix(angle, *axis) - R)
-                if error < errorThreshold*100:
-                    return axis, angle
-        msg = 'a % pi == 0 solution failed!!!' #will crash at check answer...
-    #elif norm( R - numpy.eye(3)) < errorThreshold:
-    #    axis, angle = numpy.array([1.0,0,0]), 0.0        
-    #else:
-    #    axis, angle  = rotation_matrix_axis_and_angle_2( R, errorThreshold=errorThreshold, debug=debug)
-    if debug:
-        print('  axis %s, angle %s' % (axis, angle))
-    if checkAnswer:
         error  = norm(axis_rotation_matrix(angle, *axis) - R)
         if debug: print('  norm(axis_rotation_matrix(angle, *axis) - R) %1.2e' % error)
         if error > errorThreshold:
             axis, angle = rotation_matrix_axis_and_angle_2(R, errorThreshold=errorThreshold, debug=debug, msg=msg)
+    else:
+        msg = 'abs(a % pi) > angle_pi_tol and abs(pi - (a % pi)) > angle_pi_tol'
+        axis, angle = rotation_matrix_axis_and_angle_2( R, errorThreshold=errorThreshold, debug=debug, msg=msg)
     if numpy.isnan( angle ):
         raise RuntimeError,'locals %s' % locals() 
     return axis, angle
 def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7, msg=None):
     w, v = numpy.linalg.eig(R) #this method is not used at the primary method as numpy.linalg.eig does not return answers in high enough precision
     angle, axis = None, None
-    for i in range(3):
-        if numpy.imag(w[i]) == 0 and axis == None:
-            axis = numpy.real(v[:,i])
-            if debug: print('axis: %s' % axis)
-        elif angle == None:
-            c = numpy.real( w[i] )
-            s = numpy.imag( w[i])
-            angle = arccos2(c)
-            if debug: print('w[i] %s' % w[i])
-            if debug: print('cos(angle) %f sin(angle) %f' % (cos(angle), sin(angle)))
+    eigErrors = abs(w -1) #errors from 1+0j
+    i = (eigErrors == min(eigErrors)).tolist().index(True)
+    axis = numpy.real(v[:,i])
+    if i <> 1:
+        angle = arccos2(  numpy.real( w[1] ) )
+    else:
+        angle = arccos2(  numpy.real( w[0] ) )
     error  = norm(axis_rotation_matrix(angle, *axis) - R)
     if debug: print('rotation_matrix_axis_and_angle error %1.1e' % error)
     if error > errorThreshold:
         angle = -angle
         error = norm(axis_rotation_matrix(angle, *axis) - R)
         if error > errorThreshold:
-            R_abs_minus_identity = abs(R) - numpy.eye(3)
+            R_pickle_str = pickle.dumps(R)
+            #R_abs_minus_identity = abs(R) - numpy.eye(3)
+            print(R*R.transpose())
             raise ValueError, 'rotation_matrix_axis_and_angle_2: no solution found! locals %s' % str(locals())
     return axis, angle
 
@@ -617,6 +605,7 @@ if __name__ == '__main__':
     testCases.append(numpy.array([[ -1.00000000e+00,   1.14448718e-16,  -2.01350825e-16],
                                   [ -1.14448718e-16,  -1.00000000e+00,   5.55111512e-17],
                                   [ -2.01350825e-16,   0.00000000e+00,   1.00000000e+00+1e-12]]))
+    testCases.append(pickle.loads("cnumpy.core.multiarray\n_reconstruct\np0\n(cnumpy\nndarray\np1\n(I0\ntp2\nS'b'\np3\ntp4\nRp5\n(I1\n(I3\nI3\ntp6\ncnumpy\ndtype\np7\n(S'f8'\np8\nI0\nI1\ntp9\nRp10\n(I3\nS'<'\np11\nNNNI-1\nI-1\nI0\ntp12\nbI00\nS'\\x00\\x00\\x00\\x00\\x00\\x00\\xf0\\xbf8\\xa1\\x1f\\xba\\xe7E\\x94\\xbci\\x99\\x86\\xf4d\\xb4\\xa1\\xbc@NS\\xdfy\\xf6\\xa3<h\\x95\\xfa\\x18\\x91H\\xe5\\xbf\\xf2\\n\\xeb\\xdeY\\xe5\\xe7\\xbft\\x85\\xf5+\\n\\xd3\\x80\\xbc\\xf4\\n\\xeb\\xdeY\\xe5\\xe7\\xbfi\\x95\\xfa\\x18\\x91H\\xe5?'\np13\ntp14\nb."))
     for i, R in enumerate( testCases ):
         #prettyPrintArray(R, ' '*4,'%1.2e')
         rotation_matrix_axis_and_angle(R, checkAnswer=True, debug=i==len(testCases)-1)
