@@ -222,22 +222,24 @@ def rotation_matrix_to_euler_ZYX_2(R, debug=False):
     q_1, q_2, q_3, q_0 = quaternion(angle, *axis)
     return quaternion_to_euler( q_1, q_2, q_3, q_0)
 
-def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThreshold=10**-7):
+def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThreshold=10**-7, angle_pi_tol = 10**-5):
     'http://en.wikipedia.org/wiki/Rotation_formalisms_in_three_dimensions#Rotation_matrix_.E2.86.94_Euler_axis.2Fangle'
     a = arccos2( 0.5 * ( R[0,0]+R[1,1]+R[2,2] - 1) )
-    if a % pi <> 0:
+    if abs(a % pi) > angle_pi_tol and abs(pi - (a % pi)) > angle_pi_tol:
+        msg='checking angles sing, angle %f' % a
         for angle in [a, -a]:
             u_x = 0.5* (R[2,1]-R[1,2]) / sin(angle) 
             u_y = 0.5* (R[0,2]-R[2,0]) / sin(angle) 
             u_z = 0.5* (R[1,0]-R[0,1]) / sin(angle)
-            if abs( (1-cos(angle))*u_x*u_y - u_z*sin(angle) - R[0,1] ) < 10**-6:
+            if abs( (1-cos(angle))*u_x*u_y - u_z*sin(angle) - R[0,1] ) < errorThreshold:
+                msg = 'abs( (1-cos(angle))*u_x*u_y - u_z*sin(angle) - R[0,1] ) < 10**-6 check passed' 
                 break
         axis = numpy.array([u_x, u_y, u_z])
     else: #identify matrix
-        for angle in [-pi,0]:
+        for angle in [0, pi]:
             for axis in numpy.eye(3): #x-axis, y-axis, z-axis
                 error  = norm(axis_rotation_matrix(angle, *axis) - R)
-                if error < errorThreshold:
+                if error < errorThreshold*100:
                     return axis, angle
         msg = 'a % pi == 0 solution failed!!!' #will crash at check answer...
     #elif norm( R - numpy.eye(3)) < errorThreshold:
@@ -250,11 +252,11 @@ def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThresh
         error  = norm(axis_rotation_matrix(angle, *axis) - R)
         if debug: print('  norm(axis_rotation_matrix(angle, *axis) - R) %1.2e' % error)
         if error > errorThreshold:
-            axis, angle = rotation_matrix_axis_and_angle_2(R, errorThreshold=errorThreshold, debug=debug)
+            axis, angle = rotation_matrix_axis_and_angle_2(R, errorThreshold=errorThreshold, debug=debug, msg=msg)
     if numpy.isnan( angle ):
         raise RuntimeError,'locals %s' % locals() 
     return axis, angle
-def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7):
+def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7, msg=None):
     w, v = numpy.linalg.eig(R) #this method is not used at the primary method as numpy.linalg.eig does not return answers in high enough precision
     angle, axis = None, None
     for i in range(3):
@@ -273,6 +275,7 @@ def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7):
         angle = -angle
         error = norm(axis_rotation_matrix(angle, *axis) - R)
         if error > errorThreshold:
+            R_abs_minus_identity = abs(R) - numpy.eye(3)
             raise ValueError, 'rotation_matrix_axis_and_angle_2: no solution found! locals %s' % str(locals())
     return axis, angle
 
@@ -611,6 +614,9 @@ if __name__ == '__main__':
     testCases.append(numpy.array([[ -1.00000000e+00,   1.58333754e-16,   8.65956056e-17],
                                   [  1.58333754e-16,   1.00000000e+00,  -8.49830835e-16],
                                   [ -8.65956056e-17,  -1.29392004e-15,  -1.00000000e+00]]))
+    testCases.append(numpy.array([[ -1.00000000e+00,   1.14448718e-16,  -2.01350825e-16],
+                                  [ -1.14448718e-16,  -1.00000000e+00,   5.55111512e-17],
+                                  [ -2.01350825e-16,   0.00000000e+00,   1.00000000e+00+1e-12]]))
     for i, R in enumerate( testCases ):
         #prettyPrintArray(R, ' '*4,'%1.2e')
         rotation_matrix_axis_and_angle(R, checkAnswer=True, debug=i==len(testCases)-1)
