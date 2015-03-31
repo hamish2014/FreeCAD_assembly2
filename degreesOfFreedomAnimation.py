@@ -3,6 +3,7 @@ from assembly2lib import *
 from assembly2lib import __dir__
 from PySide import QtGui, QtCore
 import traceback
+import degreesOfFreedom
 
 moduleVars = {}
 
@@ -87,6 +88,6 @@ class AnimateDOF(object):
         debugPrint(5,'finished timer loop')
 
 def base_rotation_dof(d):
-    if hasattr(d, 'ind'):
+    if isinstance(d,degreesOfFreedom.PlacementDegreeOfFreedom) and  hasattr(d, 'ind'):
         return d.ind % 6 == 3
     return False

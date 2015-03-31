@@ -7,7 +7,7 @@ class Assembly2Workbench (Workbench):
         commandslist = [
             'importPart', 
             'updateImportedPartsCommand', 
-            'assembly2_movepart', 
+            'assembly2_movePart', 
             'addCircularEdgeConstraint', 
             'addPlaneConstraint', 
             'addAxialConstraint', 
@@ -44,9 +44,11 @@ class Assembly2Workbench (Workbench):
                     self.appendContextMenu( "Assembly2", [redefineCmd,'selectConstraintObjects'])
                 if 'sourceFile' in  obj.Content:
                     self.appendContextMenu( "Assembly2", 
-                        ['assembly2_movepart',
+                        ['assembly2_movePart',
+                         'assembly2_duplicatePart',
                          'assembly2_editImportedPart',
-                         'assembly2_forkImportedPart'])
+                         'assembly2_forkImportedPart',
+                         'assembly2_deletePartsConstraints'])
 
     # Icon generated using by converting svg to xpm format using Gimp
     Icon = '''

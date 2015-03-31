@@ -205,11 +205,43 @@ class MovePartCommand:
     def GetResources(self): 
         return {
             'Pixmap' : os.path.join( __dir__ , 'Draft_Move.svg' ) , 
-            'MenuText': 'move a part (hold shift to copy)', 
-            'ToolTip': 'move (hold shift to copy, ctrl to rotate)'
+            'MenuText': 'move', 
+            'ToolTip': 'move part  ( shift+click to copy )'
             } 
 
-FreeCADGui.addCommand('assembly2_movepart', MovePartCommand())
+FreeCADGui.addCommand('assembly2_movePart', MovePartCommand())
+
+class DuplicatePartCommand:
+    def Activated(self):
+        selection = FreeCADGui.Selection.getSelectionEx()
+        if len(selection) == 1:
+            obj = selection[0].Object
+            partName = findUnusedObjectName( obj.Name[:obj.Name.find('_import') + len('_import')] )
+            newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
+            newObj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = obj.sourceFile
+            newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  obj.timeLastImport
+            newObj.setEditorMode("timeLastImport",1)  
+            newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = obj.fixedPosition
+            newObj.Shape = obj.Shape.copy()
+            newObj.ViewObject.Proxy = 0
+            for p in obj.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
+                if hasattr(newObj.ViewObject, p):
+                    setattr(newObj.ViewObject, p, getattr(obj.ViewObject, p))
+            newObj.Proxy = Proxy_importPart()
+            newObj.Placement.Base = obj.Placement.Base
+            newObj.Placement.Rotation = obj.Placement.Rotation
+            PartMover(  FreeCADGui.activeDocument().activeView(), newObj )
+
+    def GetResources(self): 
+        return {
+            'MenuText': 'duplicate', 
+            'ToolTip': 'duplicate part (hold shift for multiple)'
+            } 
+
+FreeCADGui.addCommand('assembly2_duplicatePart', DuplicatePartCommand())
+    
+#copy object
+
 
 class EditPartCommand:
     def Activated(self):
@@ -258,4 +290,30 @@ class ForkPartCommand:
             } 
 FreeCADGui.addCommand('assembly2_forkImportedPart', ForkPartCommand())
 
+
+class DeletePartsConstraints:
+    def Activated(self):
+        selection = FreeCADGui.Selection.getSelection()
+        if len(selection) == 1:
+            part = selection[0]
+            deleteList = []
+            for c in FreeCAD.ActiveDocument.Objects:
+                if 'ConstraintInfo' in c.Content:
+                    if part.Name in [ c.Object1, c.Object2 ]:
+                        deleteList.append(c)
+            if len(deleteList) == 0:
+                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Info", 'No constraints refer to "%s"' % part.Name)
+            else:
+                flags = QtGui.QMessageBox.StandardButton.Yes | QtGui.QMessageBox.StandardButton.No
+                msg = "Delete %s's constraint(s):\n  - %s?" % ( part.Name, '\n  - '.join( c.Name for c in deleteList))
+                response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Delete constraints?", msg, flags )
+                if response == QtGui.QMessageBox.Yes:
+                    for c in deleteList:
+                        FreeCAD.Console.PrintError("removing constraint %s" % c.Name)
+                        FreeCAD.ActiveDocument.removeObject(c.Name)
+    def GetResources(self): 
+        return { 
+            'MenuText': 'delete constraints', 
+            } 
+FreeCADGui.addCommand('assembly2_deletePartsConstraints', DeletePartsConstraints())
 
