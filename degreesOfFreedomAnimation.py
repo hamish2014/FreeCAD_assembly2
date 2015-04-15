@@ -31,6 +31,7 @@ class AnimateDOF(object):
     def __init__(self, constraintSystem, tick=50, framesPerDOF=40 ):
         self.constraintSystem = constraintSystem
         self.Y0 = numpy.array([ d.getValue() for d in constraintSystem.degreesOfFreedom ])
+        self.X_before_animation = constraintSystem.variableManager.X
         self.framesPerDOF = framesPerDOF
         debugPrint(2,'beginning degrees of freedom animation')
         self.count = 0
@@ -60,6 +61,7 @@ class AnimateDOF(object):
                     self.dof_count = self.dof_count + 2
                 if self.dof_count + 1 > len( self.constraintSystem.degreesOfFreedom ):
                     self.timer.stop()
+                    self.constraintSystem.variableManager.updateFreeCADValues(self.X_before_animation)
                     return
                 self.updateAmplitude()
                 

@@ -40,6 +40,7 @@ def importPart( filename, partName=None ):
     if updateExistingPart:
         obj = FreeCAD.ActiveDocument.getObject(partName)
         prevPlacement = obj.Placement
+        importUpdateConstraintSubobjects( doc, obj, obj_to_copy )
     else:
         partName = findUnusedObjectName( doc.Label + '_import' )
         obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
@@ -317,3 +318,24 @@ class DeletePartsConstraints:
             } 
 FreeCADGui.addCommand('assembly2_deletePartsConstraints', DeletePartsConstraints())
 
+
+
+from variableManager import ReversePlacementTransform
+def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
+    fakeDoc = klass() #dummpy document object, used as to interface with the variable manager class
+    T_old = ReversePlacementTransform( oldObject )
+    T_new = ReversePlacementTransform( newObject )
+    partName = oldObject.Name
+    #generating mappings
+    vertexs_old = []
+    vertexs_new = [] 
+    for c in doc.Objects:
+        if 'ConstraintInfo' in c.Content:
+            if partName == c.Object1:
+                SubElement = "SubElement1"
+            elif partName == c.Object2:
+                SubElement = "SubElement2"
+            else:
+                SubElement = None
+            if SubElement: #same as subElement <> None
+                setattr(c,SubElement, mapping[getattr(c,SubElement)])
