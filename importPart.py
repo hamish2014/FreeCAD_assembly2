@@ -77,7 +77,7 @@ class ImportPartCommand:
         filename, filetype = QtGui.QFileDialog.getOpenFileName( 
             QtGui.qApp.activeWindow(),
             "Select FreeCAD document to import part from",
-            os.path.dirname(FreeCAD.ActiveDocument.FileName),
+            "",# "" is the default, os.path.dirname(FreeCAD.ActiveDocument.FileName),
             "FreeCAD Document (*.fcstd)"
             )
         if filename == '':
@@ -112,10 +112,45 @@ class UpdateImportedPartsCommand:
                     obj.addProperty("App::PropertyFloat", "timeLastImport","importPart") #should default to zero which will force update.
                     obj.setEditorMode("timeLastImport",1)  
                 if not os.path.exists( obj.sourceFile ):
-                    QtGui.QMessageBox.critical(  QtGui.qApp.activeWindow(), "Source file not found", "update of %s aborted due source file being missing..." % obj.Name )
-                    obj.timeLastImport = 0 #force update if users repairs link
-                elif os.path.getmtime( obj.sourceFile ) > obj.timeLastImport:
-                    importPart( obj.sourceFile, obj.Name )
+                    debugPrint( 3, '%s.sourceFile %s is missing, attempting to repair it' % (obj.Name,  obj.sourceFile) )
+                    replacement = None
+                    aFolder, aFilename = os.path.split( FreeCAD.ActiveDocument.FileName )
+                    sFolder, sFilename = os.path.split( obj.sourceFile )
+                    sParts = [sFilename]
+                    for i in range(100): #being paranoid here :)
+                        sFolder, part = os.path.split(sFolder)
+                        if part <> '':
+                            sParts.insert(0, part)
+                        else:
+                            break
+                    debugPrint( 3, '  obj.sourceFile parts %s' % sParts )
+                    replacement = None
+                    previousRejects = []
+                    while replacement == None and aFilename <> '':
+                        for i in reversed(range(len(sParts))):
+                            newFn = aFolder
+                            for j in range(i,len(sParts)):
+                                newFn = os.path.join( newFn,sParts[j] )
+                            #debugPrint( 3, '    checking %s' % newFn )
+                            if os.path.exists( newFn ) and not newFn in previousRejects :
+                                reply = QtGui.QMessageBox.question(
+                                    QtGui.qApp.activeWindow(), "%s source file not found" % obj.Name,
+                                    "Unable to find\n  %s \nUse \n  %s\n instead?" % (obj.sourceFile, newFn) , 
+                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+                                if reply == QtGui.QMessageBox.Yes:
+                                    replacement = newFn
+                                    break
+                                else:
+                                    previousRejects.append( newFn )
+                        aFolder, aFilename = os.path.split( aFolder )
+                    if replacement <> None:
+                        obj.sourceFile = replacement
+                    else:
+                        QtGui.QMessageBox.critical(  QtGui.qApp.activeWindow(), "Source file not found", "update of %s aborted!\nUnable to find %s" % (obj.Name, obj.sourceFile) )
+                        obj.timeLastImport = 0 #force update if users repairs link
+                if os.path.exists( obj.sourceFile ):
+                    if os.path.getmtime( obj.sourceFile ) > obj.timeLastImport:
+                        importPart( obj.sourceFile, obj.Name )
         FreeCAD.ActiveDocument.recompute()
     def GetResources(self): 
         return {
@@ -434,6 +469,9 @@ class SubElementDifference:
 
 
 def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
+    '''
+    TO DO (if time allows): add a task dialog (using FreeCADGui.Control.addDialog) as to allow the user to specify which scheme to use to update the constraint subelement names.
+    '''
     #classify subelements
     debugPrint(2,'Import: Updating Constraint SubElements Names')
     newObjSubElements = classifySubElements( newObject )
@@ -442,23 +480,6 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
     T_old = ReversePlacementTransformWithBoundsNormalization( oldObject )
     T_new = ReversePlacementTransformWithBoundsNormalization( newObject )
     partName = oldObject.Name
-    #generating mappings
-
-    mappings = {}
-    #vertexs
-    #Q = [ Tnew(v,Point) for v in newObject.Vertexes ]
-    #for i,vOld in enumerate(oldObject.Shape.Vertexes):
-    #    p = T_old(vOld.Point)
-    #    d = [ [norm(p-q),j] for j,q in enumerate(Q) ]
-    #    d_min = min(d)
-    #    mappings['Vertex%i']
-    #    for j,vNew in enumerate(newObject.Shape.Vertexes):
-            
-
-    vertexs_old = numpy.array([ T_old(v.Point) for v in oldObject.Shape.Vertexes ])
-    vertexs_new = numpy.array([ T_new(v.Point) for v in newObject.Shape.Vertexes ])
-
-    
     for c in doc.Objects:
         if 'ConstraintInfo' in c.Content:
             if partName == c.Object1:
