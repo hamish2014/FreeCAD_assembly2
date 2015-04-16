@@ -93,18 +93,32 @@ class VariableManager:
         return numpy.linalg.solve(R,v)
 
 
-class ReversePlacementTransform:
+class ReversePlacementTransformWithBoundsNormalization:
     def __init__(self, obj):
         x, y, z = obj.Placement.Base.x, obj.Placement.Base.y, obj.Placement.Base.z
+        self.offset = numpy.array([x, y, z]) #placement offset
         axis, theta = quaternion_to_axis_and_angle( *obj.Placement.Rotation.Q )
         if theta <> 0:
             azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
         else:
             azi, ela = 0, 0
-        self.X = [ x, y, z, azi, ela, theta]
+        self.R = azimuth_elevation_rotation_matrix( azi, ela, theta ) #placement rotation
+        #now for bounds normalization
+        V = numpy.array([self.undoPlacement(v.Point) for v in obj.Shape.Vertexes])
+        self.Bmin = V.min(axis=0)
+        self.Bmax = V.max(axis=0)
+        self.dB = self.Bmax - self.Bmin
+
+    def undoPlacement(self, p):
+        # p = R*q + offset
+        return numpy.linalg.solve( self.R, numpy.array(p) - self.offset )
+    
+    def unRotate(self, p):
+        return numpy.linalg.solve( self.R, p)
+
     def __call__( self, p):
-        v = numpy.array(p) - self.X[0:3]
-        R = azimuth_elevation_rotation_matrix(*X[3:6])
-        return numpy.linalg.solve(R,v)
+        q = self.undoPlacement(p)
+        # q = self.Bmin + r* self.dB (where r is in normilezed coordinates)
+        return (q - self.Bmin) / self.dB
     
 

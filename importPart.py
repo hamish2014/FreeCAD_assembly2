@@ -6,7 +6,7 @@ from assembly2lib import *
 from assembly2lib import __dir__
 from PySide import QtGui
 import os, numpy, shutil
-import lib3D
+from lib3D import *
 
 def importPart( filename, partName=None ):
     updateExistingPart = partName <> None
@@ -40,7 +40,7 @@ def importPart( filename, partName=None ):
     if updateExistingPart:
         obj = FreeCAD.ActiveDocument.getObject(partName)
         prevPlacement = obj.Placement
-        importUpdateConstraintSubobjects( doc, obj, obj_to_copy )
+        importUpdateConstraintSubobjects( FreeCAD.ActiveDocument, obj, obj_to_copy )
     else:
         partName = findUnusedObjectName( doc.Label + '_import' )
         obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
@@ -169,8 +169,8 @@ class PartMover:
                 azi   =  ( numpy.random.rand() - 0.5 )*numpy.pi*2
                 ela   =  ( numpy.random.rand() - 0.5 )*numpy.pi
                 theta =  ( numpy.random.rand() - 0.5 )*numpy.pi
-                axis = lib3D.azimuth_and_elevation_angles_to_axis( azi, ela )
-                self.obj.Placement.Rotation.Q = lib3D.quaternion( theta, *axis )
+                axis = azimuth_and_elevation_angles_to_axis( azi, ela )
+                self.obj.Placement.Rotation.Q = quaternion( theta, *axis )
             
     def KeyboardEvent(self, info):
         debugPrint(4, 'KeyboardEvent info %s' % str(info))
@@ -320,15 +320,145 @@ FreeCADGui.addCommand('assembly2_deletePartsConstraints', DeletePartsConstraints
 
 
 
-from variableManager import ReversePlacementTransform
+
+
+from variableManager import ReversePlacementTransformWithBoundsNormalization
+
+class _SelectionWrapper:
+    'as to interface with assembly2lib classification functions'
+    def __init__(self, obj, subElementName):
+        self.Object = obj
+        self.SubElementNames = [subElementName]
+        
+
+def classifySubElement( obj, subElementName ):
+    selection = _SelectionWrapper( obj, subElementName )
+    if planeSelected( selection ):
+        return 'plane'
+    elif cylindricalPlaneSelected( selection ):
+        return 'cylindricalSurface'
+    elif CircularEdgeSelected( selection ):
+        return 'circularEdge'
+    elif LinearEdgeSelected( selection ):
+        return 'linearEdge'
+    elif vertexSelected( selection ):
+        return 'vertex' #all vertex belong to Vertex classification
+    elif sphericalSurfaceSelected( selection ):
+        return 'sphericalSurface'
+    else:
+        return 'other'
+
+def classifySubElements( obj ):
+    C = { 
+        'plane': [],
+        'cylindricalSurface': [],
+        'circularEdge':[],
+        'linearEdge':[], 
+        'vertex':[], 
+        'sphericalSurface':[],
+        'other':[] 
+        }
+    prefixDict = {'Vertexes':'Vertex','Edges':'Edge','Faces':'Face'}
+    for listName in ['Vertexes','Edges','Faces']:
+        for j, subelement in enumerate( getattr( obj.Shape, listName) ):
+            subElementName = '%s%i' % (prefixDict[listName], j+1 )
+            catergory = classifySubElement( obj, subElementName )
+            C[catergory].append(subElementName)
+    return C
+    
+class SubElementDifference:
+    def __init__(self, obj1, SE1, T1, obj2, SE2, T2):
+        self.obj1 = obj1
+        self.SE1 = SE1
+        self.T1 = T1
+        self.obj2 = obj2
+        self.SE2 = SE2
+        self.T2 = T2
+        self.catergory = classifySubElement( obj1, SE1 )
+        self.error1 = 0 #not used for 'vertex','sphericalSurface','other'
+        if self.catergory == 'circularEdge':
+            v1 = self.getAxis( obj1, SE1 )
+            v2 = self.getAxis( obj2, SE2 )
+            self.error1 = 1 - dot( T1.unRotate(v1), T2.unRotate(v2) )
+        if self.catergory <> 'other':
+            p1 = self.getPos( obj1, SE1 )
+            p2 = self.getPos( obj2, SE2 )
+            self.error2 = norm( T1(p1) - T2(p2) )
+        else:
+            self.error2 = 1 - (SE1 == SE2) #subelements have the same name
+
+    def getAxis(self, obj, subElement):
+        'copied from constraintSystems getAxis'
+        if subElement.startswith('Face'):
+            axis = getObjectFaceFromName(obj, subElement).Surface.Axis
+        elif subElement.startswith('Edge'):
+            edge = getObjectEdgeFromName(obj, subElement)
+            if isinstance(edge.Curve, Part.Line):
+                axis = edge.Curve.tangent(0)[0]
+            else: #circular curve
+                axis =  edge.Curve.Axis
+        if axis <> None:
+            return numpy.array(axis)
+        else:
+            raise NotImplementedError,"subElement %s" % subElement
+    def getPos(self, obj, subElement):
+        pos = None
+        if subElement.startswith('Face'):
+            surface = getObjectFaceFromName(obj, subElement).Surface
+            if str(surface) == '<Plane object>':
+                pos = surface.Position
+            elif all( hasattr(surface,a) for a in ['Axis','Center','Radius'] ):
+                pos = surface.Center
+            else:
+                raise NotImplementedError,"getPos %s" % str(surface)
+        elif subElement.startswith('Edge'):
+            edge = getObjectEdgeFromName(obj, subElement)
+            if isinstance(edge.Curve, Part.Line):
+                pos = edge.Curve.StartPoint
+            else: #circular curve
+                pos = edge.Curve.Center    
+        elif subElement.startswith('Vertex'):
+            return  getObjectVertexFromName(obj, subElement).Point
+        if pos <> None:
+            return numpy.array(pos)
+        else:
+            raise NotImplementedError,"subElement %s" % subElement
+        
+    def __lt__(self, b):
+        if self.error1 <> b.error1:
+            return self.error1 < b.error1
+        else:
+            return self.error2 < b.error2
+    def __str__(self):
+        return '<SubElementDifference:%s SE1:%s SE2:%s error1: %f error2: %f>' % ( self.catergory, self.SE1, self.SE2, self.error1, self.error2 )
+
+
 def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
-    fakeDoc = klass() #dummpy document object, used as to interface with the variable manager class
-    T_old = ReversePlacementTransform( oldObject )
-    T_new = ReversePlacementTransform( newObject )
+    #classify subelements
+    debugPrint(2,'Import: Updating Constraint SubElements Names')
+    newObjSubElements = classifySubElements( newObject )
+    debugPrint(3,'newObjSubElements: %s' % newObjSubElements)
+    # generating transforms
+    T_old = ReversePlacementTransformWithBoundsNormalization( oldObject )
+    T_new = ReversePlacementTransformWithBoundsNormalization( newObject )
     partName = oldObject.Name
     #generating mappings
-    vertexs_old = []
-    vertexs_new = [] 
+
+    mappings = {}
+    #vertexs
+    #Q = [ Tnew(v,Point) for v in newObject.Vertexes ]
+    #for i,vOld in enumerate(oldObject.Shape.Vertexes):
+    #    p = T_old(vOld.Point)
+    #    d = [ [norm(p-q),j] for j,q in enumerate(Q) ]
+    #    d_min = min(d)
+    #    mappings['Vertex%i']
+    #    for j,vNew in enumerate(newObject.Shape.Vertexes):
+            
+
+    vertexs_old = numpy.array([ T_old(v.Point) for v in oldObject.Shape.Vertexes ])
+    vertexs_new = numpy.array([ T_new(v.Point) for v in newObject.Shape.Vertexes ])
+
+    
     for c in doc.Objects:
         if 'ConstraintInfo' in c.Content:
             if partName == c.Object1:
@@ -338,4 +468,15 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
             else:
                 SubElement = None
             if SubElement: #same as subElement <> None
-                setattr(c,SubElement, mapping[getattr(c,SubElement)])
+                subElementName = getattr(c, SubElement)
+                debugPrint(3,'  updating %s.%s' % (c.Name, SubElement))
+                catergory = classifySubElement( oldObject, subElementName )
+                D = [ SubElementDifference( oldObject, subElementName, T_old, newObject, SE2, T_new)
+                      for SE2 in newObjSubElements[catergory] ]
+                #for d in D:
+                #    debugPrint(2,'      %s' % d)
+                d_min = min(D)
+                debugPrint(3,'    closest match %s' % d_min)
+                newSE =  d_min.SE2
+                debugPrint(2,'  updating %s.%s   %s->%s' % (c.Name, SubElement, subElementName, newSE))
+                setattr(c, SubElement, newSE) 
