@@ -74,13 +74,20 @@ class Proxy_importPart:
 class ImportPartCommand:
     def Activated(self):
         view = FreeCADGui.activeDocument().activeView()
-        filename, filetype = QtGui.QFileDialog.getOpenFileName( 
+        #filename, filetype = QtGui.QFileDialog.getOpenFileName( 
+        #    QtGui.qApp.activeWindow(),
+        #    "Select FreeCAD document to import part from",
+        #    "",# "" is the default, os.path.dirname(FreeCAD.ActiveDocument.FileName),
+        #    "FreeCAD Document (*.fcstd)"
+        #    )
+        dialog = QtGui.QFileDialog(
             QtGui.qApp.activeWindow(),
-            "Select FreeCAD document to import part from",
-            "",# "" is the default, os.path.dirname(FreeCAD.ActiveDocument.FileName),
-            "FreeCAD Document (*.fcstd)"
+            "Select FreeCAD document to import part from"
             )
-        if filename == '':
+        dialog.setNameFilter("FreeCAD Document (*.fcstd)")
+        if dialog.exec_():
+            filename = dialog.selectedFiles()[0]
+        else:
             return
         importedObject = importPart( filename )
         FreeCAD.ActiveDocument.recompute()
@@ -90,7 +97,7 @@ class ImportPartCommand:
             from PySide import QtCore
             self.timer = QtCore.QTimer()
             QtCore.QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.GuiViewFit)
-            self.timer.start( 500 ) #0.5 seconds
+            self.timer.start( 300 ) #0.3 seconds
 
     def GuiViewFit(self):
         FreeCADGui.SendMsgToActiveView("ViewFit") #dont know why this does not work

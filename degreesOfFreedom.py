@@ -86,6 +86,8 @@ class AxisRotationDegreeOfFreedom:
             self.x_ref_r, self.y_ref_r,  =  plane_degrees_of_freedom( axis_r )
             self.x_ref = dotProduct(self.R_to_align_axis, self.x_ref_r) 
             self.y_ref = dotProduct(self.R_to_align_axis, self.y_ref_r) 
+        #TO DO, change complete regeneration for numpy.array_equal( self.axis, axis ), to minor axis adjustment using rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector
+        # import for case where axis close to z-axis, where numerical noise effects the azimuth angle used to generate plane_degrees_of_freedom...
 
     def determine_R_about_axis(self, R_effective, checkAnswer=True, tol=10**-12): #not used anymore
         'determine R_about_axis so that R_effective = R_about_axis * R_to_align_axis'
