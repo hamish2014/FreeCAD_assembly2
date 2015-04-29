@@ -35,6 +35,7 @@ Vector (-0.9991351502732795, 0.0, -0.04158066243329049)
 
 from lib3D import *
 import numpy
+from assembly2lib import debugPrint
 
 
 class VariableManager:
@@ -104,7 +105,15 @@ class ReversePlacementTransformWithBoundsNormalization:
             azi, ela = 0, 0
         self.R = azimuth_elevation_rotation_matrix( azi, ela, theta ) #placement rotation
         #now for bounds normalization
-        V = numpy.array([self.undoPlacement(v.Point) for v in obj.Shape.Vertexes])
+        #V = [ self.undoPlacement(v.Point) for v in obj.Shape.Vertexes] #no nessary in BoundBox is now used.
+        V = [] 
+        BB = obj.Shape.BoundBox
+        extraPoints = []
+        for z in [ BB.ZMin, BB.ZMax ]:
+            for y in [ BB.YMin, BB.YMax ]:
+                for x in [ BB.XMin, BB.XMax ] :
+                    V.append( self.undoPlacement([x,y,z]) )
+        V = numpy.array(V)
         self.Bmin = V.min(axis=0)
         self.Bmax = V.max(axis=0)
         self.dB = self.Bmax - self.Bmin
