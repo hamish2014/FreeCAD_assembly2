@@ -7,6 +7,7 @@ from assembly2lib import __dir__
 from PySide import QtGui
 import os, numpy, shutil
 from lib3D import *
+from muxAssembly import muxObjects, Proxy_muxAssemblyObj
 
 def importPart( filename, partName=None ):
     updateExistingPart = partName <> None
@@ -23,20 +24,32 @@ def importPart( filename, partName=None ):
         FreeCAD.setActiveDocument(currentDoc)
     doc = [ d for d in FreeCAD.listDocuments().values()
             if d.FileName == filename][0]
+
     debugPrint(3, '%s objects %s' % (doc.Name, doc.Objects))
-    visibleObjects = [ obj for obj in doc.Objects
-                       if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
-                       and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
-    if len(visibleObjects) <> 1:
-        if not updateExistingPart:
-            msg = "A part can only be imported from a FreeCAD document with exactly one visible part. Aborting operation"
-            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Value Error", msg )
-        else:
-            msg = "Error updating part from %s: A part can only be imported from a FreeCAD document with exactly one visible part. Aborting update of %s" % (partName, filename)
+    if any([ 'importPart' in obj.Content for obj in doc.Objects]):
+        subAssemblyImport = True
+        debugPrint(2, 'Importing subassembly from %s' % filename)
+        tempPartName = 'import_temporary_part'
+        obj_to_copy = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",tempPartName)
+        obj_to_copy.Proxy = Proxy_muxAssemblyObj()
+        obj_to_copy.ViewObject.Proxy = 0
+        obj_to_copy.Shape =  muxObjects(doc)
+    else: 
+        subAssemblyImport = False
+        visibleObjects = [ obj for obj in doc.Objects
+                           if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
+                           and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
+        if len(visibleObjects) <> 1:
+            if not updateExistingPart:
+                msg = "A part can only be imported from a FreeCAD document with exactly one visible part. Aborting operation"
+                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Value Error", msg )
+            else:
+                msg = "Error updating part from %s: A part can only be imported from a FreeCAD document with exactly one visible part. Aborting update of %s" % (partName, filename)
             QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Value Error", msg )
         #QtGui.QMessageBox.warning( QtGui.qApp.activeWindow(), "Value Error!", msg, QtGui.QMessageBox.StandardButton.Ok )
-        return
-    obj_to_copy = visibleObjects[0]
+            return
+        obj_to_copy  = visibleObjects[0]
+
     if updateExistingPart:
         obj = FreeCAD.ActiveDocument.getObject(partName)
         prevPlacement = obj.Placement
@@ -49,8 +62,7 @@ def importPart( filename, partName=None ):
         obj.setEditorMode("timeLastImport",1)  
         obj.addProperty("App::PropertyBool","fixedPosition","importPart")
         obj.fixedPosition = not any([i.fixedPosition for i in FreeCAD.ActiveDocument.Objects if hasattr(i, 'fixedPosition') ])
-    obj.Shape = obj_to_copy.Shape.copy()
-    # would this work?:   obj.ViewObject = visibleObjects[0].ViewObject  
+    obj.Shape = obj_to_copy.Shape.copy() 
     if updateExistingPart:
         obj.Placement = prevPlacement
         obj.touch()
@@ -62,9 +74,12 @@ def importPart( filename, partName=None ):
                 setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( obj.sourceFile )
+    #clean up
+    if subAssemblyImport:
+        FreeCAD.ActiveDocument.removeObject(tempPartName)
     if not doc_already_open: #then close again
         FreeCAD.closeDocument(doc.Name)
-        FreeCAD.setActiveDocument(currentDoc)
+        FreeCAD.setActiveDocument(currentDoc)  
     return obj
 
 class Proxy_importPart:
@@ -418,7 +433,7 @@ class SubElementDifference:
         self.T2 = T2
         self.catergory = classifySubElement( obj1, SE1 )
         self.error1 = 0 #not used for 'vertex','sphericalSurface','other'
-        if self.catergory == 'circularEdge':
+        if self.catergory in ['circularEdge','plane','linearEdge']:
             v1 = self.getAxis( obj1, SE1 )
             v2 = self.getAxis( obj2, SE2 )
             self.error1 = 1 - dot( T1.unRotate(v1), T2.unRotate(v2) )

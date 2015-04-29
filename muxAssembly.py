@@ -11,6 +11,15 @@ class Proxy_muxAssemblyObj:
     def execute(self, shape):
         pass
 
+def muxObjects( doc ):
+    'combines all the imported shape object in doc into one shape'
+    faces = []
+    for obj in doc.Objects:
+        if 'importPart' in obj.Content:
+            debugPrint(3, '  - parsing "%s"' % (obj.Name))
+            faces = faces + obj.Shape.Faces
+    return Part.makeShell(faces)
+
 
 class MuxAssemblyCommand:
     def Activated(self):
@@ -28,13 +37,7 @@ class MuxAssemblyCommand:
         else:
             muxedObj = checkResult[0]
             debugPrint(2, 'updating assembly mux "%s"' % (muxedObj.Name))
-        #m.Shape =Part.makeShell( App.ActiveDocument.rod_12mm_import01.Shape.Faces + App.ActiveDocument.rod_12mm_import02.Shape.Faces + App.ActiveDocument.table_import01.Shape.Faces)
-        faces = []
-        for obj in FreeCAD.ActiveDocument.Objects:
-            if 'importPart' in obj.Content:
-                debugPrint(3, '  - parsing "%s"' % (obj.Name))
-                faces = faces + obj.Shape.Faces
-        muxedObj.Shape =  Part.makeSolid(Part.makeShell(faces))
+        muxedObj.Shape = muxObjects( FreeCAD.ActiveDocument )
         FreeCADGui.ActiveDocument.getObject(muxedObj.Name).Visibility = False
         FreeCAD.ActiveDocument.recompute()
 
