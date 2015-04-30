@@ -44,6 +44,14 @@ Once installed, use git to upgrade to the latest version through BASH as follows
 
   $ git pull
 
+Ubuntu
+++++++
+
+  1.  Add **ppa:freecad-community/ppa** to your software sources [What are PPAs and how do I use them?](http://askubuntu.com/questions/4983/what-are-ppas-and-how-do-i-use-them/5102#5102%29)
+  2.  Update your software sources the regular way (automatic with the Ubuntu software center)
+  3.  Install the [freecad-extras-assembly2](apt://freecad-extras-assembly2) (apt link) package.
+
+
 Windows Installation Instructions
 ---------------------------------
 
