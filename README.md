@@ -29,21 +29,25 @@ To use this workbench clone this git repository under your FreeCAD MyScripts dir
 On a Linux Debian based system such as Ubuntu, installation can be done through BASH as follows
 
   $ sudo apt-get install git python-numpy python-pyside
+  
   $ mkdir ~/.FreeCAD/Mod
+  
   $ cd ~/.FreeCAD/Mod
+  
   $ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
 
 FreeCAD you will now have a new workbench-entry called "Assembly 2".
 Once installed, use git to upgrade to the latest version through BASH as follows
 
   $ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
+  
   $ git pull
 
 Alternatilvely, on an *Ubuntu* system the freecad-extras PPA can be used:
 
   1.  Add **ppa:freecad-community/ppa** to your software sources ([What are PPAs and how do I use them?](http://askubuntu.com/questions/4983/what-are-ppas-and-how-do-i-use-them/5102#5102%29))
-  2.  Update your software sources the regular way (automatic with the Ubuntu software center)
-  3.  Install the [freecad-extras-assembly2](<apt://freecad-extras-assembly2>) (apt link) package.
+  2.  sudo apt-get update
+  3.  sudo apt-get install freecad-extras-assembly2
 
 
 Windows Installation Instructions
