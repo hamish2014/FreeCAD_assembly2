@@ -43,7 +43,7 @@ Once installed, use git to upgrade to the latest version through BASH as follows
   
   $ git pull
 
-Alternatilvely, on an *Ubuntu* system the freecad-extras PPA can be used:
+Alternatilvely, on an *Ubuntu* system the freecad-community PPA can be used:
 
   1.  Add **ppa:freecad-community/ppa** to your software sources ([What are PPAs and how do I use them?](http://askubuntu.com/questions/4983/what-are-ppas-and-how-do-i-use-them/5102#5102%29))
   2.  sudo apt-get update
