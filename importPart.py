@@ -54,9 +54,14 @@ def importPart( filename, partName=None ):
         obj = FreeCAD.ActiveDocument.getObject(partName)
         prevPlacement = obj.Placement
         importUpdateConstraintSubobjects( FreeCAD.ActiveDocument, obj, obj_to_copy )
-    else:
-        partName = findUnusedObjectName( doc.Label + '_import' )
-        obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
+    else:        
+        partName = findUnusedObjectName( doc.Label + '_' )
+        try:
+            obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
+        except UnicodeEncodeError:
+            safeName = findUnusedObjectName('import_')
+            obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", safeName)
+            obj.Label = findUnusedLabel( doc.Label + '_' )
         obj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = filename
         obj.addProperty("App::PropertyFloat", "timeLastImport","importPart")
         obj.setEditorMode("timeLastImport",1)  
@@ -112,10 +117,10 @@ class ImportPartCommand:
             from PySide import QtCore
             self.timer = QtCore.QTimer()
             QtCore.QObject.connect(self.timer, QtCore.SIGNAL("timeout()"), self.GuiViewFit)
-            self.timer.start( 300 ) #0.3 seconds
+            self.timer.start( 200 ) #0.2 seconds
 
     def GuiViewFit(self):
-        FreeCADGui.SendMsgToActiveView("ViewFit") #dont know why this does not work
+        FreeCADGui.SendMsgToActiveView("ViewFit")
         self.timer.stop()
        
     def GetResources(self): 
@@ -182,6 +187,30 @@ class UpdateImportedPartsCommand:
             } 
 FreeCADGui.addCommand('updateImportedPartsCommand', UpdateImportedPartsCommand())
 
+def duplicateImportedPart( part ):
+    nameBase = part.Label
+    while nameBase[-1] in '0123456789' and len(nameBase) > 0:
+        nameBase = nameBase[:-1]
+    try:
+        newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", findUnusedObjectName(nameBase))
+    except UnicodeEncodeError:
+        safeName = findUnusedObjectName('import_')
+        newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", safeName)
+        newObj.Label = findUnusedLabel( nameBase )
+    newObj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = part.sourceFile
+    newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  part.timeLastImport
+    newObj.setEditorMode("timeLastImport",1)  
+    newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = part.fixedPosition
+    newObj.Shape = part.Shape.copy()
+    newObj.ViewObject.Proxy = 0
+    for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
+        if hasattr(newObj.ViewObject, p):
+            setattr(newObj.ViewObject, p, getattr( part.ViewObject, p))
+    newObj.Proxy = Proxy_importPart()
+    newObj.Placement.Base = part.Placement.Base
+    newObj.Placement.Rotation = part.Placement.Rotation
+    return newObj
+
 
 class PartMover:
     def __init__(self, view, obj):
@@ -206,21 +235,7 @@ class PartMover:
             if not info['ShiftDown'] and not info['CtrlDown']:
                 self.removeCallbacks()
             elif info['ShiftDown']: #copy object
-                partName = findUnusedObjectName( self.obj.Name[:self.obj.Name.find('_import') + len('_import')] )
-                newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
-                newObj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = self.obj.sourceFile
-                newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  self.obj.timeLastImport
-                newObj.setEditorMode("timeLastImport",1)  
-                newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = self.obj.fixedPosition
-                newObj.Shape = self.obj.Shape.copy()
-                newObj.ViewObject.Proxy = 0
-                for p in self.obj.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
-                    if hasattr(newObj.ViewObject, p):
-                        setattr(newObj.ViewObject, p, getattr(self.obj.ViewObject, p))
-                newObj.Proxy = Proxy_importPart()
-                newObj.Placement.Base = self.obj.Placement.Base
-                newObj.Placement.Rotation = self.obj.Placement.Rotation
-                self.obj = newObj
+                self.obj = duplicateImportedPart( self.obj ) 
                 self.copiedObject = True
             elif info['CtrlDown']:
                 azi   =  ( numpy.random.rand() - 0.5 )*numpy.pi*2
@@ -273,22 +288,7 @@ class DuplicatePartCommand:
     def Activated(self):
         selection = FreeCADGui.Selection.getSelectionEx()
         if len(selection) == 1:
-            obj = selection[0].Object
-            partName = findUnusedObjectName( obj.Name[:obj.Name.find('_import') + len('_import')] )
-            newObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
-            newObj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = obj.sourceFile
-            newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  obj.timeLastImport
-            newObj.setEditorMode("timeLastImport",1)  
-            newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = obj.fixedPosition
-            newObj.Shape = obj.Shape.copy()
-            newObj.ViewObject.Proxy = 0
-            for p in obj.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
-                if hasattr(newObj.ViewObject, p):
-                    setattr(newObj.ViewObject, p, getattr(obj.ViewObject, p))
-            newObj.Proxy = Proxy_importPart()
-            newObj.Placement.Base = obj.Placement.Base
-            newObj.Placement.Rotation = obj.Placement.Rotation
-            PartMover(  FreeCADGui.activeDocument().activeView(), newObj )
+            PartMover(  FreeCADGui.activeDocument().activeView(), duplicateImportedPart( selection[0].Object ) )
 
     def GetResources(self): 
         return {

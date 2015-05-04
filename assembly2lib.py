@@ -59,10 +59,20 @@ class SelectionRecord:
 def findUnusedObjectName(base, counterStart=1, fmt='%02i'):
     i = counterStart
     objName = '%s%s' % (base, fmt%i)
-    while hasattr(FreeCAD.ActiveDocument, objName):
+    usedNames = [ obj.Name for obj in FreeCAD.ActiveDocument.Objects ]
+    while objName in usedNames:
         i = i + 1
         objName = '%s%s' % (base, fmt%i)
     return objName
+
+def findUnusedLabel(base, counterStart=1, fmt='%02i'):
+    i = counterStart
+    label = '%s%s' % (base, fmt%i)
+    usedLabels = [ obj.Label for obj in FreeCAD.ActiveDocument.Objects ]
+    while label in usedLabels:
+        i = i + 1
+        label = '%s%s' % (base, fmt%i)
+    return label
 
 class ConstraintObjectProxy:
     def execute(self, obj):
