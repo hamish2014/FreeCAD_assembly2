@@ -155,13 +155,14 @@ FreeCADGui.addCommand('assembly2SolveConstraints', Assembly2SolveConstraintsComm
 
 
 if __name__ == '__main__':
-    import glob, argparse
+    import glob, argparse, time
     print('Testing assembly 2 solver on assemblies under tests/')
     parser = argparse.ArgumentParser(description="Test assembly 2 solver.")
     parser.add_argument('--lastTestCaseOnly', action='store_true')
     args = parser.parse_args()
 
     debugPrint.level = 4
+    t_start = time.time()
     testFiles = sorted(glob.glob('tests/*.fcstd')) 
     if args.lastTestCaseOnly:
         testFiles = testFiles[-1:]
@@ -173,4 +174,4 @@ if __name__ == '__main__':
             print('Failed on %s' % testFile)
             exit()
         print('\n\n\n')
-    print('All %i tests passed' % len(testFiles))
+    print('All %i tests passed, time taken %3.2fs' % (len(testFiles), time.time() - t_start))
