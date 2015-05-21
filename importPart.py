@@ -200,7 +200,7 @@ def duplicateImportedPart( part ):
     newObj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = part.sourceFile
     newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  part.timeLastImport
     newObj.setEditorMode("timeLastImport",1)  
-    newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = part.fixedPosition
+    newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = False# part.fixedPosition
     newObj.Shape = part.Shape.copy()
     newObj.ViewObject.Proxy = 0
     for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
