@@ -269,7 +269,7 @@ class PartMoverSelectionObserver:
 
 class MovePartCommand:
     def Activated(self):
-        selection = FreeCADGui.Selection.getSelectionEx()
+        selection = [s for s in FreeCADGui.Selection.getSelectionEx() if s.Document == FreeCAD.ActiveDocument ]
         if len(selection) == 1:
             PartMover(  FreeCADGui.activeDocument().activeView(), selection[0].Object )
         else:
@@ -286,7 +286,7 @@ FreeCADGui.addCommand('assembly2_movePart', MovePartCommand())
 
 class DuplicatePartCommand:
     def Activated(self):
-        selection = FreeCADGui.Selection.getSelectionEx()
+        selection = [s for s in FreeCADGui.Selection.getSelectionEx() if s.Document == FreeCAD.ActiveDocument ]
         if len(selection) == 1:
             PartMover(  FreeCADGui.activeDocument().activeView(), duplicateImportedPart( selection[0].Object ) )
 
@@ -303,7 +303,7 @@ FreeCADGui.addCommand('assembly2_duplicatePart', DuplicatePartCommand())
 
 class EditPartCommand:
     def Activated(self):
-        selection = FreeCADGui.Selection.getSelection()
+        selection = [s for s in FreeCADGui.Selection.getSelection() if s.Document == FreeCAD.ActiveDocument ]
         obj = selection[0]
         docs = FreeCAD.listDocuments().values()
         docFilenames = [ d.FileName for d in docs ]
@@ -324,7 +324,7 @@ FreeCADGui.addCommand('assembly2_editImportedPart', EditPartCommand())
 
 class ForkPartCommand:
     def Activated(self):
-        selection = FreeCADGui.Selection.getSelection()
+        selection = [s for s in FreeCADGui.Selection.getSelection() if s.Document == FreeCAD.ActiveDocument ]
         obj = selection[0]
         filename, filetype = QtGui.QFileDialog.getSaveFileName( 
             QtGui.qApp.activeWindow(),
@@ -351,24 +351,24 @@ FreeCADGui.addCommand('assembly2_forkImportedPart', ForkPartCommand())
 
 class DeletePartsConstraints:
     def Activated(self):
-        selection = FreeCADGui.Selection.getSelection()
-        if len(selection) == 1:
-            part = selection[0]
-            deleteList = []
-            for c in FreeCAD.ActiveDocument.Objects:
-                if 'ConstraintInfo' in c.Content:
-                    if part.Name in [ c.Object1, c.Object2 ]:
-                        deleteList.append(c)
-            if len(deleteList) == 0:
-                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Info", 'No constraints refer to "%s"' % part.Name)
-            else:
-                flags = QtGui.QMessageBox.StandardButton.Yes | QtGui.QMessageBox.StandardButton.No
-                msg = "Delete %s's constraint(s):\n  - %s?" % ( part.Name, '\n  - '.join( c.Name for c in deleteList))
-                response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Delete constraints?", msg, flags )
-                if response == QtGui.QMessageBox.Yes:
-                    for c in deleteList:
-                        FreeCAD.Console.PrintError("removing constraint %s" % c.Name)
-                        FreeCAD.ActiveDocument.removeObject(c.Name)
+        selection = [s for s in FreeCADGui.Selection.getSelection() if s.Document == FreeCAD.ActiveDocument ]
+        #if len(selection) == 1: not required as this check is done in initGui
+        part = selection[0]
+        deleteList = []
+        for c in FreeCAD.ActiveDocument.Objects:
+            if 'ConstraintInfo' in c.Content:
+                if part.Name in [ c.Object1, c.Object2 ]:
+                    deleteList.append(c)
+        if len(deleteList) == 0:
+            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Info", 'No constraints refer to "%s"' % part.Name)
+        else:
+            flags = QtGui.QMessageBox.StandardButton.Yes | QtGui.QMessageBox.StandardButton.No
+            msg = "Delete %s's constraint(s):\n  - %s?" % ( part.Name, '\n  - '.join( c.Name for c in deleteList))
+            response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Delete constraints?", msg, flags )
+            if response == QtGui.QMessageBox.Yes:
+                for c in deleteList:
+                    FreeCAD.Console.PrintError("removing constraint %s" % c.Name)
+                    FreeCAD.ActiveDocument.removeObject(c.Name)
     def GetResources(self): 
         return { 
             'MenuText': 'delete constraints', 
