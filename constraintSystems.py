@@ -86,6 +86,7 @@ class ConstraintSystemPrototype:
             return True
         return self.parentSystem.containtsObject( objName )
 
+
     def solveConstraintEq( self ):
         tol = self.solveConstraintEq_tol
         PLO = 0 if not self.childSystem else 1 #print level offset
@@ -270,6 +271,7 @@ class ConstraintSystemPrototype:
         if self.generateDegreesOfFreedomNumerically_case == 0:
             return 
         raise NotImplementedError
+
     
 
 
@@ -837,6 +839,7 @@ class VertexUnion(ConstraintSystemPrototype):
                 if debugPrint.level >= 3: dp('  VertexUnion Logic: %s removing all 3 movement degrees of freedom' % objName )
                 self.degreesOfFreedom = [ d for d in D if not d in matches ] 
                 success = True
+                break
         return success
         #if not success:
         #    raise NotImplementedError, 'Panic! PlaneOffsetUnion Logic not programmed for the reduction of degrees of freedom of:\n%s' % '\n'.join(d.str('  ') for d in dofs )
@@ -844,4 +847,38 @@ class VertexUnion(ConstraintSystemPrototype):
         
     def updateDegreesOfFreedomAnalytically( self):
         pass
+
+
+
+class LockRelativeAxialRotationUnion(ConstraintSystemPrototype):
+    label = 'LockRelativeAxialRotationUnion'
+
+    def init2(self):
+        if self.constraintObj.Type == 'axial':
+            sys = self.parentSystem.parentSystem
+        elif self.constraintObj.Type == 'circularEdge':
+            sys = self.parentSystem.parentSystem.parentSystem
+        assert isinstance(sys.sys2, FreeObjectSystem)
+        self.objectToLock = sys.sys2.objName
+
+    def constraintEq_value( self, X ):
+        return 0
+
+    def generateDegreesOfFreedomAnalytically( self ):
+        #only works for simple case described below
+        D = self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom
+        matches = [d for d in D if d.objName == self.objectToLock and isinstance(d,AxisRotationDegreeOfFreedom ) ]
+        if len(matches) == 1:
+            if debugPrint.level >= 4: dp('%s Logic: removing axis rotation dof of %s' % (self.label, self.objectToLock))
+            self.degreesOfFreedom = [ d for d in D if not d in matches ] 
+        else:
+            self.degreesOfFreedom = D
+            if debugPrint.level >= 3: dp('%s Logic Failure, unable to remove relative rotation degree of freedom' % (self.label))
+        return True
+
+
+        
+    def updateDegreesOfFreedomAnalytically( self):
+        pass
+
 

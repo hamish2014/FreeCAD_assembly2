@@ -143,6 +143,10 @@ def updateObjectProperties( c ):
         c.removeProperty('offset')
         c.addProperty('App::PropertyDistance','offset',"ConstraintInfo")
         c.offset = '%f mm' % v
+    if c.Type == 'axial' or c.Type == 'circularEdge':
+        if not hasattr(c, 'lockRotation'):
+            debugPrint(3,'updating properties of %s, to add lockRotation (default=false)' % c.Name )
+            c.addProperty("App::PropertyBool","lockRotation","ConstraintInfo")
     
 def getObjectFaceFromName( obj, faceName ):
     assert faceName.startswith('Face')

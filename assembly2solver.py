@@ -20,7 +20,7 @@ if __name__ == '__main__': #then testing library.
 from assembly2lib import *
 from assembly2lib import __dir__ #variables not imported with * directive ...
 from lib3D import *
-import numpy
+import time, numpy
 from numpy import pi, inf
 from numpy.linalg import norm
 from solverLib import *
@@ -60,6 +60,7 @@ def findBaseObject( doc, objectNames  ):
 def solveConstraints( doc ):
     if not constraintsObjectsAllExist(doc):
         return
+    T_start = time.time()
     updateOldStyleConstraintProperties(doc)
     constraintObjectQue = [ obj for obj in doc.Objects if 'ConstraintInfo' in obj.Content ]
     #doc.Objects already in tree order so no additional sorting / order checking required for constraints.
@@ -89,10 +90,12 @@ def solveConstraints( doc ):
             elif constraintObj.Type == 'axial':
                 constraintSystem = AxisAlignmentUnion(constraintSystem,  *cArgs, constraintValue = constraintObj.directionConstraint)
                 constraintSystem =  AxisDistanceUnion(constraintSystem,  *cArgs, constraintValue = 0)
+                if constraintObj.lockRotation: constraintSystem =  LockRelativeAxialRotationUnion(constraintSystem,  *cArgs, constraintValue = 0)
             elif constraintObj.Type == 'circularEdge':
                 constraintSystem = AxisAlignmentUnion(constraintSystem,  *cArgs, constraintValue=constraintObj.directionConstraint)
                 constraintSystem = AxisDistanceUnion(constraintSystem,  *cArgs, constraintValue=0)
                 constraintSystem = PlaneOffsetUnion(constraintSystem,  *cArgs, constraintValue=constraintObj.offset.Value)
+                if constraintObj.lockRotation: constraintSystem =  LockRelativeAxialRotationUnion(constraintSystem,  *cArgs, constraintValue = 0)
             elif constraintObj.Type == 'sphericalSurface':
                 constraintSystem = VertexUnion(constraintSystem,  *cArgs, constraintValue=0)
             else:
@@ -110,6 +113,7 @@ def solveConstraints( doc ):
     if solved:
         debugPrint(4,'placement X %s' % constraintSystem.variableManager.X )
         variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
+        debugPrint(2,'Constraint system solved in %2.2fs; resulting system has %i degrees-of-freedom' % (time.time()-T_start, len( constraintSystem.degreesOfFreedom)))
     elif QtGui.qApp <> None: #i.e. GUI active
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
         flags = QtGui.QMessageBox.StandardButton.Yes 
