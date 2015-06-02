@@ -5,18 +5,10 @@ from assembly2lib import *
 try:
     from dimensioning import getDrawingPageGUIVars, DimensioningProcessTracker
     import previewDimension
-    dimensioning = DimensioningProcessTracker()
+    dimensioningTracker = DimensioningProcessTracker()
     drawing_dimensioning_installed = True
 except ImportError:
     drawing_dimensioning_installed = False
-
-strokeWidth = 0.4
-
-fontSize = 4.0
-fontColor = 'rgb(0,0,0)'
-fontPadding = 1.6
-rowHeight = fontSize + 2*fontPadding
-
 
 class PartsList:
     def __init__(self):
@@ -27,7 +19,13 @@ class PartsList:
             self.entries[index].count = self.entries[index].count + 1
         except ValueError:
             self.entries.append(PartListEntry( obj ))
-    def svg(self, x, y, svgTag='g', svgParms=''):
+    def svg(self, x, y, columns,
+            strokeWidth = 0.4,
+            fontSize = 4.0,
+            fontColor = 'rgb(0,0,0)',
+            fontPadding = 1.6,
+            ):
+        rowHeight = fontSize + 2*fontPadding
         XML_body = []
         def addLine(x1,y1,x2,y2):
             XML_body.append('<line x1="%f" y1="%f" x2="%f" y2="%f" style="stroke:rgb(0,0,0);stroke-width:%1.2f" />' % (x1, y1, x2, y2, strokeWidth))
@@ -50,7 +48,7 @@ class PartsList:
             for j, entry in enumerate(self.entries):
                 addText( j+1, i,  c.entryFor(j, entry))
 
-        XML = '''<%s  %s > %s </%s> ''' % ( svgTag, svgParms, '\n'.join(XML_body), svgTag )
+        XML = '''<g> %s </g>''' % ('\n'.join(XML_body) )
         debugPrint(4, 'partList.XML %s' % XML)
         return XML
 
@@ -70,20 +68,30 @@ class PartListColumn:
         self.width = width
         self.entryFor = entryFor
 
-columns = [
-    PartListColumn('part', 20, lambda ind,entry: '%i' % (ind+1)),
-    PartListColumn('sourceFile', 80, lambda ind,entry: '%s' % os.path.basename(entry.sourceFile).replace('.fcstd','')),
-    PartListColumn('quantity', 40, lambda ind,entry: '%i' % entry.count),
-    ]
-        
+def partsListSvg(x,y):
+    d = dimensioningTracker
+    columns = [
+        PartListColumn(d.column_part_label,       d.column_part_width,       lambda ind,entry: '%i' % (ind+1)),
+        PartListColumn(d.column_sourceFile_label, d.column_sourceFile_width, lambda ind,entry: '%s' % os.path.basename(entry.sourceFile).replace('.fcstd','')),
+        PartListColumn(d.column_quantity_label,   d.column_quantity_width,   lambda ind,entry: '%i' % entry.count),
+        ]
+    return dimensioningTracker.partsList.svg( 
+        x, y,
+        columns,
+        strokeWidth = d.strokeWidth,
+        fontSize = d.fontSize,
+        fontColor = d.fontColor,
+        fontPadding = d.fontPadding
+        )
 
 def clickEvent( x, y):
-    viewName = findUnusedObjectName('dimPartsList')
-    XML = dimensioning.partsList.svg(x,y)
-    return viewName, XML
+    FreeCADGui.Control.closeDialog()
+    return findUnusedObjectName('dimPartsList'), partsListSvg(x,y)
 
 def hoverEvent( x, y):
-    return dimensioning.partsList.svg( x, y,svgTag=dimensioning.svg_preview_KWs['svgTag'], svgParms=dimensioning.svg_preview_KWs['svgParms'] )
+    prefix = '<svg width="%i" height="%i">' % (dimensioningTracker.drawingVars.width, dimensioningTracker.drawingVars.height)
+    suffix = '</svg>'
+    return prefix + partsListSvg(x, y) + suffix
 
 class AddPartsList:
     def Activated(self):
@@ -91,13 +99,16 @@ class AddPartsList:
             QtGui.QMessageBox.critical( QtGui.qApp.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning/network)' )
             return
         V = getDrawingPageGUIVars() #needs to be done before dialog show, else Qt active is dialog and not freecads
-        dimensioning.activate( V )
+        dimensioningTracker.activate( V )
         P = PartsList()
         for obj in FreeCAD.ActiveDocument.Objects:
             if 'importPart' in obj.Content:
                 debugPrint(3, 'adding %s to parts list' % obj.Name)
                 P.addObject(obj)
-        dimensioning.partsList = P
+        dimensioningTracker.partsList = P
+        
+        dimensioningTracker.taskPanelDialog =  PartsListTaskDialog()
+        FreeCADGui.Control.showDialog( dimensioningTracker.taskPanelDialog )
         previewDimension.initializePreview( V, clickEvent, hoverEvent )
         
     def GetResources(self): 
@@ -111,3 +122,70 @@ class AddPartsList:
 FreeCADGui.addCommand('addPartsList', AddPartsList())
 
 
+class PartsListTaskDialog:
+    def __init__(self):
+        from assembly2lib import __dir__
+        self.form = FreeCADGui.PySideUic.loadUi( os.path.join(__dir__, 'partsList.ui') )
+        self.form.setWindowIcon(QtGui.QIcon( os.path.join( __dir__, 'partsList.svg' ) ) )
+        self.setIntialValues()
+        self.getValues()
+        for groupBox in self.form.children():
+            for w in groupBox.children():
+                if hasattr(w, 'valueChanged'):
+                    w.valueChanged.connect( self.getValues )
+                if isinstance(w, QtGui.QLineEdit):
+                    w.textChanged.connect( self.getValues ) 
+        self.form.pushButton_set_as_default.clicked.connect( self.setDefaults )
+
+    def setIntialValues(self):
+        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2/partsList")
+        form = self.form
+        form.doubleSpinBox_column_part_width.setValue(         parms.GetFloat('column_part_width', 20) )
+        form.doubleSpinBox_column_sourceFile_width.setValue(   parms.GetFloat('column_sourceFile_width', 80) )
+        form.doubleSpinBox_column_quantity_width.setValue(     parms.GetFloat('column_quantity_width', 40)  )
+        form.lineEdit_column_part_label.setText(               parms.GetString('column_part_label', 'part #'))
+        form.lineEdit_column_sourceFile_label.setText(         parms.GetString('column_sourceFile_label', 'source file'))
+        form.lineEdit_column_quantity_label.setText(           parms.GetString('column_quantity_label', 'quantity'))
+        form.doubleSpinBox_lineWidth.setValue(                 parms.GetFloat('lineWidth', 0.4) )
+        form.doubleSpinBox_fontSize.setValue(                  parms.GetFloat('fontSize', 4.0) )
+        form.lineEdit_fontColor.setText(                       parms.GetString('fontColor','rgb(0,0,0)') )
+        form.doubleSpinBox_padding.setValue(                   parms.GetFloat('padding', 1.5))
+
+    def setDefaults(self):
+        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2/partsList")
+        form = self.form        
+        parms.SetFloat('column_part_width',       form.doubleSpinBox_column_part_width.value()       )
+        parms.SetFloat('column_sourceFile_width', form.doubleSpinBox_column_sourceFile_width.value() )
+        parms.SetFloat('column_quantity_width',   form.doubleSpinBox_column_quantity_width.value()   )
+        parms.SetString('column_part_label',      form.lineEdit_column_part_label.text()             )
+        parms.SetString('column_sourceFile_label',form.lineEdit_column_sourceFile_label.text()       ) 
+        parms.SetString('column_quantity_label',  form.lineEdit_column_quantity_label.text()         )
+        parms.SetFloat('lineWidth',               form.doubleSpinBox_lineWidth.value()               )
+        parms.SetFloat('fontSize',                form.doubleSpinBox_fontSize.value()                )
+        parms.SetString('fontColor',              form.lineEdit_fontColor.text()                     )
+        parms.SetFloat('padding',                 form.doubleSpinBox_padding.setValue()              )
+
+
+    def getValues(self, notUsed=None):
+        d = dimensioningTracker
+        form = self.form
+        d.column_part_width =       form.doubleSpinBox_column_part_width.value()
+        d.column_sourceFile_width = form.doubleSpinBox_column_sourceFile_width.value()
+        d.column_quantity_width =   form.doubleSpinBox_column_quantity_width.value()
+
+        d.column_part_label =       form.lineEdit_column_part_label.text()
+        d.column_sourceFile_label = form.lineEdit_column_sourceFile_label.text()
+        d.column_quantity_label =   form.lineEdit_column_quantity_label.text()
+
+        d.fontSize = form.doubleSpinBox_fontSize.value()
+        d.fontColor = form.lineEdit_fontColor.text()
+
+        d.fontPadding = form.doubleSpinBox_padding.value()
+        d.strokeWidth =  form.doubleSpinBox_lineWidth.value()
+
+    def accept(self):
+        pass #need to figure out how to remove this button...
+    
+    def reject(self):
+        previewDimension.removePreviewGraphicItems( recomputeActiveDocument = True )
+        FreeCADGui.Control.closeDialog()
