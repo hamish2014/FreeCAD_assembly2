@@ -84,14 +84,9 @@ def partsListSvg(x,y):
         fontPadding = d.fontPadding
         )
 
-def clickEvent( x, y):
+def clickHandler( x, y):
     FreeCADGui.Control.closeDialog()
-    return findUnusedObjectName('dimPartsList'), partsListSvg(x,y)
-
-def hoverEvent( x, y):
-    prefix = '<svg width="%i" height="%i">' % (dimensioningTracker.drawingVars.width, dimensioningTracker.drawingVars.height)
-    suffix = '</svg>'
-    return prefix + partsListSvg(x, y) + suffix
+    return 'createDimension:%s' % findUnusedObjectName('dimPartsList')
 
 class AddPartsList:
     def Activated(self):
@@ -109,7 +104,7 @@ class AddPartsList:
         
         dimensioningTracker.taskPanelDialog =  PartsListTaskDialog()
         FreeCADGui.Control.showDialog( dimensioningTracker.taskPanelDialog )
-        previewDimension.initializePreview( V, clickEvent, hoverEvent )
+        previewDimension.initializePreview( V, partsListSvg, clickHandler )
         
     def GetResources(self): 
         tip = 'create a parts list from the objects imported using the assembly 2 workbench'
