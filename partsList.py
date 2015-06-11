@@ -104,7 +104,7 @@ class AddPartsList:
         
         dimensioningTracker.taskPanelDialog =  PartsListTaskDialog()
         FreeCADGui.Control.showDialog( dimensioningTracker.taskPanelDialog )
-        previewDimension.initializePreview( V, partsListSvg, clickHandler )
+        previewDimension.initializePreview( dimensioningTracker, partsListSvg, clickHandler )
         
     def GetResources(self): 
         tip = 'create a parts list from the objects imported using the assembly 2 workbench'
