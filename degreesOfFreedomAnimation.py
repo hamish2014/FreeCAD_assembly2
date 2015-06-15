@@ -38,9 +38,12 @@ class AnimateDegreesOfFreedomTaskPanel:
     def _startAnimation(self, D):
         frames_per_DOF =  self.form.spinBox_frames_per_DOF.value()
         ms_per_frame = self.form.spinBox_ms_per_frame.value()
+        rotationAmplification = self.form.doubleSpinBox_rotMag.value()
+        linearDispAmplification = self.form.doubleSpinBox_linMag.value()
         self.constraintSystem.degreesOfFreedom = D
         if len(self.constraintSystem.degreesOfFreedom) > 0:
-            moduleVars['animation'] = AnimateDOF(self.constraintSystem, ms_per_frame, frames_per_DOF)#required to protect the QTimer from the garbage collector
+            moduleVars['animation'] = AnimateDOF(self.constraintSystem, ms_per_frame, frames_per_DOF, rotationAmplification, linearDispAmplification)
+            #moduleVars['animation'] assignment required to protect the QTimer from the garbage collector
         else:
             FreeCAD.Console.PrintError('Aborting Animation! Constraint system has no degrees of freedom.')
             FreeCADGui.Control.closeDialog()
@@ -69,11 +72,13 @@ class AnimateDegreesOfFreedomTaskPanel:
 
 class AnimateDOF(object):
     'based on http://freecad-tutorial.blogspot.com/2014/06/piston-conrod-animation.html'
-    def __init__(self, constraintSystem, tick=50, framesPerDOF=40 ):
+    def __init__(self, constraintSystem, tick=50, framesPerDOF=40, rotationAmplification=1.0, linearDispAmplification=1.0):
         self.constraintSystem = constraintSystem
         self.Y0 = numpy.array([ d.getValue() for d in constraintSystem.degreesOfFreedom ])
         self.X_before_animation = constraintSystem.variableManager.X.copy()
         self.framesPerDOF = framesPerDOF
+        self.rotationAmplification = rotationAmplification
+        self.linearDispAmplification = linearDispAmplification
         debugPrint(2,'beginning degrees of freedom animation')
         self.count = 0
         self.dof_count = 0
@@ -85,10 +90,10 @@ class AnimateDOF(object):
     def updateAmplitude( self) :
         D = self.constraintSystem.degreesOfFreedom
         if D[self.dof_count].rotational():
-            self.amplitude = 1.0
+            self.amplitude = 1.0 * self.rotationAmplification
         else:
             obj = FreeCAD.ActiveDocument.getObject( D[self.dof_count].objName )
-            self.amplitude = obj.Shape.BoundBox.DiagonalLength / 2
+            self.amplitude = obj.Shape.BoundBox.DiagonalLength / 2 * self.linearDispAmplification
 
     def renderFrame(self):
         try:
