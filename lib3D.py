@@ -467,6 +467,16 @@ def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector2( v, v_
     return axis, angle
 
 
+def gram_schmidt_proj(u,v):
+    return dot(v,u)/dot(u,u)*u
+def gram_schmidt_orthonormalization( v1, v2, v3 ):
+    'https://en.wikipedia.org/wiki/Gram%E2%80%93Schmidt_process'
+    u1 = v1
+    u2 = v2 - gram_schmidt_proj(u1,v2)
+    u3 = v3 - gram_schmidt_proj(u1,v3) - gram_schmidt_proj(u2,v3)
+    return normalize(u1), normalize(u2), normalize(u3)
+
+
 
 if __name__ == '__main__':
     print('Testing lib3D.py')
@@ -700,7 +710,7 @@ if __name__ == '__main__':
         print('test case %i, distance old %f, distance new %f, diff %e' % (i+1, d_old, d_new, abs(d_old - d_new)))
 
 
-    print('investigating trigonmetric function precion loss')
+    print('investigating trigonmetric function precission loss')
     angles = pi*(rand(12)-0.5)
     for angle in angles:
         print('   arccos(  cos(angle) ) - angle    %1.1e' % abs( arccos(  cos(angle) ) * numpy.sign(angle) - angle ) )
@@ -708,3 +718,22 @@ if __name__ == '__main__':
         print('   arctan2( sin(angle), cos(angle)) - angle    %1.1e' % abs( arctan2( sin(angle), cos(angle)) - angle ) )
     for angle in angles:
         print('   1  - (sin(angle)**2 + cos(angle)**2)     %1.1e' % abs( 1  - (sin(angle)**2 + cos(angle)**2 ) ) )
+
+
+    print('\ntesting gram_schmidt_orthonormalization')
+    testCases = [ [ numpy.array([1.0, 0.0, 0.0]), numpy.array([1.0,1.0,0]), numpy.array([1.0, 1.0, 1.0]) ] ]
+    testCases = testCases + [ [rand(3)-0.5,rand(3)-0.5,rand(3)-0.5] for i in range(3) ]
+    for vec1, vec2, vec3 in testCases:
+        u1,u2,u3 = gram_schmidt_orthonormalization(vec1, vec2, vec3)
+        U = numpy.array([u1,u2,u3])
+        W =  dot(U, U.transpose())
+        error = norm(W - numpy.eye(3)) 
+        if error > 10**-9:
+            print('FAILURE for Case:')
+            print('   ', vec1, vec2, vec3)
+            print('U:')
+            prettyPrintArray(U, '  ', '%1.2f')
+            print('U U^T:')
+            prettyPrintArray( W, '  ', '%1.2f' )
+            raise ValueError, 'gram_schmidt_orthonormalization test failed, error %e > 10**-9' % error
+    print('..passed')

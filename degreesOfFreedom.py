@@ -1,3 +1,10 @@
+if __name__ == '__main__': #testomg.
+    import sys
+    sys.path.append('/usr/lib/freecad/lib/') #path to FreeCAD library on Linux
+    import FreeCADGui
+    assert not hasattr(FreeCADGui, 'addCommand')
+    FreeCADGui.addCommand = lambda x,y: 0
+
 from lib3D import *
 import numpy
 
@@ -83,11 +90,13 @@ class AxisRotationDegreeOfFreedom:
                 print('NOTE: checking AxisRotationDegreeOfFreedom self.R_to_align_axis')
                 if norm(  dotProduct(self.R_to_align_axis, axis_r) - axis ) > 10**-12:
                     raise ValueError, " dotProduct(self.R_to_align_axis, axis_r) - axis ) [%e] > 10**-12" % norm(  dotProduct(self.R_to_align_axis, axis_r) - axis )
-            self.x_ref_r, self.y_ref_r,  =  plane_degrees_of_freedom( axis_r )
+            
+            if not hasattr(self, 'x_ref_r'):
+                self.x_ref_r, self.y_ref_r  =  plane_degrees_of_freedom( axis_r )
+            else: #use gram_schmidt_orthonormalization ; import for case where axis close to z-axis, where numerical noise effects the azimuth angle used to generate plane DOF...
+                notUsed, self.x_ref_r, self.y_ref_r = gram_schmidt_orthonormalization( axis_r,  self.x_ref_r, self.y_ref_r) #still getting wonky rotations :(
             self.x_ref = dotProduct(self.R_to_align_axis, self.x_ref_r) 
             self.y_ref = dotProduct(self.R_to_align_axis, self.y_ref_r) 
-        #TO DO, change complete regeneration for numpy.array_equal( self.axis, axis ), to minor axis adjustment using rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector
-        # import for case where axis close to z-axis, where numerical noise effects the azimuth angle used to generate plane_degrees_of_freedom...
 
     def determine_R_about_axis(self, R_effective, checkAnswer=True, tol=10**-12): #not used anymore
         'determine R_about_axis so that R_effective = R_about_axis * R_to_align_axis'
@@ -150,10 +159,9 @@ class AxisRotationDegreeOfFreedom:
 
 if __name__ == '__main__':
     from numpy.random import rand
+    import sys
     from variableManager import VariableManager
     print('Testing degrees-of-freedom library')
-    import sys
-    sys.path.append('/usr/lib/freecad/lib/') #path to FreeCAD library on Linux
 
     print('creating test FreeCAD document, constraining a single Cube')
     import FreeCAD, Part
