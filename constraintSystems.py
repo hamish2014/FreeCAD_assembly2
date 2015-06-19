@@ -91,7 +91,7 @@ class ConstraintSystemPrototype:
         tol = self.solveConstraintEq_tol
         PLO = 0 if not self.childSystem else 1 #print level offset
         if abs( self.constraintEq_value( self.variableManager.X) ) > tol: #constraint violated
-            self.solveConstraintEq_dofs = [ d for d in self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom ]#if not d.assignedValue ]
+            self.solveConstraintEq_dofs = [ d for d in self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom  if not getattr(d,'locked',False) ]
             if len(self.solveConstraintEq_dofs) == 0: 
                 raise Assembly2SolverError,"%s no degrees-of-freedom to adjust to satify constraints:\n%s" % (self.str(), self.strSystemTree())
             else:
@@ -245,7 +245,7 @@ class ConstraintSystemPrototype:
             yOpt = [ d.getValue() for d in self.solveConstraintEq_dofs ] #values update in solve equation.
             df_dy = GradientApproximatorForwardDifference(self.constraintEq_f)(numpy.array(yOpt))
             #debugPrint(5, '  df_dy == %s' % str(df_dy))
-            self.variableManager.X = X_org
+            self.variableManager.X = X_org.copy()
             if all(df_dy == 0):
                 if debugPrint.level >= 4: dp('  generateDegreesOfFreedomNumerically, all(df_dy == 0), so assuming constraint is reduntant.')
                 self.generateDegreesOfFreedomNumerically_case = 0
@@ -259,11 +259,31 @@ class ConstraintSystemPrototype:
                 elif len(df_dy) - sum(abs(df_dy) < max(abs(df_dy))*1e-6) == 1:
                     if debugPrint.level >= 4: dp('  generateDegreesOfFreedomNumerically, len(df_dy) - sum(abs(df_dy) < max(abs(df_dy))*1e-6) == 1, removing dof with largest gradient')
                     removeInd = list( abs(df_dy) == max(abs(df_dy)) ).index(True)
-                self.generateDegreesOfFreedomNumerically_case = 0
-                if debugPrint.level >= 4: dp('    removing %s' % D[removeInd])
-                self.degreesOfFreedom = [ d for i,d in enumerate(D) if i <> removeInd ]
-                return
-               
+                if removeInd <> None:
+                    self.generateDegreesOfFreedomNumerically_case = 0
+                    if debugPrint.level >= 4: dp('    removing %s' % D[removeInd])
+                    self.degreesOfFreedom = [ d for i,d in enumerate(D) if i <> removeInd ]
+                    return
+                else:
+                     if debugPrint.level >= 4: dp('  generateDegreesOfFreedomNumerically, trivial reductions failed; attempting to determine non-perfect DOF by trail and error.')
+                     active_D = [ d for d, df_dy_i in zip(self.solveConstraintEq_dofs,df_dy) if abs(df_dy_i) > 1e-6 ]
+                     dormant_D = [ d for d, df_dy_i in zip(self.solveConstraintEq_dofs,df_dy) if abs(df_dy_i) <= 1e-6 ]
+                     if debugPrint.level >= 4: dp('    len(active_D) %i, len(dormant_D) %i' % (len(active_D),len((dormant_D))))
+                     self.degreesOfFreedom = [] #prevent coming solve calls from entering this function agoin
+                     self.generateDegreesOfFreedomNumerically_case = 0 # "
+                     for i in range(len(active_D)):
+                         active_D[i].setValue( active_D[i].getValue() + 0.1 ) #delta = 0.1
+                         active_D[i].locked = True
+                         try:
+                             self.solveConstraintEq()
+                         except Assembly2SolverError:
+                             if debugPrint.level >= 4: dp('unable to solve system after the locking the first %i DOFs, therefore passing through %i/%i of active_DOF' % (i+1,i,len(active_D)))
+                             for j in range(i+1):
+                                 active_D[i].locked = False
+                             self.variableManager.X = X_org
+                             self.degreesOfFreedom = active_D[:i] + dormant_D
+                             return 
+
                 
         raise NotImplementedError,'generateDegreesOfFreedomNumerically Logic not programmed for the reduction of degrees of freedom with df_dy=%s, self.solveConstraintEq_dofs:\n%s' % (df_dy,'\n'.join(d.str('  ') for d in self.solveConstraintEq_dofs ))
 

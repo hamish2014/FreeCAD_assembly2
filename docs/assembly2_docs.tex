@@ -14,7 +14,7 @@
 
 \begin{abstract}
 
-Documents for personal use, for keeping tracks of the maths behind the Assembly 2 work bench for FreeCAD~v0.15.
+Documents for personal use to help track of the maths behind the Assembly 2 workbench add-on for FreeCAD~v0.15+.
 
 \end{abstract}
 
@@ -27,9 +27,9 @@ Documents for personal use, for keeping tracks of the maths behind the Assembly 
 
 \section{Solver approach}
 
-Adjust the placement variables (position and rotation variables, 6 for each object) as satisfy all constraints;
-by adding one constraint at a time and adjusting the degrees-of-freedom.
-Ideally, this degrees-of-freedom can be identified, so that they can be adjusted with having to check previous constraints.
+Adjust the placement variables (position and rotation variables, 6 for each object) as to satisfy all constraints.
+Approach entails reducing the systems degrees-of-freedom, one constraint at a time until all constraints are processed.
+Ideally, this degrees-of-freedom can be identified, so that they can be adjusted with having to check/reprocess previous constraints.
 For non-simple systems this is not practical however as there are to many combinations to hard-code.
 
 Therefore a hierarchical constraint system is used.
@@ -89,6 +89,80 @@ which gives
  A \mathbf{v} = [r]
 \end{align}
 then solve for least norm using numpy.linalg.lstsq
+
+
+
+\section{Numerically Reducing the System's Degrees-of-Freedom}
+
+New degrees-of-freedom need to be determined which allow for adjustment without the constraint's equality function, $h$, being violated.
+Therefore $h$ as a function of the current DOF $\mathbf{x}$ needs be satisfied so that
+\begin{equation}
+ h(\mathbf{x}) = 0
+\end{equation}
+
+The DOF of the new system will therefore result in a change of $\mathbf{x}$ ( $\Delta \mathbf{x}$ ) so that
+\begin{equation}
+ h(\mathbf{x} + \Delta \mathbf{x}) = 0
+\end{equation}
+
+\subsection{assuming $h$ is a linear system}
+
+\begin{align}
+    \begin{bmatrix} dh/dx1 & df/dx2 &\dots  \end{bmatrix} \mathbf{x} + c &= 0 \\
+    \mathbf{b} \cdot \mathbf{x} + c &= 0 \label{eq:reduction_dof_linear1}
+\end{align}
+
+DOF therefore need to satisfy
+\begin{align}
+   \mathbf{b} \cdot (\mathbf{x}  + \Delta \mathbf{x}) + c &= 0 \label{eq:reduction_dof_linear2}
+\end{align}   
+leading to (eq  \ref{eq:reduction_dof_linear2}- eq \ref{eq:reduction_dof_linear1})
+\begin{align}
+   \mathbf{b} \cdot \Delta \mathbf{x} &= 0
+\end{align} 
+Therefore any vector orgonal to $\mathbf{b}$ is a degree of freedom.
+   
+\subsection{assuming $h$ is a quatdratic system}
+
+\begin{align}
+    \frac{1}{2} \mathbf{x}^T \mathbf{A} \mathbf{x} + \mathbf{b} \cdot \mathbf{x} + c &= 0 \label{eq:reduction_dof_quad1}
+\end{align}
+The changes in $\mathbf{x}$ are allowed which satisfy
+\begin{align}
+    \frac{1}{2} (\mathbf{x}+\Delta \mathbf{x})^T \mathbf{A} (\mathbf{x}+\Delta \mathbf{x}) + \mathbf{b} \cdot (\mathbf{x}+\Delta \mathbf{x}) + c &= 0 \label{eq:reduction_dof_quad2} \\
+    \frac{1}{2} (\mathbf{x}+\Delta \mathbf{x})^T  ( \mathbf{A} \mathbf{x}+ \mathbf{A} \Delta \mathbf{x}) + \mathbf{b} \cdot (\mathbf{x}+\Delta \mathbf{x}) + c &= 0 \\
+    \frac{1}{2} (\mathbf{x}^T \mathbf{A} \mathbf{x} + \mathbf{x}^T \mathbf{A} \Delta \mathbf{x} + \Delta\mathbf{x}^T\mathbf{A}\mathbf{x}+ \Delta\mathbf{x}^T\mathbf{A} \Delta \mathbf{x}) + \mathbf{b} \cdot (\mathbf{x}+\Delta \mathbf{x}) + c &= 0 
+\end{align}
+since $\frac{1}{2} \mathbf{x}^T \mathbf{A} \mathbf{x} + \mathbf{b} \cdot \mathbf{x} + c = 0$,
+\begin{align}
+    \frac{1}{2} (\mathbf{x}^T \mathbf{A} \Delta \mathbf{x} + \Delta\mathbf{x}^T\mathbf{A}\mathbf{x}+ \Delta\mathbf{x}^T\mathbf{A} \Delta \mathbf{x}) + \mathbf{b} \cdot \Delta \mathbf{x} &= 0 
+\end{align}
+
+furthmore assuming that $\mathbf{x}^T \mathbf{A} \Delta \mathbf{x} = \Delta\mathbf{x}^T\mathbf{A}\mathbf{x}$ ($\mathbf{A} = \mathbf{A} ^T)$ gives
+
+\begin{align}
+    \frac{1}{2} \Delta\mathbf{x}^T\mathbf{A} \Delta \mathbf{x} + (\mathbf{b}+\mathbf{x}^T \mathbf{A}) \cdot \Delta \mathbf{x} &= 0 
+\end{align}
+
+
+Find solutions for $\Delta \mathbf{x}$ allows for the degrees-of-freedom of the resulting system to be determined.
+By definition these DOFs can be alterted without violating $h(\mathbf{x})$(eq. \ref{eq:reduction_dof_quad1}), hence not requiring the previous constraints to be resatisfied/resolved.
+
+Scenarios do occur however, where $h(\mathbf{x}$ is a complicated functional which is not quatdratic.
+
+
+\subsection{trail and error approach}
+
+Here the approach is to pass dimensions of $\mathbf{x}$ directly through, to create non-perfect or false degrees of freedom.
+The passed through dimensions of $\mathbf{y}$ when altered require that the previous constraints in the system be resolved.
+The approach inside assembly 2 is determined the $\mathbf{y}$ with largest number of dimensions, which can passed through and changed, while still be able to satisfy previous constraints.
+
+Order probably maters, but anyway, the going to be assumed that order does not matter.
+
+\section{generating repairing/orthogonal basis functions}
+
+Use the Gram–Schmidt process https://en.wikipedia.org/wiki/Gram\%E2\%80\%93Schmidt\_process :
+the Gram–Schmidt process is a method for orthonormalising a set of vectors in an inner product space, most commonly the Euclidean space $\Re^n$.
 
 
 
