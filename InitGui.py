@@ -3,7 +3,7 @@ class Assembly2Workbench (Workbench):
     MenuText = 'Assembly 2'
     def Initialize(self):
         from assembly2lib import __dir__
-        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, sphericalSurfaceConstraint
+        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, sphericalSurfaceConstraint, checkAssembly
         commandslist = [
             'importPart', 
             'updateImportedPartsCommand', 
@@ -16,7 +16,8 @@ class Assembly2Workbench (Workbench):
             'degreesOfFreedomAnimation', 
             'assembly2SolveConstraints',
             'muxAssembly',
-            'addPartsList'
+            'addPartsList',
+            'assembly2_checkAssembly'
             ]
         self.appendToolbar('Assembly 2', commandslist)
         self.treecmdList = ['importPart', 'updateImportedPartsCommand']
