@@ -177,10 +177,11 @@ class PartsListTaskDialog:
 
         d.fontPadding = form.doubleSpinBox_padding.value()
         d.strokeWidth =  form.doubleSpinBox_lineWidth.value()
-
-    def accept(self):
-        pass #need to figure out how to remove this button...
     
     def reject(self):
         previewDimension.removePreviewGraphicItems( recomputeActiveDocument = True )
         FreeCADGui.Control.closeDialog()
+        
+    def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
+        return 0x00400000
+

@@ -65,10 +65,6 @@ class AnimateDegreesOfFreedomTaskPanel:
         parms.SetFloat('rotation_magnitude',   form.doubleSpinBox_rotMag.value()       )
         parms.SetFloat('linear_magnitude',     form.doubleSpinBox_linMag.value()       )
 
-    def accept(self):
-        self._startAnimation( self.constraintSystem.degreesOfFreedom )
-        #FreeCADGui.Control.closeDialog() #if this is done, rather do so at the end of the timer loop.
-        
     def animateSelected(self):
         debugPrint(4,'pushButton_animateSelected has been clicked')
         D_to_animate = []
@@ -81,12 +77,15 @@ class AnimateDegreesOfFreedomTaskPanel:
         if len(D_to_animate) > 0:
             self._startAnimation( D_to_animate )
 
-    def reject(self):
-        moduleVars['animation'].timer.stop()
-        self.constraintSystem.variableManager.updateFreeCADValues(moduleVars['animation'].X_before_animation)
+    def reject(self): #or more correctly close, given the button settings
+        if  moduleVars.has_key('animation'):
+            moduleVars['animation'].timer.stop()
+            self.constraintSystem.variableManager.updateFreeCADValues(moduleVars['animation'].X_before_animation)
+            del moduleVars['animation']
         FreeCADGui.Control.closeDialog()
 
-
+    def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
+        return 0x00200000
 
 
 
