@@ -34,6 +34,7 @@ class AnimateDegreesOfFreedomTaskPanel:
             item = QtGui.QListWidgetItem('%i. %s' % (i+1, str(d)[1:-1].replace('DegreeOfFreedom ','')), self.form.listWidget_DOF)
             if i == 0: item.setSelected(True)
         self.form.pushButton_animateSelected.clicked.connect(self.animateSelected)
+        self.form.pushButton_animateAll.clicked.connect(self.animateAll)
         self.form.pushButton_set_as_default.clicked.connect( self.setDefaults )
         self.setIntialValues()
     
@@ -76,6 +77,8 @@ class AnimateDegreesOfFreedomTaskPanel:
                 D_to_animate.append( d )
         if len(D_to_animate) > 0:
             self._startAnimation( D_to_animate )
+    def animateAll(self):
+         self._startAnimation( [d for d in self.constraintSystem.degreesOfFreedom] )
 
     def reject(self): #or more correctly close, given the button settings
         if  moduleVars.has_key('animation'):
