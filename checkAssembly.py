@@ -25,11 +25,13 @@ class CheckAssemblyCommand:
                     msg = 'overlap check between:   "%s"  &  "%s"' % (objects[i].Label, objects[j].Label)
                     debugPrint(3, '  ' + msg)
                     p.setLabelText(msg)
-                    if boundBoxesOverlap(objects[i].Shape, objects[j].Shape ): #first do a rough check, to speed up checks, on the test case used, time reduce from 11s ->10s ...
+                    if boundBoxesOverlap(objects[i].Shape, objects[j].Shape,  tol = 10**-5 ): #first do a rough check, to speed up checks, on the test case used, time reduce from 11s ->10s ...
                         overlap = objects[i].Shape.common( objects[j].Shape )
                         overlap_ratio = overlap.Volume / min( objects[j].Shape.Volume, objects[i].Shape.Volume )
                         if overlap.Volume > 0:
                             errorMsgs.append('%s  &  %s : %3.3f%%*' % (objects[i].Label, objects[j].Label, 100*overlap_ratio ))
+                    else:
+                        debugPrint(3, '    skipping check based on boundBoxesOverlap check')
                     count = count + 1
                     p.setValue(count)
                 else:            
@@ -56,9 +58,12 @@ class CheckAssemblyCommand:
 FreeCADGui.addCommand('assembly2_checkAssembly', CheckAssemblyCommand())
 
 
-def boundBoxesOverlap( shape1, shape2 ):
+def boundBoxesOverlap( shape1, shape2, tol ):
     bb1 = shape1.BoundBox
     box1 = Part.makeBox( bb1.XLength, bb1.YLength, bb1.ZLength, Base.Vector( bb1.XMin, bb1.YMin, bb1.ZMin ))
     bb2 = shape2.BoundBox
     box2 = Part.makeBox( bb2.XLength, bb2.YLength, bb2.ZLength, Base.Vector( bb2.XMin, bb2.YMin, bb2.ZMin ))
-    return box1.common(box2).Volume > 0
+    overlap = box1.common(box2)
+    overlap_ratio = overlap.Volume / min( box1.Volume, box2.Volume )  
+    debugPrint(3, '    boundBoxesOverlap:overlap_ratio %e' % overlap_ratio)
+    return overlap_ratio > tol
