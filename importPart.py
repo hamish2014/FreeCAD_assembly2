@@ -72,8 +72,7 @@ def importPart( filename, partName=None ):
         obj.Placement = prevPlacement
         obj.touch()
     else:
-        #obj.ViewObject.Proxy = ViewProviderProxy_importPart()
-        obj.ViewObject.Proxy = 0
+        obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
         for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
             if hasattr(obj.ViewObject, p):
                 setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
@@ -367,7 +366,7 @@ class DeletePartsConstraints:
             response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Delete constraints?", msg, flags )
             if response == QtGui.QMessageBox.Yes:
                 for c in deleteList:
-                    FreeCAD.Console.PrintError("removing constraint %s" % c.Name)
+                    FreeCAD.Console.PrintMessage("removing constraint %s" % c.Name)
                     FreeCAD.ActiveDocument.removeObject(c.Name)
     def GetResources(self): 
         return { 

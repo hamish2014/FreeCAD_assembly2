@@ -82,7 +82,23 @@ class ConstraintObjectProxy:
         from assembly2solver import solveConstraints
         solveConstraints( FreeCAD.ActiveDocument )
 
-
+class ImportedPartViewProviderProxy:
+    def onDelete(self, feature, subelements): # subelements is a tuple of strings
+        viewObject = feature
+        obj = viewObject.Object
+        doc = obj.Document
+        debugPrint(2, 'ConstraintObjectViewProviderProxy.onDelete: removing constraints refering to %s (label:%s)' % (obj.Name, obj.Label))
+        deleteList = []
+        for c in doc.Objects:
+            if 'ConstraintInfo' in c.Content:
+                if obj.Name in [ c.Object1, c.Object2 ]:
+                    deleteList.append(c)
+        if len(deleteList) > 0:
+            debugPrint(3, "  delete list %s" % str(deleteList) )
+            for c in deleteList:
+                debugPrint(2, "  - removing constraint %s" % c.Name )
+                doc.removeObject(c.Name)
+        return True # If False is returned the object won't be deleted
 
 class SelectConstraintObjectsCommand:
     def Activated(self):
