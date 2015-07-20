@@ -32,7 +32,7 @@ def importPart( filename, partName=None ):
         tempPartName = 'import_temporary_part'
         obj_to_copy = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",tempPartName)
         obj_to_copy.Proxy = Proxy_muxAssemblyObj()
-        obj_to_copy.ViewObject.Proxy = 0
+        obj_to_copy.ViewObject.Proxy = ImportedPartViewProviderProxy()
         obj_to_copy.Shape =  muxObjects(doc)
     else: 
         subAssemblyImport = False
@@ -72,10 +72,10 @@ def importPart( filename, partName=None ):
         obj.Placement = prevPlacement
         obj.touch()
     else:
-        obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
         for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
             if hasattr(obj.ViewObject, p):
                 setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
+        obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( obj.sourceFile )
     #clean up
@@ -201,11 +201,11 @@ def duplicateImportedPart( part ):
     newObj.setEditorMode("timeLastImport",1)  
     newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = False# part.fixedPosition
     newObj.Shape = part.Shape.copy()
-    newObj.ViewObject.Proxy = 0
     for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
         if hasattr(newObj.ViewObject, p):
             setattr(newObj.ViewObject, p, getattr( part.ViewObject, p))
     newObj.Proxy = Proxy_importPart()
+    newObj.ViewObject.Proxy = ImportedPartViewProviderProxy()
     newObj.Placement.Base = part.Placement.Base
     newObj.Placement.Rotation = part.Placement.Rotation
     return newObj
