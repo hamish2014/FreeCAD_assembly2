@@ -485,8 +485,13 @@ class SubElementDifference:
             return self.error1 < b.error1
         else:
             return self.error2 < b.error2
+
     def __str__(self):
         return '<SubElementDifference:%s SE1:%s SE2:%s error1: %f error2: %f>' % ( self.catergory, self.SE1, self.SE2, self.error1, self.error2 )
+
+def subElements_equal(obj1, SE1, T1, obj2, SE2, T2):
+    diff = SubElementDifference(obj1, SE1, T1, obj2, SE2, T2)
+    return diff.error1 == 0 and diff.error2 == 0
 
 
 def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
@@ -512,13 +517,16 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
             if SubElement: #same as subElement <> None
                 subElementName = getattr(c, SubElement)
                 debugPrint(3,'  updating %s.%s' % (c.Name, SubElement))
-                catergory = classifySubElement( oldObject, subElementName )
-                D = [ SubElementDifference( oldObject, subElementName, T_old, newObject, SE2, T_new)
-                      for SE2 in newObjSubElements[catergory] ]
-                #for d in D:
-                #    debugPrint(2,'      %s' % d)
-                d_min = min(D)
-                debugPrint(3,'    closest match %s' % d_min)
-                newSE =  d_min.SE2
-                debugPrint(2,'  updating %s.%s   %s->%s' % (c.Name, SubElement, subElementName, newSE))
-                setattr(c, SubElement, newSE) 
+                if not subElements_equal(  oldObject, subElementName, T_old, newObject, subElementName, T_new):
+                    catergory = classifySubElement( oldObject, subElementName )
+                    D = [ SubElementDifference( oldObject, subElementName, T_old, newObject, SE2, T_new)
+                          for SE2 in newObjSubElements[catergory] ]
+                    #for d in D:
+                    #    debugPrint(2,'      %s' % d)
+                    d_min = min(D)
+                    debugPrint(3,'    closest match %s' % d_min)
+                    newSE =  d_min.SE2
+                    debugPrint(2,'  updating %s.%s   %s->%s' % (c.Name, SubElement, subElementName, newSE))
+                    setattr(c, SubElement, newSE) 
+                else:
+                    debugPrint(3,'  leaving %s.%s as is, since subElement in old and new shape are equal' % (c.Name, SubElement))
