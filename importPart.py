@@ -490,8 +490,11 @@ class SubElementDifference:
         return '<SubElementDifference:%s SE1:%s SE2:%s error1: %f error2: %f>' % ( self.catergory, self.SE1, self.SE2, self.error1, self.error2 )
 
 def subElements_equal(obj1, SE1, T1, obj2, SE2, T2):
-    diff = SubElementDifference(obj1, SE1, T1, obj2, SE2, T2)
-    return diff.error1 == 0 and diff.error2 == 0
+    try:
+        diff = SubElementDifference(obj1, SE1, T1, obj2, SE2, T2)
+        return diff.error1 == 0 and diff.error2 == 0
+    except IndexError:
+        return False
 
 
 def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
