@@ -493,7 +493,7 @@ def subElements_equal(obj1, SE1, T1, obj2, SE2, T2):
     try:
         diff = SubElementDifference(obj1, SE1, T1, obj2, SE2, T2)
         return diff.error1 == 0 and diff.error2 == 0
-    except IndexError:
+    except (IndexError, AttributeError), msg:
         return False
 
 
