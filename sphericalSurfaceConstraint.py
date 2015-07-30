@@ -70,9 +70,16 @@ class SphericalSurfaceConstraintCommand:
             parseSelection( selection )
         else:
             FreeCADGui.Selection.clearSelection()
-            if wb_globals.has_key('selectionObserver'): 
-                wb_globals['selectionObserver'].stopSelectionObservation()
-            wb_globals['selectionObserver'] =  ConstraintSelectionObserver( SphericalSurfaceSelectionGate(), parseSelection  )
+            ConstraintSelectionObserver( 
+                SphericalSurfaceSelectionGate(), 
+                parseSelection,
+                taskDialog_title ='add spherical surface constraint', 
+                taskDialog_iconPath = self.GetResources()['Pixmap'], 
+                taskDialog_text = \
+'''Selection options:
+  - spherical surface
+  - vertex'''
+                    )
 
     def GetResources(self): 
         return {

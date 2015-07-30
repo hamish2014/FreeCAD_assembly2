@@ -79,9 +79,18 @@ class PlaneConstraintCommand:
                parseSelection( selection )
           else:
                FreeCADGui.Selection.clearSelection()
-               if wb_globals.has_key('selectionObserver'): 
-                    wb_globals['selectionObserver'].stopSelectionObservation()
-               wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), parseSelection, PlaneSelectionGate2() )
+               ConstraintSelectionObserver( 
+                    PlaneSelectionGate(), 
+                    parseSelection, 
+                    taskDialog_title ='add plane constraint', 
+                    taskDialog_iconPath = self.GetResources()['Pixmap'], 
+                    taskDialog_text = \
+'''Selection 1 options:
+  - plane
+Selection 2 options:
+  - plane
+  - vertex ''',
+                    secondSelectionGate = PlaneSelectionGate2() )
                
      def GetResources(self): 
           return {

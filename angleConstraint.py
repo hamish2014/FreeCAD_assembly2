@@ -64,9 +64,16 @@ class AngleConstraintCommand:
                parseSelection( selection )
           else:
                FreeCADGui.Selection.clearSelection()
-               if wb_globals.has_key('selectionObserver'): 
-                    wb_globals['selectionObserver'].stopSelectionObservation()
-               wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), parseSelection  )
+               ConstraintSelectionObserver( 
+                    PlaneSelectionGate(), 
+                    parseSelection,
+                    taskDialog_title ='add angular constraint', 
+                    taskDialog_iconPath = self.GetResources()['Pixmap'], 
+                    taskDialog_text = \
+'''Selection options:
+  - plane surface
+  - edge '''
+                    )
                
      def GetResources(self): 
           msg = 'create an angular constraint between two planes'

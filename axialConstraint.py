@@ -70,9 +70,16 @@ class AxialConstraintCommand:
                parseSelection( selection )
           else:
                FreeCADGui.Selection.clearSelection()
-               if wb_globals.has_key('selectionObserver'): 
-                    wb_globals['selectionObserver'].stopSelectionObservation()
-               wb_globals['selectionObserver'] =  ConstraintSelectionObserver( AxialSelectionGate(), parseSelection  )
+               ConstraintSelectionObserver( 
+                    AxialSelectionGate(), 
+                    parseSelection,
+                    taskDialog_title ='add axial constraint', 
+                    taskDialog_iconPath = self.GetResources()['Pixmap'], 
+                    taskDialog_text = \
+'''Selection options:
+  - cylindrical surface
+  - edge '''
+                    )
      def GetResources(self): 
           return {
                'Pixmap' : os.path.join( __dir__ , 'axialConstraint.svg' ) , 

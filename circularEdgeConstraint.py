@@ -73,9 +73,13 @@ class CircularEdgeConstraintCommand:
             parseSelection( selection )
         else:
             FreeCADGui.Selection.clearSelection()
-            if wb_globals.has_key('selectionObserver'): 
-                wb_globals['selectionObserver'].stopSelectionObservation()
-            wb_globals['selectionObserver'] =  ConstraintSelectionObserver( CircularEdgeSelectionGate(), parseSelection  )
+            ConstraintSelectionObserver( 
+                CircularEdgeSelectionGate(), 
+                parseSelection,
+                taskDialog_title ='add circular edge constraint', 
+                taskDialog_iconPath = self.GetResources()['Pixmap'], 
+                taskDialog_text = '''Select 2 circular edges'''
+                )
 
     def GetResources(self): 
         return {

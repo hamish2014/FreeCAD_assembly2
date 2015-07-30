@@ -26,13 +26,18 @@ def formatDictionary( d, indent):
     return '%s{' % indent + '\n'.join(['%s%s:%s' % (indent,k,d[k]) for k in sorted(d.keys())]) + '}'
 
 class ConstraintSelectionObserver:
-     def __init__(self, selectionGate, parseSelectionFunction, secondSelectionGate=None):
+     def __init__(self, selectionGate, parseSelectionFunction, 
+                  taskDialog_title, taskDialog_iconPath, taskDialog_text,
+                  secondSelectionGate=None):
           self.selections = []
           self.parseSelectionFunction = parseSelectionFunction
           self.secondSelectionGate = secondSelectionGate
           FreeCADGui.Selection.addObserver(self)  
           FreeCADGui.Selection.removeSelectionGate()
           FreeCADGui.Selection.addSelectionGate( selectionGate )
+          wb_globals['selectionObserver'] = self
+          self.taskDialog = SelectionTaskDialog(taskDialog_title, taskDialog_iconPath, taskDialog_text)
+          FreeCADGui.Control.showDialog( self.taskDialog )
      def addSelection( self, docName, objName, sub, pnt ):
          debugPrint(4,'addSelection: docName,objName,sub = %s,%s,%s' % (docName, objName, sub))
          obj = FreeCAD.ActiveDocument.getObject(objName)
@@ -47,6 +52,8 @@ class ConstraintSelectionObserver:
          FreeCADGui.Selection.removeObserver(self) 
          del wb_globals['selectionObserver']
          FreeCADGui.Selection.removeSelectionGate()
+         FreeCADGui.Control.closeDialog()
+
 
 class SelectionRecord:
     def __init__(self, docName, objName, sub):
@@ -54,6 +61,28 @@ class SelectionRecord:
         self.ObjectName = objName
         self.Object = self.Document.getObject(objName)
         self.SubElementNames = [sub]
+
+
+class SelectionTaskDialog:
+    def __init__(self, title, iconPath, textLines ):
+        self.form = SelectionTaskDialogForm( textLines )
+        self.form.setWindowTitle( title )    
+        if iconPath <> None:
+            self.form.setWindowIcon( QtGui.QIcon( iconPath ) )
+    def reject(self):
+        wb_globals['selectionObserver'].stopSelectionObservation()
+    def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
+        return 0x00400000 #cancel button
+class SelectionTaskDialogForm(QtGui.QWidget):    
+    def __init__(self, textLines ):
+        super(SelectionTaskDialogForm, self).__init__()
+        self.textLines = textLines 
+        self.initUI()
+    def initUI(self):
+        vbox = QtGui.QVBoxLayout()
+        for line in self.textLines.split('\n'):
+            vbox.addWidget( QtGui.QLabel(line) )
+        self.setLayout(vbox)
 
 
 def findUnusedObjectName(base, counterStart=1, fmt='%02i'):
@@ -223,4 +252,7 @@ def sphericalSurfaceSelected( selection ):
             face = getObjectFaceFromName( selection.Object, subElement)
             return str( face.Surface ).startswith('Sphere ')
     return False
+
+
+
 
