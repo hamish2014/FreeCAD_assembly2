@@ -66,6 +66,8 @@ def parseSelection(selection, objectToUpdate=None):
     #FreeCADGui.Selection.addSelection(c)
     
 
+selection_text = '''Select 2 circular edges'''
+
 class CircularEdgeConstraintCommand:
     def Activated(self):
         selection = FreeCADGui.Selection.getSelectionEx()
@@ -78,7 +80,7 @@ class CircularEdgeConstraintCommand:
                 parseSelection,
                 taskDialog_title ='add circular edge constraint', 
                 taskDialog_iconPath = self.GetResources()['Pixmap'], 
-                taskDialog_text = '''Select 2 circular edges'''
+                taskDialog_text = selection_text
                 )
 
     def GetResources(self): 
@@ -96,9 +98,13 @@ class RedefineCircularEdgeConstraintCommand:
         self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
         debugPrint(3,'redefining %s' % self.constObject.Name)
         FreeCADGui.Selection.clearSelection()
-        if wb_globals.has_key('selectionObserver'): 
-            wb_globals['selectionObserver'].stopSelectionObservation()
-        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( CircularEdgeSelectionGate(), self.UpdateConstraint  )
+        ConstraintSelectionObserver( 
+                CircularEdgeSelectionGate(), 
+                self.UpdateConstraint,
+                taskDialog_title ='redefine circular edge constraint', 
+                taskDialog_iconPath = os.path.join( __dir__ , 'circularEdgeConstraint.svg' ), 
+                taskDialog_text = selection_text
+                )
 
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)

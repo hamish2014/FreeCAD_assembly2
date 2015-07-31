@@ -72,6 +72,13 @@ Selection made:
 
      c.Proxy.callSolveConstraints()
          
+
+selection_text = '''Selection 1 options:
+  - plane
+Selection 2 options:
+  - plane
+  - vertex '''
+
 class PlaneConstraintCommand:
      def Activated(self):
           selection = FreeCADGui.Selection.getSelectionEx()
@@ -84,12 +91,7 @@ class PlaneConstraintCommand:
                     parseSelection, 
                     taskDialog_title ='add plane constraint', 
                     taskDialog_iconPath = self.GetResources()['Pixmap'], 
-                    taskDialog_text = \
-'''Selection 1 options:
-  - plane
-Selection 2 options:
-  - plane
-  - vertex ''',
+                    taskDialog_text = selection_text,
                     secondSelectionGate = PlaneSelectionGate2() )
                
      def GetResources(self): 
@@ -107,9 +109,13 @@ class RedefineConstraintCommand:
         self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
         debugPrint(3,'redefining %s' % self.constObject.Name)
         FreeCADGui.Selection.clearSelection()
-        if wb_globals.has_key('selectionObserver'): 
-            wb_globals['selectionObserver'].stopSelectionObservation()
-        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), self.UpdateConstraint, PlaneSelectionGate2()  )
+        ConstraintSelectionObserver( 
+                    PlaneSelectionGate(), 
+                    self.UpdateConstraint, 
+                    taskDialog_title ='add plane constraint', 
+                    taskDialog_iconPath = os.path.join( __dir__ , 'planeConstraint.svg' ), 
+                    taskDialog_text = selection_text,
+                    secondSelectionGate = PlaneSelectionGate2() )
 
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)

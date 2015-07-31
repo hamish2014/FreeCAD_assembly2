@@ -57,6 +57,11 @@ def parseSelection(selection, objectToUpdate=None):
 
      c.Proxy.callSolveConstraints()
          
+
+selection_text = '''Selection options:
+  - plane surface
+  - edge '''
+
 class AngleConstraintCommand:
      def Activated(self):
           selection = FreeCADGui.Selection.getSelectionEx()
@@ -69,11 +74,7 @@ class AngleConstraintCommand:
                     parseSelection,
                     taskDialog_title ='add angular constraint', 
                     taskDialog_iconPath = self.GetResources()['Pixmap'], 
-                    taskDialog_text = \
-'''Selection options:
-  - plane surface
-  - edge '''
-                    )
+                    taskDialog_text = selection_text )
                
      def GetResources(self): 
           msg = 'create an angular constraint between two planes'
@@ -91,9 +92,12 @@ class RedefineConstraintCommand:
         self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
         debugPrint(3,'redefining %s' % self.constObject.Name)
         FreeCADGui.Selection.clearSelection()
-        if wb_globals.has_key('selectionObserver'): 
-            wb_globals['selectionObserver'].stopSelectionObservation()
-        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( PlaneSelectionGate(), self.UpdateConstraint  )
+        ConstraintSelectionObserver( 
+             PlaneSelectionGate(), 
+             self.UpdateConstraint,
+             taskDialog_title ='redefine angular constraint', 
+             taskDialog_iconPath = os.path.join( __dir__ , 'angleConstraint.svg' ), 
+             taskDialog_text = selection_text )
 
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)

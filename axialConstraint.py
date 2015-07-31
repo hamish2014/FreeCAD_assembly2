@@ -62,7 +62,11 @@ def parseSelection(selection, objectToUpdate=None):
      c.SubElement2 = cParms[1][1]
 
      c.Proxy.callSolveConstraints()
-         
+
+selection_text = '''Selection options:
+  - cylindrical surface
+  - edge '''
+
 class AxialConstraintCommand:
      def Activated(self):
           selection = FreeCADGui.Selection.getSelectionEx()
@@ -75,10 +79,7 @@ class AxialConstraintCommand:
                     parseSelection,
                     taskDialog_title ='add axial constraint', 
                     taskDialog_iconPath = self.GetResources()['Pixmap'], 
-                    taskDialog_text = \
-'''Selection options:
-  - cylindrical surface
-  - edge '''
+                    taskDialog_text = selection_text
                     )
      def GetResources(self): 
           return {
@@ -94,9 +95,17 @@ class RedefineConstraintCommand:
         self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
         debugPrint(3,'redefining %s' % self.constObject.Name)
         FreeCADGui.Selection.clearSelection()
-        if wb_globals.has_key('selectionObserver'): 
-            wb_globals['selectionObserver'].stopSelectionObservation()
-        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( AxialSelectionGate(), self.UpdateConstraint  )
+        ConstraintSelectionObserver( 
+             AxialSelectionGate(), 
+             self.UpdateConstraint,
+             taskDialog_title ='redefine axial constraint', 
+             taskDialog_iconPath = os.path.join( __dir__ , 'axialConstraint.svg' ), 
+             taskDialog_text = selection_text
+             )
+        #
+        #if wb_globals.has_key('selectionObserver'): 
+        #    wb_globals['selectionObserver'].stopSelectionObservation()
+        #wb_globals['selectionObserver'] =  ConstraintSelectionObserver( AxialSelectionGate(), self.UpdateConstraint  )
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)
     def GetResources(self): 

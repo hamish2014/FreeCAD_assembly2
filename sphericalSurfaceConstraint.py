@@ -62,6 +62,10 @@ def parseSelection(selection, objectToUpdate=None):
     #FreeCADGui.Selection.clearSelection()
     #FreeCADGui.Selection.addSelection(c)
     
+selection_text = '''Selection options:
+  - spherical surface
+  - vertex'''
+
 
 class SphericalSurfaceConstraintCommand:
     def Activated(self):
@@ -75,11 +79,8 @@ class SphericalSurfaceConstraintCommand:
                 parseSelection,
                 taskDialog_title ='add spherical surface constraint', 
                 taskDialog_iconPath = self.GetResources()['Pixmap'], 
-                taskDialog_text = \
-'''Selection options:
-  - spherical surface
-  - vertex'''
-                    )
+                taskDialog_text = selection_text
+                )
 
     def GetResources(self): 
         return {
@@ -96,10 +97,13 @@ class RedefineSphericalSurfaceConstraintCommand:
         self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
         debugPrint(3,'redefining %s' % self.constObject.Name)
         FreeCADGui.Selection.clearSelection()
-        if wb_globals.has_key('selectionObserver'): 
-            wb_globals['selectionObserver'].stopSelectionObservation()
-        wb_globals['selectionObserver'] =  ConstraintSelectionObserver( SphericalSurfaceSelectionGate(), self.UpdateConstraint  )
-
+        ConstraintSelectionObserver( 
+            SphericalSurfaceSelectionGate(), 
+            self.UpdateConstraint,
+            taskDialog_title ='redefine spherical surface constraint', 
+            taskDialog_iconPath = os.path.join( __dir__ , 'sphericalSurfaceConstraint.svg' ), 
+            taskDialog_text = selection_text
+            )
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)
 
