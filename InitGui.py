@@ -30,7 +30,6 @@ class Assembly2Workbench (Workbench):
             updateOldStyleConstraintProperties(doc)
 
     def ContextMenu(self, recipient):
-        return
         selection = [s  for s in FreeCADGui.Selection.getSelection() if s.Document == FreeCAD.ActiveDocument ]
         if len(selection) == 1:
             obj = selection[0]
