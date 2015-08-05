@@ -24,9 +24,12 @@ def importPart( filename, partName=None ):
         FreeCAD.setActiveDocument(currentDoc)
     doc = [ d for d in FreeCAD.listDocuments().values()
             if d.FileName == filename][0]
+    visibleObjects = [ obj for obj in doc.Objects
+                       if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
+                       and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
 
     debugPrint(3, '%s objects %s' % (doc.Name, doc.Objects))
-    if any([ 'importPart' in obj.Content for obj in doc.Objects]):
+    if any([ 'importPart' in obj.Content for obj in doc.Objects]) and not len(visibleObjects) == 1: 
         subAssemblyImport = True
         debugPrint(2, 'Importing subassembly from %s' % filename)
         tempPartName = 'import_temporary_part'
@@ -36,9 +39,6 @@ def importPart( filename, partName=None ):
         obj_to_copy.Shape =  muxObjects(doc)
     else: 
         subAssemblyImport = False
-        visibleObjects = [ obj for obj in doc.Objects
-                           if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
-                           and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
         if len(visibleObjects) <> 1:
             if not updateExistingPart:
                 msg = "A part can only be imported from a FreeCAD document with exactly one visible part. Aborting operation"
