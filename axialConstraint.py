@@ -6,23 +6,18 @@ from PySide import QtGui
 
 class AxialSelectionGate:
      def allow(self, doc, obj, sub):
-          if sub.startswith('Face'):
-               face = getObjectFaceFromName( obj, sub)
-               return hasattr( face.Surface, 'Radius' )
-          elif sub.startswith('Edge'):
-               edge = getObjectEdgeFromName( obj, sub)
-               return isinstance(edge.Curve, Part.Line)
-               #return str(edge.Curve).startswith('<Line')
-          else:
-               return False
+          return ValidSelection(SelectionExObject(doc, obj, sub))
+
+def ValidSelection(selectionExObj):
+     return cylindricalPlaneSelected(selectionExObj)\
+         or LinearEdgeSelected(selectionExObj)
 
 def parseSelection(selection, objectToUpdate=None):
      validSelection = False
      if len(selection) == 2:
           s1, s2 = selection
           if s1.ObjectName <> s2.ObjectName:
-               if (cylindricalPlaneSelected(s1) or LinearEdgeSelected(s1)) \
-                        and (cylindricalPlaneSelected(s2) or LinearEdgeSelected(s2)):
+               if ValidSelection(s1) and ValidSelection(s2):
                     validSelection = True
                     cParms = [ [s1.ObjectName, s1.SubElementNames[0] ],
                                [s2.ObjectName, s2.SubElementNames[0] ] ]

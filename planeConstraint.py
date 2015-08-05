@@ -6,21 +6,12 @@ from PySide import QtGui
 
 class PlaneSelectionGate:
      def allow(self, doc, obj, sub):
-          if not sub.startswith('Face'):
-               return False
-          ind = int( sub[4:]) -1 
-          return str( obj.Shape.Faces[ind].Surface ) == '<Plane object>'
+          return planeSelected( SelectionExObject(doc, obj, sub) )
 
 class PlaneSelectionGate2:
      def allow(self, doc, obj, sub):
-          if sub.startswith('Face'):
-               ind = int( sub[4:]) -1 
-               return str( obj.Shape.Faces[ind].Surface ) == '<Plane object>'
-          elif sub.startswith('Vertex'):
-               return True
-          else:
-               return False
-
+          s2 = SelectionExObject(doc, obj, sub)
+          return planeSelected(s2) or vertexSelected(s2)
 
 def parseSelection(selection, objectToUpdate=None):
      validSelection = False

@@ -13,6 +13,7 @@ import FreeCAD
 import FreeCADGui
 import Part
 from PySide import QtGui
+from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
 
 __dir__ = os.path.dirname(__file__)
 wb_globals = {}
@@ -198,12 +199,26 @@ def getObjectFaceFromName( obj, faceName ):
     ind = int( faceName[4:]) -1 
     return obj.Shape.Faces[ind]
 
+class SelectionExObject:
+    'allows for selection gate funtions to interface with classification functions below'
+    def __init__(self, doc, Object, subElementName):
+        self.doc = doc
+        self.Object = Object
+        self.SubElementNames = [subElementName]
+    
+
 def planeSelected( selection ):
     if len( selection.SubElementNames ) == 1:
         subElement = selection.SubElementNames[0]
         if subElement.startswith('Face'):
             face = getObjectFaceFromName( selection.Object, subElement)
-            return str(face.Surface) == '<Plane object>'
+            if str(face.Surface) == '<Plane object>':
+                return True
+            else:
+                plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                #debugPrint(2,'plane_norm %s, plane_pos %s, error_normalized %e' % (plane_norm, plane_pos, error_normalized))
+                return error_normalized < 10**-6
     return False
 
 def cylindricalPlaneSelected( selection ):
@@ -211,7 +226,15 @@ def cylindricalPlaneSelected( selection ):
         subElement = selection.SubElementNames[0]
         if subElement.startswith('Face'):
             face = getObjectFaceFromName( selection.Object, subElement)
-            return hasattr(face.Surface,'Radius')
+            if hasattr(face.Surface,'Radius'):
+                return True
+            elif str(face.Surface).startswith('<SurfaceOfRevolution'):
+                return True
+            else:
+                axis, center, error = fit_rotation_axis_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                #debugPrint(2,'fitted axis %s, center %s, error_normalized %e' % (axis, center,error_normalized))
+                return error_normalized < 10**-6
     return False
 
 def getObjectEdgeFromName( obj, name ):

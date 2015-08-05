@@ -167,13 +167,25 @@ class ConstraintSystemPrototype:
         obj =  self.variableManager.doc.getObject( objName )
         pos = None
         if subElement.startswith('Face'):
-            surface = getObjectFaceFromName(obj, subElement).Surface
+            face = getObjectFaceFromName(obj, subElement)
+            surface = face.Surface
             if str(surface) == '<Plane object>':
                 pos = surface.Position
             elif all( hasattr(surface,a) for a in ['Axis','Center','Radius'] ):
                 pos = surface.Center
-            else:
-                raise NotImplementedError,"getPos %s" % str(surface)
+            elif str(surface).startswith('<SurfaceOfRevolution'):
+                pos = getObjectFaceFromName(obj, subElement).Edges[0].Curve.Center
+            else: #numerically approximating surface
+                plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                if error_normalized < 10**-6: #then good plane fit
+                    pos = plane_pos
+                axis, center, error = fit_rotation_axis_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                if error_normalized < 10**-6: #then good rotation_axis fix
+                    pos = center
+                if pos == None:
+                    raise NotImplementedError,"getPos %s" % str(surface)
         elif subElement.startswith('Edge'):
             edge = getObjectEdgeFromName(obj, subElement)
             if isinstance(edge.Curve, Part.Line):
@@ -185,7 +197,7 @@ class ConstraintSystemPrototype:
         if pos <> None:
             return numpy.array(pos)
         else:
-            raise NotImplementedError,"subElement %s" % subElement
+            raise NotImplementedError,"getPos:subElement %s" % subElement
         #elif self.featureType == 'circle':
         #     return obj.Shape.Edges[featureInd].Curve.Center
 
@@ -193,7 +205,23 @@ class ConstraintSystemPrototype:
         obj =  self.variableManager.doc.getObject( objName )
         axis = None
         if subElement.startswith('Face'):
-            axis = getObjectFaceFromName(obj, subElement).Surface.Axis
+            face = getObjectFaceFromName(obj, subElement)
+            surface = face.Surface
+            if hasattr(surface,'Axis'):
+                axis = surface.Axis
+            elif str(surface).startswith('<SurfaceOfRevolution'):
+                axis = face.Edges[0].Curve.Axis
+            else: #numerically approximating surface
+                plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                if error_normalized < 10**-6: #then good plane fit
+                    axis = plane_norm
+                axis_fitted, center, error = fit_rotation_axis_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                if error_normalized < 10**-6: #then good rotation_axis fix
+                    axis = axis_fitted
+                if axis == None:
+                    raise NotImplementedError,"getAxis %s" % str(surface)
         elif subElement.startswith('Edge'):
             edge = getObjectEdgeFromName(obj, subElement)
             if isinstance(edge.Curve, Part.Line):
