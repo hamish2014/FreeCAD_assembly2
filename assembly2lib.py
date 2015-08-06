@@ -251,7 +251,10 @@ def CircularEdgeSelected( selection ):
                 return True
             else:
                 BSpline = edge.Curve.toBSpline()
-                arcs = BSpline.toBiArcs(10**-6)
+                try:
+                    arcs = BSpline.toBiArcs(10**-6)
+                except:  #FreeCAD exception thrown ()
+                    return False
                 if all( hasattr(a,'Center') for a in arcs ):
                     centers = numpy.array([a.Center for a in arcs])
                     sigma = numpy.std( centers, axis=0 )
@@ -267,7 +270,10 @@ def LinearEdgeSelected( selection ):
                 return True
             else:
                 BSpline = edge.Curve.toBSpline()
-                arcs = BSpline.toBiArcs(10**-6)
+                try:
+                    arcs = BSpline.toBiArcs(10**-6)
+                except:  #FreeCAD exception thrown ()
+                    return False
                 if all(isinstance(a, Part.Line) for a in arcs):
                     lines = arcs
                     D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
