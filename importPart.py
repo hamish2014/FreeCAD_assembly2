@@ -436,7 +436,7 @@ class SubElementDifference:
         if self.catergory in ['cylindricalSurface','circularEdge','plane','linearEdge']:
             v1 = self.getAxis( obj1, SE1 )
             v2 = self.getAxis( obj2, SE2 )
-            self.error1 = 1 - abs(dot( T1.unRotate(v1), T2.unRotate(v2) ))
+            self.error1 = 1 - dot( T1.unRotate(v1), T2.unRotate(v2) )
         if self.catergory <> 'other':
             p1 = self.getPos( obj1, SE1 )
             p2 = self.getPos( obj2, SE2 )
