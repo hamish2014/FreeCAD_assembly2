@@ -6,14 +6,8 @@ from PySide import QtGui
 
 class PlaneSelectionGate:
      def allow(self, doc, obj, sub):
-          if sub.startswith('Face'):
-               face = getObjectFaceFromName( obj, sub)
-               return str( face.Surface ) == '<Plane object>'
-          elif sub.startswith('Edge'):
-               edge = getObjectEdgeFromName( obj, sub)
-               return isinstance(edge.Curve, Part.Line)
-          else:
-               return False
+          s = SelectionExObject(doc, obj, sub)
+          return planeSelected(s) or LinearEdgeSelected(s)
 
 def parseSelection(selection, objectToUpdate=None):
      validSelection = False

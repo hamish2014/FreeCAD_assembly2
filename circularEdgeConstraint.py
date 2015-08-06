@@ -6,13 +6,7 @@ from PySide import QtGui
          
 class CircularEdgeSelectionGate:
     def allow(self, doc, obj, sub):
-        if not sub.startswith('Edge'):
-            return False
-        ##if doc.Name <> self.docName: #deemed unnessary
-        ##    return False
-        #FreeCAD.Console.PrintMessage("addSelection %s-%s-%s\n" % (doc.Name, obj.Name, sub))
-        edgeInd = int( sub[4:]) -1 
-        return hasattr( obj.Shape.Edges[edgeInd].Curve, 'Radius' )
+        return CircularEdgeSelected( SelectionExObject(doc, obj, sub) )
 
 def parseSelection(selection, objectToUpdate=None):
     validSelection = False

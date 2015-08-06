@@ -247,7 +247,15 @@ def CircularEdgeSelected( selection ):
         subElement = selection.SubElementNames[0]
         if subElement.startswith('Edge'):
             edge = getObjectEdgeFromName( selection.Object, subElement)
-            return hasattr( edge.Curve, 'Radius' )
+            if hasattr( edge.Curve, 'Radius' ):
+                return True
+            else:
+                BSpline = edge.Curve.toBSpline()
+                arcs = BSpline.toBiArcs(10**-6)
+                if all( hasattr(a,'Center') for a in arcs ):
+                    centers = numpy.array([a.Center for a in arcs])
+                    sigma = numpy.std( centers, axis=0 )
+                    return max(sigma) < 10**-6
     return False
 
 def LinearEdgeSelected( selection ):
@@ -255,7 +263,15 @@ def LinearEdgeSelected( selection ):
         subElement = selection.SubElementNames[0]
         if subElement.startswith('Edge'):
             edge = getObjectEdgeFromName( selection.Object, subElement)
-            return isinstance(edge.Curve, Part.Line)
+            if isinstance(edge.Curve, Part.Line):
+                return True
+            else:
+                BSpline = edge.Curve.toBSpline()
+                arcs = BSpline.toBiArcs(10**-6)
+                if all(isinstance(a, Part.Line) for a in arcs):
+                    lines = arcs
+                    D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
+                    return numpy.std( D, axis=0 ).max() < 10**-9
     return False
 
 def vertexSelected( selection ):
@@ -276,6 +292,93 @@ def sphericalSurfaceSelected( selection ):
             return str( face.Surface ).startswith('Sphere ')
     return False
 
+def getSubElementPos(obj, subElementName):
+    pos = None
+    if subElementName.startswith('Face'):
+        face = getObjectFaceFromName(obj, subElementName)
+        surface = face.Surface
+        if str(surface) == '<Plane object>':
+            pos = surface.Position
+        elif all( hasattr(surface,a) for a in ['Axis','Center','Radius'] ):
+            pos = surface.Center
+        elif str(surface).startswith('<SurfaceOfRevolution'):
+            pos = getObjectFaceFromName(obj, subElementName).Edges[0].Curve.Center
+        else: #numerically approximating surface
+            plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
+            error_normalized = error / face.BoundBox.DiagonalLength
+            if error_normalized < 10**-6: #then good plane fit
+                pos = plane_pos
+            axis, center, error = fit_rotation_axis_to_surface1(face.Surface)
+            error_normalized = error / face.BoundBox.DiagonalLength
+            if error_normalized < 10**-6: #then good rotation_axis fix
+                pos = center
+    elif subElementName.startswith('Edge'):
+        edge = getObjectEdgeFromName(obj, subElementName)
+        if isinstance(edge.Curve, Part.Line):
+            pos = edge.Curve.StartPoint
+        elif hasattr( edge.Curve, 'Center'): #circular curve
+            pos = edge.Curve.Center
+        else:
+            BSpline = edge.Curve.toBSpline()
+            arcs = BSpline.toBiArcs(10**-6)
+            if all( hasattr(a,'Center') for a in arcs ):
+                centers = numpy.array([a.Center for a in arcs])
+                sigma = numpy.std( centers, axis=0 )
+                if max(sigma) < 10**-6: #then circular curce
+                    pos = centers[0]
+            if all(isinstance(a, Part.Line) for a in arcs):
+                lines = arcs
+                D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
+                if numpy.std( D, axis=0 ).max() < 10**-9: #then linear curve
+                    return lines[0].value(0)
+    elif subElementName.startswith('Vertex'):
+        return  getObjectVertexFromName(obj, subElementName).Point
+    if pos <> None:
+        return numpy.array(pos)
+    else:
+        raise NotImplementedError,"getSubElementPos Failed! Locals:\n%s" % formatDictionary(locals(),' '*4)
 
+    
+def getSubElementAxis(obj, subElementName):
+    axis = None
+    if subElementName.startswith('Face'):
+        face = getObjectFaceFromName(obj, subElementName)
+        surface = face.Surface
+        if hasattr(surface,'Axis'):
+            axis = surface.Axis
+        elif str(surface).startswith('<SurfaceOfRevolution'):
+            axis = face.Edges[0].Curve.Axis
+        else: #numerically approximating surface
+            plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
+            error_normalized = error / face.BoundBox.DiagonalLength
+            if error_normalized < 10**-6: #then good plane fit
+                axis = plane_norm
+            axis_fitted, center, error = fit_rotation_axis_to_surface1(face.Surface)
+            error_normalized = error / face.BoundBox.DiagonalLength
+            if error_normalized < 10**-6: #then good rotation_axis fix
+                axis = axis_fitted
+    elif subElementName.startswith('Edge'):
+        edge = getObjectEdgeFromName(obj, subElementName)
+        if isinstance(edge.Curve, Part.Line):
+            axis = edge.Curve.tangent(0)[0]
+        elif hasattr( edge.Curve, 'Axis'): #circular curve
+            axis =  edge.Curve.Axis
+        else:
+            BSpline = edge.Curve.toBSpline()
+            arcs = BSpline.toBiArcs(10**-6)
+            if all( hasattr(a,'Center') for a in arcs ):
+                centers = numpy.array([a.Center for a in arcs])
+                sigma = numpy.std( centers, axis=0 )
+                if max(sigma) < 10**-6: #then circular curce
+                    axis = a.Axis
+            if all(isinstance(a, Part.Line) for a in arcs):
+                lines = arcs
+                D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
+                if numpy.std( D, axis=0 ).max() < 10**-9: #then linear curve
+                    return D[0]
+    if axis <> None:
+        return numpy.array(axis)
+    else:
+        raise NotImplementedError,"getSubElementAxis Failed! Locals:\n%s" % formatDictionary(locals(),' '*4)
 
 

@@ -434,89 +434,20 @@ class SubElementDifference:
         #assert self.catergory == classifySubElement( obj2, SE2 )
         self.error1 = 0 #not used for 'vertex','sphericalSurface','other'
         if self.catergory in ['cylindricalSurface','circularEdge','plane','linearEdge']:
-            v1 = self.getAxis( obj1, SE1 )
-            v2 = self.getAxis( obj2, SE2 )
+            v1 = getSubElementAxis( obj1, SE1 )
+            v2 = getSubElementAxis( obj2, SE2 )
             self.error1 = 1 - dot( T1.unRotate(v1), T2.unRotate(v2) )
         if self.catergory <> 'other':
-            p1 = self.getPos( obj1, SE1 )
-            p2 = self.getPos( obj2, SE2 )
+            p1 = getSubElementPos( obj1, SE1 )
+            p2 = getSubElementPos( obj2, SE2 )
             self.error2 = norm( T1(p1) - T2(p2) )
         else:
-            self.error2 = 1 - (SE1 == SE2) #subelements have the same name
-
-    def getAxis(self, obj, subElement):
-        'copied from constraintSystems getAxis'
-        axis = None
-        if subElement.startswith('Face'):
-            face = getObjectFaceFromName(obj, subElement)
-            surface = face.Surface
-            if hasattr(surface,'Axis'):
-                axis = surface.Axis
-            elif str(surface).startswith('<SurfaceOfRevolution'):
-                axis = face.Edges[0].Curve.Axis
-            else: #numerically approximating surface
-                plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
-                error_plane_normalized = error / face.BoundBox.DiagonalLength
-                if error_plane_normalized < 10**-6: #then good plane fit
-                    axis = plane_norm
-                axis_fitted, center, error = fit_rotation_axis_to_surface1(face.Surface)
-                error_rotation_normalized = error / face.BoundBox.DiagonalLength
-                if error_rotation_normalized < 10**-6: #then good rotation_axis fix
-                    axis = axis_fitted
-                if axis == None:
-                    debugPrint(2,str(locals()))
-                    raise NotImplementedError,"getAxis %s" % str(surface)
-        elif subElement.startswith('Edge'):
-            edge = getObjectEdgeFromName(obj, subElement)
-            if isinstance(edge.Curve, Part.Line):
-                axis = edge.Curve.tangent(0)[0]
-            else: #circular curve
-                axis =  edge.Curve.Axis
-        if axis <> None:
-            return numpy.array(axis)
-        else:
-            raise NotImplementedError,"subElement %s" % subElement
-    def getPos(self, obj, subElement):
-        pos = None
-        if subElement.startswith('Face'):
-            face = getObjectFaceFromName(obj, subElement)
-            surface = face.Surface
-            if str(surface) == '<Plane object>':
-                pos = surface.Position
-            elif all( hasattr(surface,a) for a in ['Axis','Center','Radius'] ):
-                pos = surface.Center
-            elif str(surface).startswith('<SurfaceOfRevolution'):
-                pos = getObjectFaceFromName(obj, subElement).Edges[0].Curve.Center
-            else: #numerically approximating surface
-                plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
-                error_normalized = error / face.BoundBox.DiagonalLength
-                if error_normalized < 10**-6: #then good plane fit
-                    pos = plane_pos
-                axis, center, error = fit_rotation_axis_to_surface1(face.Surface)
-                error_normalized = error / face.BoundBox.DiagonalLength
-                if error_normalized < 10**-6: #then good rotation_axis fix
-                    pos = center
-                if pos == None:
-                    raise NotImplementedError,"getPos %s" % str(surface)
-        elif subElement.startswith('Edge'):
-            edge = getObjectEdgeFromName(obj, subElement)
-            if isinstance(edge.Curve, Part.Line):
-                pos = edge.Curve.StartPoint
-            else: #circular curve
-                pos = edge.Curve.Center    
-        elif subElement.startswith('Vertex'):
-            return  getObjectVertexFromName(obj, subElement).Point
-        if pos <> None:
-            return numpy.array(pos)
-        else:
-            raise NotImplementedError,"subElement %s" % subElement
-        
+            self.error2 = 1 - (SE1 == SE2) #subelements have the same name        
     def __lt__(self, b):
         if self.error1 <> b.error1:
             return self.error1 < b.error1
         else:
             return self.error2 < b.error2
-
     def __str__(self):
         return '<SubElementDifference:%s SE1:%s SE2:%s error1: %f error2: %f>' % ( self.catergory, self.SE1, self.SE2, self.error1, self.error2 )
 
