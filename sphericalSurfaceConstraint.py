@@ -48,6 +48,7 @@ def parseSelection(selection, objectToUpdate=None):
             c.setEditorMode(prop, 1) 
         
         c.Proxy = ConstraintObjectProxy()
+        c.ViewObject.Proxy = 0 
     else:
         debugPrint(2, "redefining %s" % objectToUpdate.Name )
         c = objectToUpdate
