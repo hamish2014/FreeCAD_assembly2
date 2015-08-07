@@ -214,6 +214,10 @@ def planeSelected( selection ):
             face = getObjectFaceFromName( selection.Object, subElement)
             if str(face.Surface) == '<Plane object>':
                 return True
+            elif hasattr(face.Surface,'Radius'):
+                return False
+            elif str(face.Surface).startswith('<SurfaceOfRevolution'):
+                return False
             else:
                 plane_norm, plane_pos, error = fit_plane_to_surface1(face.Surface)
                 error_normalized = error / face.BoundBox.DiagonalLength
@@ -230,6 +234,8 @@ def cylindricalPlaneSelected( selection ):
                 return True
             elif str(face.Surface).startswith('<SurfaceOfRevolution'):
                 return True
+            elif str(face.Surface) == '<Plane object>':
+                return False
             else:
                 axis, center, error = fit_rotation_axis_to_surface1(face.Surface)
                 error_normalized = error / face.BoundBox.DiagonalLength
@@ -249,6 +255,8 @@ def CircularEdgeSelected( selection ):
             edge = getObjectEdgeFromName( selection.Object, subElement)
             if hasattr( edge.Curve, 'Radius' ):
                 return True
+            elif isinstance(edge.Curve, Part.Line):
+                return False
             else:
                 BSpline = edge.Curve.toBSpline()
                 try:
@@ -268,6 +276,8 @@ def LinearEdgeSelected( selection ):
             edge = getObjectEdgeFromName( selection.Object, subElement)
             if isinstance(edge.Curve, Part.Line):
                 return True
+            elif hasattr( edge.Curve, 'Radius' ):
+                return False
             else:
                 BSpline = edge.Curve.toBSpline()
                 try:
