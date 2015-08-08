@@ -16,6 +16,7 @@ class CheckAssemblyCommand:
         p = moduleVars['progressDialog']
         p.setWindowModality(QtCore.Qt.WindowModal)
         p.forceShow()
+        p.setValue(0)
         count = 0
         t_start = time.time()
         errorMsgs = []
