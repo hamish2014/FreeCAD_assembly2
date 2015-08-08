@@ -16,7 +16,6 @@ class CheckAssemblyCommand:
         p = moduleVars['progressDialog']
         p.setWindowModality(QtCore.Qt.WindowModal)
         p.forceShow()
-        p.setValue(0)
         count = 0
         t_start = time.time()
         errorMsgs = []
@@ -26,6 +25,7 @@ class CheckAssemblyCommand:
                     msg = 'overlap check between:   "%s"  &  "%s"' % (objects[i].Label, objects[j].Label)
                     debugPrint(3, '  ' + msg)
                     p.setLabelText(msg)
+                    p.setValue(count)
                     if boundBoxesOverlap(objects[i].Shape, objects[j].Shape,  tol = 10**-5 ): #first do a rough check, to speed up checks, on the test case used, time reduce from 11s ->10s ...
                         overlap = objects[i].Shape.common( objects[j].Shape )
                         overlap_ratio = overlap.Volume / min( objects[j].Shape.Volume, objects[i].Shape.Volume )
@@ -34,7 +34,6 @@ class CheckAssemblyCommand:
                     else:
                         debugPrint(3, '    skipping check based on boundBoxesOverlap check')
                     count = count + 1
-                    p.setValue(count)
                 else:            
                     break
         debugPrint(3, 'ProgressDialog canceled %s' % p.wasCanceled())
