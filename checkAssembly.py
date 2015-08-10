@@ -67,11 +67,14 @@ FreeCADGui.addCommand('assembly2_checkAssembly', CheckAssemblyCommand())
 
 
 def boundBoxesOverlap( shape1, shape2, tol ):
-    bb1 = shape1.BoundBox
-    box1 = Part.makeBox( bb1.XLength, bb1.YLength, bb1.ZLength, Base.Vector( bb1.XMin, bb1.YMin, bb1.ZMin ))
-    bb2 = shape2.BoundBox
-    box2 = Part.makeBox( bb2.XLength, bb2.YLength, bb2.ZLength, Base.Vector( bb2.XMin, bb2.YMin, bb2.ZMin ))
-    overlap = box1.common(box2)
+    try:
+        bb1 = shape1.BoundBox
+        box1 = Part.makeBox( bb1.XLength, bb1.YLength, bb1.ZLength, Base.Vector( bb1.XMin, bb1.YMin, bb1.ZMin ))
+        bb2 = shape2.BoundBox
+        box2 = Part.makeBox( bb2.XLength, bb2.YLength, bb2.ZLength, Base.Vector( bb2.XMin, bb2.YMin, bb2.ZMin ))
+        overlap = box1.common(box2)
+    except:
+        return True
     overlap_ratio = overlap.Volume / min( box1.Volume, box2.Volume )  
     debugPrint(3, '    boundBoxesOverlap:overlap_ratio %e' % overlap_ratio)
     return overlap_ratio > tol
