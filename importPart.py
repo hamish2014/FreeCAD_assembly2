@@ -5,9 +5,9 @@ When update parts is executed, this library import or updates the parts in the a
 from assembly2lib import *
 from assembly2lib import __dir__
 from PySide import QtGui
-import os, numpy, shutil
+import os, numpy, shutil, copy
 from lib3D import *
-from muxAssembly import muxObjects, Proxy_muxAssemblyObj
+from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
 
 def importPart( filename, partName=None ):
     updateExistingPart = partName <> None
@@ -37,6 +37,7 @@ def importPart( filename, partName=None ):
         obj_to_copy.Proxy = Proxy_muxAssemblyObj()
         obj_to_copy.ViewObject.Proxy = ImportedPartViewProviderProxy()
         obj_to_copy.Shape =  muxObjects(doc)
+        muxMapColors(doc, obj_to_copy)
     else: 
         subAssemblyImport = False
         if len(visibleObjects) <> 1:
@@ -73,8 +74,9 @@ def importPart( filename, partName=None ):
         obj.touch()
     else:
         for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
-            if hasattr(obj.ViewObject, p):
+            if hasattr(obj.ViewObject, p) and p not in ['DiffuseColor']:
                 setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
+        obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )
         obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( obj.sourceFile )
@@ -201,9 +203,11 @@ def duplicateImportedPart( part ):
     newObj.setEditorMode("timeLastImport",1)  
     newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = False# part.fixedPosition
     newObj.Shape = part.Shape.copy()
-    for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
-        if hasattr(newObj.ViewObject, p):
+    for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on their role in the assembly.
+        if hasattr(newObj.ViewObject, p) and p not in ['DiffuseColor']:
             setattr(newObj.ViewObject, p, getattr( part.ViewObject, p))
+    newObj.ViewObject.DiffuseColor = copy.copy( part.ViewObject.DiffuseColor )
+            
     newObj.Proxy = Proxy_importPart()
     newObj.ViewObject.Proxy = ImportedPartViewProviderProxy()
     newObj.Placement.Base = part.Placement.Base

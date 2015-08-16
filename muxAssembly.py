@@ -20,6 +20,31 @@ def muxObjects( doc ):
             faces = faces + obj.Shape.Faces
     return Part.makeShell(faces)
 
+def muxMapColors( doc, muxedObj):
+    'call after muxedObj.Shape =  muxObjects(doc)'
+    diffuseColors = []
+    for f1 in muxedObj.Shape.Faces:
+        foundMatch = False
+        for obj in doc.Objects:
+            if 'importPart' in obj.Content:
+                for j,f2 in enumerate(obj.Shape.Faces):
+                    if not foundMatch and facesEqual(f1,f2):
+                        if j < len(obj.ViewObject.DiffuseColor):
+                            diffuseColors.append( obj.ViewObject.DiffuseColor[j] )
+                        else:
+                            diffuseColors.append( obj.ViewObject.ShapeColor )
+                        foundMatch = True
+                        break
+            #if foundMatch:
+            #    break
+        if not foundMatch:
+            diffuseColors.append( muxedObjViewObject.ShapeColor )
+    muxedObj.ViewObject.DiffuseColor = diffuseColors
+
+def facesEqual(f1,f2):
+    return len(f1.Vertexes) == len(f2.Vertexes) \
+        and f1.Area == f2.Area \
+        and all( v1.Point == v2.Point for v1,v2 in zip(f1.Vertexes, f2.Vertexes) )
 
 class MuxAssemblyCommand:
     def Activated(self):
