@@ -42,7 +42,7 @@ class Assembly2Workbench (Workbench):
                         'circularEdge' : 'redefineCircularEdgeConstraint',
                         'sphericalSurface' : 'redefineSphericalSurfaceConstraint'
                         }[ obj.Type ]
-                    self.appendContextMenu( "Assembly2", [redefineCmd,'selectConstraintObjects'])
+                    self.appendContextMenu( "Assembly2", [redefineCmd,'selectConstraintObjects','selectConstraintElements'])
                 if 'sourceFile' in  obj.Content:
                     self.appendContextMenu( "Assembly2", 
                         ['assembly2_movePart',

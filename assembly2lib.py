@@ -141,6 +141,17 @@ class SelectConstraintObjectsCommand:
         return { 'MenuText': 'Select Objects' } 
 FreeCADGui.addCommand('selectConstraintObjects', SelectConstraintObjectsCommand())
 
+class SelectConstraintElementsCommand:
+    def Activated(self):
+        constraintObj = FreeCADGui.Selection.getSelectionEx()[0].Object
+        obj1Name = constraintObj.Object1
+        obj2Name = constraintObj.Object2
+        FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj1Name), constraintObj.SubElement1 )
+        FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj2Name), constraintObj.SubElement2 )
+    def GetResources(self): 
+        return { 'MenuText': 'Select Object Elements' } 
+FreeCADGui.addCommand('selectConstraintElements', SelectConstraintElementsCommand())
+
 def printSelection(selection):
     entries = []
     for s in selection:
