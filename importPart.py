@@ -37,7 +37,9 @@ def importPart( filename, partName=None ):
         obj_to_copy.Proxy = Proxy_muxAssemblyObj()
         obj_to_copy.ViewObject.Proxy = ImportedPartViewProviderProxy()
         obj_to_copy.Shape =  muxObjects(doc)
-        muxMapColors(doc, obj_to_copy)
+        if (not updateExistingPart) or \
+                (updateExistingPart and getattr( FreeCAD.ActiveDocument.getObject(partName),'updateColors',True)):
+            muxMapColors(doc, obj_to_copy)
     else: 
         subAssemblyImport = False
         if len(visibleObjects) <> 1:
@@ -54,6 +56,8 @@ def importPart( filename, partName=None ):
     if updateExistingPart:
         obj = FreeCAD.ActiveDocument.getObject(partName)
         prevPlacement = obj.Placement
+        if not hasattr(obj, 'updateColors'):
+            obj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = True
         importUpdateConstraintSubobjects( FreeCAD.ActiveDocument, obj, obj_to_copy )
     else:        
         partName = findUnusedObjectName( doc.Label + '_' )
@@ -68,6 +72,7 @@ def importPart( filename, partName=None ):
         obj.setEditorMode("timeLastImport",1)  
         obj.addProperty("App::PropertyBool","fixedPosition","importPart")
         obj.fixedPosition = not any([i.fixedPosition for i in FreeCAD.ActiveDocument.Objects if hasattr(i, 'fixedPosition') ])
+        obj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = True
     obj.Shape = obj_to_copy.Shape.copy() 
     if updateExistingPart:
         obj.Placement = prevPlacement
@@ -76,8 +81,9 @@ def importPart( filename, partName=None ):
         for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
             if hasattr(obj.ViewObject, p) and p not in ['DiffuseColor']:
                 setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
-        obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )
         obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
+    if getattr(obj,'updateColors',True):
+        obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )        
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( obj.sourceFile )
     #clean up
@@ -202,6 +208,7 @@ def duplicateImportedPart( part ):
     newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  part.timeLastImport
     newObj.setEditorMode("timeLastImport",1)  
     newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = False# part.fixedPosition
+    newObj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = part.updateColors
     newObj.Shape = part.Shape.copy()
     for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on their role in the assembly.
         if hasattr(newObj.ViewObject, p) and p not in ['DiffuseColor']:
@@ -471,6 +478,9 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
     TO DO (if time allows): add a task dialog (using FreeCADGui.Control.addDialog) as to allow the user to specify which scheme to use to update the constraint subelement names.
     '''
     #classify subelements
+    if len([c for c in doc.Objects if  'ConstraintInfo' in c.Content and oldObject.Name in [c.Object1, c.Object2] ]) == 0:
+        debugPrint(3,'Aborint Import Updating Constraint SubElements Names since no matching constraints')
+        return
     debugPrint(2,'Import: Updating Constraint SubElements Names')
     newObjSubElements = classifySubElements( newObject )
     debugPrint(3,'newObjSubElements: %s' % newObjSubElements)

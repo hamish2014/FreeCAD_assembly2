@@ -26,11 +26,17 @@ def muxMapColors( doc, muxedObj):
     faceMap = {}
     for obj in doc.Objects:
         if 'importPart' in obj.Content:
-            for face,clr in zip(obj.Shape.Faces, obj.ViewObject.DiffuseColor):
+            for i, face in enumerate(obj.Shape.Faces):
+                if i < len(obj.ViewObject.DiffuseColor):
+                    clr = obj.ViewObject.DiffuseColor[i]
+                else:
+                    clr = obj.ViewObject.DiffuseColor[0]
                 faceMap[faceMapKey(face)] = clr    
     for f in muxedObj.Shape.Faces:
         try:
-            clr = faceMap[faceMapKey(f)] 
+            key = faceMapKey(f)
+            clr = faceMap[key] 
+            del faceMap[key]
         except KeyError:
             debugPrint(3, 'muxMapColors: waring no faceMap entry for %s - key %s' % (f,faceMapKey(f)))
             clr = muxedObj.ViewObject.ShapeColor
@@ -38,7 +44,7 @@ def muxMapColors( doc, muxedObj):
     muxedObj.ViewObject.DiffuseColor = diffuseColors
 
 def faceMapKey(face):
-    c = sum([ [v.Point.x, v.Point.y, v.Point.z] for v in face.Vertexes ], [])
+    c = sum([ [ v.Point.x, v.Point.y, v.Point.z] for v in face.Vertexes ], [])
     return tuple(c)
     
 class MuxAssemblyCommand:
