@@ -208,7 +208,7 @@ def duplicateImportedPart( part ):
     newObj.addProperty("App::PropertyFloat", "timeLastImport","importPart").timeLastImport =  part.timeLastImport
     newObj.setEditorMode("timeLastImport",1)  
     newObj.addProperty("App::PropertyBool","fixedPosition","importPart").fixedPosition = False# part.fixedPosition
-    newObj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = part.updateColors
+    newObj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = getattr(part,'updateColors',True)
     newObj.Shape = part.Shape.copy()
     for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on their role in the assembly.
         if hasattr(newObj.ViewObject, p) and p not in ['DiffuseColor']:
