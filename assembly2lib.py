@@ -215,6 +215,7 @@ class SelectionExObject:
     def __init__(self, doc, Object, subElementName):
         self.doc = doc
         self.Object = Object
+        self.ObjectName = Object.Name
         self.SubElementNames = [subElementName]
     
 

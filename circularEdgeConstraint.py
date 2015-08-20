@@ -8,7 +8,7 @@ class CircularEdgeSelectionGate:
     def allow(self, doc, obj, sub):
         return CircularEdgeSelected( SelectionExObject(doc, obj, sub) )
 
-def parseSelection(selection, objectToUpdate=None):
+def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lockRotation = False):
     validSelection = False
     if len(selection) == 2:
         s1, s2 = selection
@@ -38,7 +38,7 @@ def parseSelection(selection, objectToUpdate=None):
         c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
         c.directionConstraint = ["none","aligned","opposed"]
         c.addProperty("App::PropertyDistance","offset","ConstraintInfo")
-        c.addProperty("App::PropertyBool","lockRotation","ConstraintInfo")
+        c.addProperty("App::PropertyBool","lockRotation","ConstraintInfo").lockRotation = lockRotation
     
         c.setEditorMode('Type',1)
         for prop in ["Object1","Object2","SubElement1","SubElement2"]:
@@ -56,9 +56,11 @@ def parseSelection(selection, objectToUpdate=None):
     c.Object2 = cParms[1][0]
     c.SubElement2 = cParms[1][1]
 
-    c.Proxy.callSolveConstraints()    
+    if callSolveConstraints:
+        c.Proxy.callSolveConstraints()    
     #FreeCADGui.Selection.clearSelection()
     #FreeCADGui.Selection.addSelection(c)
+    return c
     
 
 selection_text = '''Select 2 circular edges'''
