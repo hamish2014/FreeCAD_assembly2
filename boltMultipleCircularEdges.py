@@ -72,6 +72,7 @@ from importPart import duplicateImportedPart
 
 def boltSelection():
     doc = FreeCAD.ActiveDocument
+    doc.openTransaction('Bolt Multiple Circular Edges')
     selection = FreeCADGui.Selection.getSelectionEx()
     bolt = selection[0].Object
     bolt_se_name = selection[0].SubElementNames[0]
@@ -88,3 +89,4 @@ def boltSelection():
             callSolveConstraints= False, lockRotation = True 
             )
     solveConstraints( doc )
+    FreeCAD.ActiveDocument.commitTransaction()
