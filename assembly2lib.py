@@ -265,6 +265,8 @@ def CircularEdgeSelected( selection ):
         subElement = selection.SubElementNames[0]
         if subElement.startswith('Edge'):
             edge = getObjectEdgeFromName( selection.Object, subElement)
+            if not hasattr(edge, 'Curve'): #issue 39
+                return False
             if hasattr( edge.Curve, 'Radius' ):
                 return True
             elif isinstance(edge.Curve, Part.Line):
@@ -286,6 +288,8 @@ def LinearEdgeSelected( selection ):
         subElement = selection.SubElementNames[0]
         if subElement.startswith('Edge'):
             edge = getObjectEdgeFromName( selection.Object, subElement)
+            if not hasattr(edge, 'Curve'): #issue 39
+                return False
             if isinstance(edge.Curve, Part.Line):
                 return True
             elif hasattr( edge.Curve, 'Radius' ):
