@@ -2,7 +2,7 @@
 class Assembly2Workbench (Workbench): 
     MenuText = 'Assembly 2'
     def Initialize(self):
-        from assembly2lib import __dir__
+        from assembly2lib import os, path_assembly2_ui, path_assembly2_icons
         import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, sphericalSurfaceConstraint, checkAssembly, boltMultipleCircularEdges
         commandslist = [
             'importPart', 
@@ -22,6 +22,8 @@ class Assembly2Workbench (Workbench):
             ]
         self.appendToolbar('Assembly 2', commandslist)
         self.treecmdList = ['importPart', 'updateImportedPartsCommand']
+        FreeCADGui.addIconPath( path_assembly2_icons )
+        FreeCADGui.addPreferencePage( os.path.join(  path_assembly2_ui, 'assembly2_prefs.ui'),'Assembly2' )
         #self.appendMenu('Assembly 2', commandslist)
 
     def Activated(self):

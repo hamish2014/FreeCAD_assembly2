@@ -15,7 +15,10 @@ import Part
 from PySide import QtGui
 from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
 
-__dir__ = os.path.dirname(__file__)
+path_assembly2 = os.path.dirname(__file__)
+path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')
+path_assembly2_ui =  os.path.join( path_assembly2, 'Resources', 'ui')
+__dir__ = path_assembly2
 wb_globals = {}
 
 def debugPrint( level, msg ):
@@ -106,8 +109,10 @@ def findUnusedLabel(base, counterStart=1, fmt='%02i'):
 
 class ConstraintObjectProxy:
     def execute(self, obj):
-        self.callSolveConstraints()
-        obj.touch()
+        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+        if parms.GetBool('autoSolveConstraintAttributesChanged', True):
+            self.callSolveConstraints()
+            obj.touch()
     def callSolveConstraints(self):
         from assembly2solver import solveConstraints
         solveConstraints( FreeCAD.ActiveDocument )
