@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>391</width>
-    <height>502</height>
+    <width>385</width>
+    <height>815</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -393,8 +393,20 @@
    <item>
     <widget class="QPushButton" name="pushButton_set_as_default">
      <property name="text">
-      <string>Set as Default</string>
+      <string>Save</string>
      </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QGroupBox" name="groupBox_5">
+     <property name="title">
+      <string>Directory Filter</string>
+     </property>
+     <layout class="QHBoxLayout" name="horizontalLayout_11">
+      <item>
+       <widget class="QListWidget" name="listWidget_directoryFilter"/>
+      </item>
+     </layout>
     </widget>
    </item>
   </layout>

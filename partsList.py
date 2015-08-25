@@ -2,6 +2,8 @@
 create parts list
 '''
 from assembly2lib import *
+from PySide import QtCore
+
 try:
     from dimensioning import getDrawingPageGUIVars, DimensioningProcessTracker
     import previewDimension
@@ -13,6 +15,7 @@ except ImportError:
 class PartsList:
     def __init__(self):
         self.entries = []
+        self.directoryMask = []
     def addObject(self, obj):
         try:
             index = self.entries.index(obj)
@@ -25,13 +28,14 @@ class PartsList:
             fontColor = 'rgb(0,0,0)',
             fontPadding = 1.6,
             ):
+        entries = [ e for e in self.entries if e.parentDirectory in self.directoryMask ]
         rowHeight = fontSize + 2*fontPadding
         XML_body = []
         def addLine(x1,y1,x2,y2):
             XML_body.append('<line x1="%f" y1="%f" x2="%f" y2="%f" style="stroke:rgb(0,0,0);stroke-width:%1.2f" />' % (x1, y1, x2, y2, strokeWidth))
         #building table body
         width = sum( c.width for c in columns )
-        for i in range(len(self.entries) +2):
+        for i in range(len(entries) +2):
             addLine( x, y + i*rowHeight, x+width, y + i*rowHeight )
         y_bottom = y + i*rowHeight
         addLine( x, y, x, y_bottom )
@@ -45,7 +49,7 @@ class PartsList:
             XML_body.append('<text x="%f" y="%f" fill="%s" style="font-size:%i">%s</text>' % (x1,y1,fontColor,fontSize,text))
         for i,c in enumerate(columns):
             addText(0,i,c.heading)
-            for j, entry in enumerate(self.entries):
+            for j, entry in enumerate(entries):
                 addText( j+1, i,  c.entryFor(j, entry))
 
         XML = '''<g> %s </g>''' % ('\n'.join(XML_body) )
@@ -59,6 +63,7 @@ class PartListEntry:
         self.count = 1
         self.sourceFile = obj.sourceFile
         self.name = os.path.basename( obj.sourceFile )
+        self.parentDirectory = os.path.basename( os.path.dirname( obj.sourceFile ))
     def __eq__(self, b):
         return  self.sourceFile == b.sourceFile
 
@@ -91,7 +96,7 @@ def clickHandler( x, y):
 class AddPartsList:
     def Activated(self):
         if not drawing_dimensioning_installed:
-            QtGui.QMessageBox.critical( QtGui.qApp.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning/network)' )
+            QtGui.QMessageBox.critical( QtGui.qApp.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning)' )
             return
         V = getDrawingPageGUIVars() #needs to be done before dialog show, else Qt active is dialog and not freecads
         dimensioningTracker.activate( V )
@@ -145,6 +150,14 @@ class PartsListTaskDialog:
         form.doubleSpinBox_fontSize.setValue(                  parms.GetFloat('fontSize', 4.0) )
         form.lineEdit_fontColor.setText(                       parms.GetString('fontColor','rgb(0,0,0)') )
         form.doubleSpinBox_padding.setValue(                   parms.GetFloat('padding', 1.5))
+        filtersAdded = []
+        for entry in dimensioningTracker.partsList.entries:
+            if not entry.parentDirectory in filtersAdded:
+                item = QtGui.QListWidgetItem('%s' % entry.parentDirectory, form.listWidget_directoryFilter)
+                item.setCheckState( QtCore.Qt.CheckState.Checked )
+                filtersAdded.append( entry.parentDirectory )
+        dimensioningTracker.partsList.directoryMask = filtersAdded
+        form.listWidget_directoryFilter.itemChanged.connect( self.update_directoryFilter )  
 
     def setDefaults(self):
         parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2/partsList")
@@ -178,6 +191,19 @@ class PartsListTaskDialog:
         d.fontPadding = form.doubleSpinBox_padding.value()
         d.strokeWidth =  form.doubleSpinBox_lineWidth.value()
     
+    def update_directoryFilter(self, *args):
+        try:
+            del dimensioningTracker.partsList.directoryMask[:]
+            listWidget = self.form.listWidget_directoryFilter
+            for index in range(listWidget.count()):
+                item = listWidget.item(index)
+                if item.checkState() ==  QtCore.Qt.CheckState.Checked:
+                    dimensioningTracker.partsList.directoryMask.append( item.text() )
+        except:
+            import traceback
+            FreeCAD.Console.PrintError(traceback.format_exc())
+
+
     def reject(self):
         previewDimension.removePreviewGraphicItems( recomputeActiveDocument = True )
         FreeCADGui.Control.closeDialog()
