@@ -868,3 +868,32 @@ class LockRelativeAxialRotationUnion(ConstraintSystemPrototype):
         pass
 
 
+class AddFreeObjectsUnion(ConstraintSystemPrototype): #for adding free objects to parent system which are not constrainted to the parent system
+    label = 'AddFreeObjectsUnion'
+
+    def __init__(self, parentSystem, variableManager, constraintObj ):
+        self.parentSystem = parentSystem
+        self.variableManager = variableManager
+        self.constraintObj = constraintObj
+        obj1Name = constraintObj.Object1
+        obj2Name = constraintObj.Object2
+        self.obj1Name = obj1Name
+        self.obj2Name = obj2Name
+        self.subElement1 = ''
+        self.subElement2 = ''
+        self.sys2 = FreeObjectSystem( variableManager, obj1Name )
+        self.sys3 = FreeObjectSystem( variableManager, obj2Name )
+        self.childSystem = None
+        parentSystem.childSystem = self
+        self.solveConstraintEq()      
+        if debugPrint.level >= 3 : dp('AddFreeObjectsUnion resulting system:\n%s' % self.str(indent=' '*4, addDOFs=debugPrint.level>3))
+
+    def constraintEq_value( self, X ):
+        return 0
+
+    def generateDegreesOfFreedomAnalytically( self ):
+        self.degreesOfFreedom =  self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom +  self.sys3.degreesOfFreedom
+        return True
+        
+    def updateDegreesOfFreedomAnalytically( self):
+        pass

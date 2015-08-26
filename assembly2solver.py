@@ -81,6 +81,8 @@ def solveConstraints( doc ):
         debugPrint( 3, '  parsing %s, type:%s' % (constraintObj.Name, constraintObj.Type ))
         try:
             cArgs = [variableManager, constraintObj]
+            if not constraintSystem.containtsObject( constraintObj.Object1) and not constraintSystem.containtsObject( constraintObj.Object2):
+                constraintSystem = AddFreeObjectsUnion(constraintSystem, *cArgs)
             if constraintObj.Type == 'plane':
                 if constraintObj.SubElement2.startswith('Face'): #otherwise vertext
                     constraintSystem = AxisAlignmentUnion(constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
