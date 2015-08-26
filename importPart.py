@@ -18,12 +18,13 @@ def importPart( filename, partName=None ):
         
     doc_already_open = filename in [ d.FileName for d in FreeCAD.listDocuments().values() ] 
     debugPrint(4, "%s open already %s" % (filename, doc_already_open))
-    if not doc_already_open:
+    if doc_already_open:
+        doc = [ d for d in FreeCAD.listDocuments().values() if d.FileName == filename][0]
+    else:
         currentDoc = FreeCAD.ActiveDocument.Name
-        FreeCAD.open(filename)
+        doc = FreeCAD.open(filename)
         FreeCAD.setActiveDocument(currentDoc)
-    doc = [ d for d in FreeCAD.listDocuments().values()
-            if d.FileName == filename][0]
+        assert doc.FileName == filename #just making sure nothing funny is going on.
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
                        and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
