@@ -25,9 +25,9 @@ def importPart( filename, partName=None ):
         doc = FreeCAD.open(filename)
         FreeCAD.setActiveDocument(currentDoc)
         if doc.FileName != filename:
-            time.sleep(0.1) #maybe this will fix the problem from #44 but i doubt it.
+            time.sleep(0.1) #maybe this will fix the problem from #43 but i doubt it.
             if doc.FileName != filename:
-                raise RuntimeError,"doc.FileName != filename (%s != %s)" % str(doc.FileName,filename)
+                raise RuntimeError,"doc.FileName != filename (%s != %s)" % (doc.FileName,filename)
 
  #making sure nothing funny is going on.
     visibleObjects = [ obj for obj in doc.Objects
