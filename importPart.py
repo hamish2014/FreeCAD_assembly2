@@ -2,10 +2,17 @@
 Used for importing parts from other FreeCAD documents.
 When update parts is executed, this library import or updates the parts in the assembly document.
 '''
+if __name__ == '__main__': #then testing library.
+    import sys
+    sys.path.append('/usr/lib/freecad/lib/') #path to FreeCAD library on Linux
+    import FreeCADGui
+    assert not hasattr(FreeCADGui, 'addCommand')
+    FreeCADGui.addCommand = lambda x,y: 0
+
 from assembly2lib import *
 from assembly2lib import __dir__
 from PySide import QtGui
-import os, numpy, shutil, copy, time
+import os, numpy, shutil, copy, time, posixpath, ntpath
 from lib3D import *
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
 
@@ -15,7 +22,6 @@ def importPart( filename, partName=None ):
         FreeCAD.Console.PrintMessage("updating part %s from %s\n" % (partName,filename))
     else:
         FreeCAD.Console.PrintMessage("importing part from %s\n" % filename)
-        
     doc_already_open = filename in [ d.FileName for d in FreeCAD.listDocuments().values() ] 
     debugPrint(4, "%s open already %s" % (filename, doc_already_open))
     if doc_already_open:
@@ -24,12 +30,6 @@ def importPart( filename, partName=None ):
         currentDoc = FreeCAD.ActiveDocument.Name
         doc = FreeCAD.open(filename)
         FreeCAD.setActiveDocument(currentDoc)
-        if doc.FileName != filename:
-            time.sleep(0.1) #maybe this will fix the problem from #43 but i doubt it.
-            if doc.FileName != filename:
-                raise RuntimeError,"doc.FileName != filename (%s != %s)" % (doc.FileName,filename)
-
- #making sure nothing funny is going on.
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
                        and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
@@ -144,25 +144,44 @@ class ImportPartCommand:
             } 
 FreeCADGui.addCommand('importPart', ImportPartCommand())
 
+
+
+def path_split( pathLib, path):
+    parentPath, childPath = pathLib.split( path )
+    parts = [childPath]
+    while childPath <> '':
+        parentPath, childPath = pathLib.split( parentPath )
+        parts.insert(0, childPath)
+    parts[0] = parentPath
+    if  pathLib == ntpath and parts[0].endswith(':/'): #ntpath ...
+        parts[0] = parts[0][:-2] + ':\\'
+    return parts
+
+def path_join( pathLib, parts):
+    if pathLib == posixpath and parts[0].endswith(':\\'):
+        path = parts[0][:-2]+ ':/'
+    else:
+        path = parts[0]
+    for part in parts[1:]:
+        path = pathLib.join( path, part)
+    return path
+
+def path_convert( path, pathLibFrom, pathLibTo):
+    parts =  path_split( pathLibFrom, path)
+    return path_join(pathLibTo, parts )
+
 class UpdateImportedPartsCommand:
     def Activated(self):
         for obj in FreeCAD.ActiveDocument.Objects:
             if hasattr(obj, 'sourceFile'):
                 if not hasattr( obj, 'timeLastImport'):
                     obj.addProperty("App::PropertyFloat", "timeLastImport","importPart") #should default to zero which will force update.
-                    obj.setEditorMode("timeLastImport",1)  
-                if not os.path.exists( obj.sourceFile ):
+                    obj.setEditorMode("timeLastImport",1)
+                if not os.path.exists( path_convert(obj.sourceFile, posixpath, os.path )):
                     debugPrint( 3, '%s.sourceFile %s is missing, attempting to repair it' % (obj.Name,  obj.sourceFile) )
                     replacement = None
-                    aFolder, aFilename = os.path.split( FreeCAD.ActiveDocument.FileName )
-                    sFolder, sFilename = os.path.split( obj.sourceFile )
-                    sParts = [sFilename]
-                    for i in range(100): #being paranoid here :)
-                        sFolder, part = os.path.split(sFolder)
-                        if part <> '':
-                            sParts.insert(0, part)
-                        else:
-                            break
+                    aFolder, aFilename = posixpath.split( FreeCAD.ActiveDocument.FileName )
+                    sParts = path_split( posixpath, obj.sourceFile)
                     debugPrint( 3, '  obj.sourceFile parts %s' % sParts )
                     replacement = None
                     previousRejects = []
@@ -170,9 +189,9 @@ class UpdateImportedPartsCommand:
                         for i in reversed(range(len(sParts))):
                             newFn = aFolder
                             for j in range(i,len(sParts)):
-                                newFn = os.path.join( newFn,sParts[j] )
+                                newFn = posixpath.join( newFn,sParts[j] )
                             #debugPrint( 3, '    checking %s' % newFn )
-                            if os.path.exists( newFn ) and not newFn in previousRejects :
+                            if os.path.exists( path_convert( newFn, posixpath, os.path ) ) and not newFn in previousRejects :
                                 reply = QtGui.QMessageBox.question(
                                     QtGui.qApp.activeWindow(), "%s source file not found" % obj.Name,
                                     "Unable to find\n  %s \nUse \n  %s\n instead?" % (obj.sourceFile, newFn) , 
@@ -182,7 +201,7 @@ class UpdateImportedPartsCommand:
                                     break
                                 else:
                                     previousRejects.append( newFn )
-                        aFolder, aFilename = os.path.split( aFolder )
+                        aFolder, aFilename = posixpath.split( aFolder )
                     if replacement <> None:
                         obj.sourceFile = replacement
                     else:
@@ -518,3 +537,27 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
                     setattr(c, SubElement, newSE) 
                 else:
                     debugPrint(3,'  leaving %s.%s as is, since subElement in old and new shape are equal' % (c.Name, SubElement))
+
+
+                    
+if __name__ == '__main__':
+    print('\nTesting importPart.py')
+    def test_split_and_join( pathLib, path):
+        print('Testing splitting and rejoining. lib %s' % (str(pathLib)))
+        parts = path_split( pathLib, path )
+        print('  parts %s' % parts )
+        print('  rejoined   %s'  %  path_join(pathLib, parts ) )
+        print('  original   %s'  %  path )
+
+    test_split_and_join( ntpath, 'C:/Users/gyb/Desktop/Circular Saw Jig\Side support V1.00.FCStd')
+    test_split_and_join( ntpath, 'C:/Users/gyb/Desktop/Circular Saw Jig/Side support V1.00.FCStd')
+    test_split_and_join( posixpath, '/temp/hello1/foo.FCStd')
+
+    def test_path_convert( path, pathLibFrom, pathLibTo):
+        print('Testing path_convert_lib.')
+        print('  original    %s'  %  path )
+        converted = path_convert( path, pathLibFrom, pathLibTo)
+        print('  converted   %s'  %  converted )
+        print('  reversed    %s'  % path_convert( path, pathLibTo, pathLibFrom) )
+                
+    test_path_convert( r'C:\Users\gyb\Desktop\Circular Saw Jig\Side support V1.00.FCStd', ntpath, os.path )
