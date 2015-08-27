@@ -5,7 +5,7 @@ When update parts is executed, this library import or updates the parts in the a
 from assembly2lib import *
 from assembly2lib import __dir__
 from PySide import QtGui
-import os, numpy, shutil, copy
+import os, numpy, shutil, copy, time
 from lib3D import *
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
 
@@ -24,7 +24,12 @@ def importPart( filename, partName=None ):
         currentDoc = FreeCAD.ActiveDocument.Name
         doc = FreeCAD.open(filename)
         FreeCAD.setActiveDocument(currentDoc)
-        assert doc.FileName == filename #just making sure nothing funny is going on.
+        if doc.FileName != filename:
+            time.sleep(0.1) #maybe this will fix the problem from #44 but i doubt it.
+            if doc.FileName != filename:
+                raise RuntimeError,"doc.FileName != filename (%s != %s)" % str(doc.FileName,filename)
+
+ #making sure nothing funny is going on.
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
                        and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
