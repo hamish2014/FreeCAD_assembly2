@@ -177,7 +177,7 @@ class UpdateImportedPartsCommand:
                 if not hasattr( obj, 'timeLastImport'):
                     obj.addProperty("App::PropertyFloat", "timeLastImport","importPart") #should default to zero which will force update.
                     obj.setEditorMode("timeLastImport",1)
-                if not os.path.exists( path_convert(obj.sourceFile, posixpath, os.path )):
+                if not os.path.exists( obj.sourceFile ):
                     debugPrint( 3, '%s.sourceFile %s is missing, attempting to repair it' % (obj.Name,  obj.sourceFile) )
                     replacement = None
                     aFolder, aFilename = posixpath.split( FreeCAD.ActiveDocument.FileName )
@@ -190,8 +190,8 @@ class UpdateImportedPartsCommand:
                             newFn = aFolder
                             for j in range(i,len(sParts)):
                                 newFn = posixpath.join( newFn,sParts[j] )
-                            #debugPrint( 3, '    checking %s' % newFn )
-                            if os.path.exists( path_convert( newFn, posixpath, os.path ) ) and not newFn in previousRejects :
+                            debugPrint( 4, '    checking %s' % newFn )
+                            if os.path.exists( newFn ) and not newFn in previousRejects :
                                 reply = QtGui.QMessageBox.question(
                                     QtGui.qApp.activeWindow(), "%s source file not found" % obj.Name,
                                     "Unable to find\n  %s \nUse \n  %s\n instead?" % (obj.sourceFile, newFn) , 
