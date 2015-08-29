@@ -14,6 +14,7 @@ from assembly2lib import __dir__
 from PySide import QtGui
 import os, numpy, shutil, copy, time, posixpath, ntpath
 from lib3D import *
+from assembly2solver import solveConstraints
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
 
 def importPart( filename, partName=None ):
@@ -82,7 +83,6 @@ def importPart( filename, partName=None ):
     obj.Shape = obj_to_copy.Shape.copy() 
     if updateExistingPart:
         obj.Placement = prevPlacement
-        obj.touch()
     else:
         for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
             if hasattr(obj.ViewObject, p) and p not in ['DiffuseColor']:
@@ -172,6 +172,11 @@ def path_convert( path, pathLibFrom, pathLibTo):
 
 class UpdateImportedPartsCommand:
     def Activated(self):
+        #disable proxies solving the system as their objects are updated
+        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+        org_setting = parms.GetBool('autoSolveConstraintAttributesChanged', True)
+        parms.SetBool('autoSolveConstraintAttributesChanged', False)
+        solve_assembly_constraints = False
         for obj in FreeCAD.ActiveDocument.Objects:
             if hasattr(obj, 'sourceFile'):
                 if not hasattr( obj, 'timeLastImport'):
@@ -210,7 +215,12 @@ class UpdateImportedPartsCommand:
                 if os.path.exists( obj.sourceFile ):
                     if os.path.getmtime( obj.sourceFile ) > obj.timeLastImport:
                         importPart( obj.sourceFile, obj.Name )
+                        solve_assembly_constraints = True
+        if solve_assembly_constraints:
+            solveConstraints( FreeCAD.ActiveDocument )
         FreeCAD.ActiveDocument.recompute()
+        parms.SetBool('autoSolveConstraintAttributesChanged', org_setting )
+        
     def GetResources(self): 
         return {
             'Pixmap' : os.path.join( __dir__ , 'importPart_update.svg' ) , 
