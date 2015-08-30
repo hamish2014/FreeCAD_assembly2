@@ -82,7 +82,7 @@ class CircularEdgeConstraintCommand:
 
     def GetResources(self): 
         return {
-            'Pixmap' : os.path.join( __dir__ , 'circularEdgeConstraint.svg' ) , 
+            'Pixmap' : ':/icons/circularEdgeConstraint.svg' , 
             'MenuText': 'Add CircularEdge Constraint', 
             'ToolTip': 'Add an CircularEdge Constraint between two objects'
             } 
@@ -99,7 +99,7 @@ class RedefineCircularEdgeConstraintCommand:
                 CircularEdgeSelectionGate(), 
                 self.UpdateConstraint,
                 taskDialog_title ='redefine circular edge constraint', 
-                taskDialog_iconPath = os.path.join( __dir__ , 'circularEdgeConstraint.svg' ), 
+                taskDialog_iconPath = ':/icons/circularEdgeConstraint.svg', 
                 taskDialog_text = selection_text
                 )
 
