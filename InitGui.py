@@ -55,5 +55,4 @@ class Assembly2Workbench (Workbench):
 
     Icon = ':/icons/workBenchIcon.svg'
 
-
 Gui.addWorkbench(Assembly2Workbench())
