@@ -1,5 +1,4 @@
 from assembly2lib import *
-from assembly2lib import __dir__, wb_globals #variables not imported * directive ...
 from lib3D import *
 from pivy import coin
 from PySide import QtGui
@@ -82,7 +81,7 @@ class CircularEdgeConstraintCommand:
 
     def GetResources(self): 
         return {
-            'Pixmap' : os.path.join( __dir__ , 'circularEdgeConstraint.svg' ) , 
+            'Pixmap' : ':/assembly2/icons/circularEdgeConstraint.svg' , 
             'MenuText': 'Add CircularEdge Constraint', 
             'ToolTip': 'Add an CircularEdge Constraint between two objects'
             } 
@@ -99,7 +98,7 @@ class RedefineCircularEdgeConstraintCommand:
                 CircularEdgeSelectionGate(), 
                 self.UpdateConstraint,
                 taskDialog_title ='redefine circular edge constraint', 
-                taskDialog_iconPath = os.path.join( __dir__ , 'circularEdgeConstraint.svg' ), 
+                taskDialog_iconPath = ':/assembly2/icons/circularEdgeConstraint.svg', 
                 taskDialog_text = selection_text
                 )
 

@@ -1,6 +1,4 @@
-
 from assembly2lib import *
-from assembly2lib import __dir__
 from PySide import QtGui, QtCore
 import traceback
 import degreesOfFreedom
@@ -16,7 +14,7 @@ class AnimateCommand:
     def GetResources(self): 
         msg = 'animate degrees of freedom'
         return {
-            'Pixmap' : os.path.join( __dir__ , 'degreesOfFreedomAnimation.svg' ) , 
+            'Pixmap' : ':/assembly2/icons/degreesOfFreedomAnimation.svg', 
             'MenuText': msg, 
             'ToolTip':  msg
             } 
@@ -27,8 +25,8 @@ FreeCADGui.addCommand('degreesOfFreedomAnimation', animateCommand)
 class AnimateDegreesOfFreedomTaskPanel:
     def __init__(self, constraintSystem):
         self.constraintSystem = constraintSystem
-        self.form = FreeCADGui.PySideUic.loadUi( os.path.join(__dir__,"degreesOfFreedomAnimation.ui") )
-        self.form.setWindowIcon(QtGui.QIcon( os.path.join( __dir__ , 'degreesOfFreedomAnimation.svg' ) ) )
+        self.form = FreeCADGui.PySideUic.loadUi( ':/assembly2/ui/degreesOfFreedomAnimation.ui' )
+        self.form.setWindowIcon(QtGui.QIcon( ':/assembly2/icons/degreesOfFreedomAnimation.svg' ) )
         self.form.groupBox_DOF.setTitle('%i Degrees-of-freedom:' % len(constraintSystem.degreesOfFreedom))
         for i, d in enumerate(constraintSystem.degreesOfFreedom):
             item = QtGui.QListWidgetItem('%i. %s' % (i+1, str(d)[1:-1].replace('DegreeOfFreedom ','')), self.form.listWidget_DOF)

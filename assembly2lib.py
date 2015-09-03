@@ -12,12 +12,18 @@ import numpy, os
 import FreeCAD
 import FreeCADGui
 import Part
-from PySide import QtGui
+from PySide import QtGui, QtCore
 from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
 
 path_assembly2 = os.path.dirname(__file__)
-path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')
-path_assembly2_ui =  os.path.join( path_assembly2, 'Resources', 'ui')
+#path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')
+#path_assembly2_ui =  os.path.join( path_assembly2, 'Resources', 'ui')
+path_assembly2_resources = os.path.join( path_assembly2, 'Gui', 'Resources', 'resources.rcc')
+resourcesLoaded = QtCore.QResource.registerResource(path_assembly2_resources)
+assert resourcesLoaded
+#update resources file using 
+# $rcc -binary  Gui/Resources/resources.qrc -o Gui/Resources/resources.rcc 
+
 __dir__ = path_assembly2
 wb_globals = {}
 

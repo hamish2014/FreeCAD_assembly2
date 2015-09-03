@@ -1,9 +1,4 @@
-'''
-Used for importing parts from other FreeCAD documents.
-When update parts is executed, this library import or updates the parts in the assembly document.
-'''
 from assembly2lib import *
-from assembly2lib import __dir__
 import Part
 import os, numpy
 
@@ -72,7 +67,7 @@ class MuxAssemblyCommand:
     def GetResources(self): 
         msg = 'Combine assembly into a single object ( use to create a drawing of the assembly, and so on...)'
         return {
-            'Pixmap' : os.path.join( __dir__ , 'muxAssembly.svg' ) , 
+            'Pixmap' : ':/assembly2/icons/muxAssembly.svg', 
             'MenuText': msg, 
             'ToolTip': msg
             } 

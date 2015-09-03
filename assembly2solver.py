@@ -18,7 +18,6 @@ if __name__ == '__main__': #then testing library.
     FreeCADGui.addCommand = lambda x,y: 0
 
 from assembly2lib import *
-from assembly2lib import __dir__ #variables not imported with * directive ...
 from lib3D import *
 import time, numpy
 from numpy import pi, inf
@@ -148,7 +147,7 @@ class Assembly2SolveConstraintsCommand:
         solveConstraints( FreeCAD.ActiveDocument )
     def GetResources(self): 
         return {
-            'Pixmap' : os.path.join( __dir__ , 'assembly2SolveConstraints.svg' ) , 
+            'Pixmap' : ':/assembly2/icons/assembly2SolveConstraints.svg', 
             'MenuText': 'Solve Assembly 2 constraints', 
             'ToolTip': 'Solve Assembly 2 constraints'
             } 

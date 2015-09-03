@@ -1,5 +1,4 @@
 from assembly2lib import *
-from assembly2lib import __dir__, wb_globals #variables not imported * directive ...
 from lib3D import *
 from pivy import coin
 from PySide import QtGui
@@ -85,7 +84,7 @@ class SphericalSurfaceConstraintCommand:
 
     def GetResources(self): 
         return {
-            'Pixmap' : os.path.join( __dir__ , 'sphericalSurfaceConstraint.svg' ) , 
+            'Pixmap' : ':/assembly2/icons/sphericalSurfaceConstraint.svg', 
             'MenuText': 'Add SphericalSurface Constraint', 
             'ToolTip': 'Add an SphericalSurface Constraint between two objects'
             } 
@@ -102,7 +101,7 @@ class RedefineSphericalSurfaceConstraintCommand:
             SphericalSurfaceSelectionGate(), 
             self.UpdateConstraint,
             taskDialog_title ='redefine spherical surface constraint', 
-            taskDialog_iconPath = os.path.join( __dir__ , 'sphericalSurfaceConstraint.svg' ), 
+            taskDialog_iconPath = ':/assembly2/icons/sphericalSurfaceConstraint.svg', 
             taskDialog_text = selection_text
             )
     def UpdateConstraint(self, selection):
