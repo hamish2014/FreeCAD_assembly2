@@ -148,7 +148,7 @@ class Assembly2SolveConstraintsCommand:
         solveConstraints( FreeCAD.ActiveDocument )
     def GetResources(self): 
         return {
-            'Pixmap' : ':/icons/assembly2SolveConstraints.svg', 
+            'Pixmap' : os.path.join( __dir__ , 'assembly2SolveConstraints.svg' ) , 
             'MenuText': 'Solve Assembly 2 constraints', 
             'ToolTip': 'Solve Assembly 2 constraints'
             } 

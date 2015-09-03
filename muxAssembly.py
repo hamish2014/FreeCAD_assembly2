@@ -72,7 +72,7 @@ class MuxAssemblyCommand:
     def GetResources(self): 
         msg = 'Combine assembly into a single object ( use to create a drawing of the assembly, and so on...)'
         return {
-            'Pixmap' : ':/icons/muxAssembly.svg', 
+            'Pixmap' : os.path.join( __dir__ , 'muxAssembly.svg' ) , 
             'MenuText': msg, 
             'ToolTip': msg
             } 
