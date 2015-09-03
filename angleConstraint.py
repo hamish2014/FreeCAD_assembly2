@@ -1,5 +1,4 @@
 from assembly2lib import *
-from assembly2lib import __dir__, wb_globals #variables not imported with * directive ...
 from lib3D import *
 from pivy import coin
 from PySide import QtGui
@@ -74,7 +73,7 @@ class AngleConstraintCommand:
      def GetResources(self): 
           msg = 'create an angular constraint between two planes'
           return {
-               'Pixmap' : ':/icons/angleConstraint.svg', 
+               'Pixmap' : ':/assembly2/icons/angleConstraint.svg', 
                'MenuText': msg, 
                'ToolTip': msg,
                } 
@@ -91,7 +90,7 @@ class RedefineConstraintCommand:
              PlaneSelectionGate(), 
              self.UpdateConstraint,
              taskDialog_title ='redefine angular constraint', 
-             taskDialog_iconPath = ':/icons/angleConstraint.svg', 
+             taskDialog_iconPath = ':/assembly2/icons/angleConstraint.svg', 
              taskDialog_text = selection_text )
 
     def UpdateConstraint(self, selection):

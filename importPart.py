@@ -138,7 +138,7 @@ class ImportPartCommand:
        
     def GetResources(self): 
         return {
-            'Pixmap' : ':/icons/importPart.svg', 
+            'Pixmap' : ':/assembly2/icons/importPart.svg', 
             'MenuText': 'Import a part from another FreeCAD document', 
             'ToolTip': 'Import a part from another FreeCAD document'
             } 
@@ -223,7 +223,7 @@ class UpdateImportedPartsCommand:
         
     def GetResources(self): 
         return {
-            'Pixmap' : ':/icons/importPart_update.svg', 
+            'Pixmap' : ':/assembly2/icons/importPart_update.svg', 
             'MenuText': 'Update parts imported into the assembly', 
             'ToolTip': 'Update parts imported into the assembly'
             } 
@@ -322,7 +322,7 @@ class MovePartCommand:
        
     def GetResources(self): 
         return {
-            'Pixmap' : ':/icons/Draft_Move.svg', 
+            'Pixmap' : ':/assembly2/icons/Draft_Move.svg', 
             'MenuText': 'move', 
             'ToolTip': 'move part  ( shift+click to copy )'
             } 

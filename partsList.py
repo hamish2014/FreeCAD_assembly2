@@ -115,7 +115,7 @@ class AddPartsList:
         tip = 'create a parts list from the objects imported using the assembly 2 workbench'
         from assembly2lib import __dir__
         return {
-            'Pixmap' : ':/icons/partsList.svg' , 
+            'Pixmap' : ':/assembly2/icons/partsList.svg' , 
             'MenuText': tip, 
             'ToolTip': tip
             } 
@@ -125,8 +125,8 @@ FreeCADGui.addCommand('addPartsList', AddPartsList())
 class PartsListTaskDialog:
     def __init__(self):
         from assembly2lib import __dir__
-        self.form = FreeCADGui.PySideUic.loadUi( ':/ui/partsList.ui' )
-        self.form.setWindowIcon(QtGui.QIcon( ':/icons/partsList.svg' ) )
+        self.form = FreeCADGui.PySideUic.loadUi( ':/assembly2/ui/partsList.ui' )
+        self.form.setWindowIcon(QtGui.QIcon( ':/assembly2/icons/partsList.svg' ) )
         self.setIntialValues()
         self.getValues()
         for groupBox in self.form.children():

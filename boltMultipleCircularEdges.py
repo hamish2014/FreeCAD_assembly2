@@ -1,8 +1,5 @@
 from assembly2lib import *
-from assembly2lib import __dir__
 from assembly2solver import solveConstraints
-
-iconPath = os.path.join( __dir__ , 'boltMultipleCircularEdges.svg' )
 
 class CircularEdgeSelectionGate:
     def allow(self, doc, obj, sub):
@@ -31,7 +28,7 @@ class boltMultipleCircularEdgesCommand:
     def GetResources(self): 
         msg = 'Bolt Multiple Circular Edges'
         return {
-            'Pixmap' : ':/icons/boltMultipleCircularEdges.svg', 
+            'Pixmap' : ':/assembly2/icons/boltMultipleCircularEdges.svg', 
             'MenuText': msg, 
             'ToolTip': msg
             } 
@@ -47,7 +44,7 @@ class RapidBoltingTaskDialog:
 to which the bolt is to be mated
 3) press Ok ''' )
         self.form.setWindowTitle( 'Bolt Multiple Circular Edges' )    
-        self.form.setWindowIcon( QtGui.QIcon( ':/icons/boltMultipleCircularEdges.svg' ) )
+        self.form.setWindowIcon( QtGui.QIcon( ':/assembly2/icons/boltMultipleCircularEdges.svg' ) )
     def reject(self):
         FreeCADGui.Selection.removeSelectionGate()
         FreeCADGui.Control.closeDialog()

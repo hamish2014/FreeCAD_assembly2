@@ -1,5 +1,5 @@
 <RCC version="1.0">
-	<qresource>
+	<qresource prefix="/assembly2">
 		<file>icons/preferences-assembly2.svg</file>
 		<file>icons/workBenchIcon.svg</file>
 		<file>icons/angleConstraint.svg</file>            

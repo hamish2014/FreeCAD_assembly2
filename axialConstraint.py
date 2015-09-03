@@ -1,5 +1,4 @@
 from assembly2lib import *
-from assembly2lib import __dir__, wb_globals #variables not imported * directive ...
 from lib3D import *
 from pivy import coin
 from PySide import QtGui
@@ -79,7 +78,7 @@ class AxialConstraintCommand:
                     )
      def GetResources(self): 
           return {
-               'Pixmap' : ':/icons/axialConstraint.svg', 
+               'Pixmap' : ':/assembly2/icons/axialConstraint.svg', 
                'MenuText': 'Add Axial Constraint', 
                'ToolTip': 'Add an Axial Constraint between two objects'
                } 
@@ -95,7 +94,7 @@ class RedefineConstraintCommand:
              AxialSelectionGate(), 
              self.UpdateConstraint,
              taskDialog_title ='redefine axial constraint', 
-             taskDialog_iconPath = ':/icons/axialConstraint.svg', 
+             taskDialog_iconPath = ':/assembly2/icons/axialConstraint.svg', 
              taskDialog_text = selection_text
              )
         #

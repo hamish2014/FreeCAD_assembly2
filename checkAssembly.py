@@ -1,6 +1,4 @@
 from assembly2lib import *
-from assembly2lib import __dir__
-from PySide import QtGui, QtCore
 import time, traceback
 from FreeCAD import Base
 
@@ -59,7 +57,7 @@ class CheckAssemblyCommand:
     def GetResources(self): 
         msg = 'Check assembly for part overlap/interferance'
         return {
-            'Pixmap' : ':/icons/checkAssembly.svg', 
+            'Pixmap' : ':/assembly2/icons/checkAssembly.svg', 
             'MenuText': msg, 
             'ToolTip':  msg
             } 

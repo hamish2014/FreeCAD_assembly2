@@ -1,3 +1,4 @@
+import assembly2lib #QtCore.QResource.registerResource happens in assembly2lib
 
 class Assembly2Workbench (Workbench): 
     MenuText = 'Assembly 2'
@@ -21,8 +22,8 @@ class Assembly2Workbench (Workbench):
             ]
         self.appendToolbar('Assembly 2', commandslist)
         self.treecmdList = ['importPart', 'updateImportedPartsCommand']
-        FreeCADGui.addIconPath( ':/icons' )
-        FreeCADGui.addPreferencePage( ':/ui/assembly2_prefs.ui','Assembly2' )
+        FreeCADGui.addIconPath( ':/assembly2/icons' )
+        FreeCADGui.addPreferencePage( ':/assembly2/ui/assembly2_prefs.ui','Assembly2' )
         self.appendMenu('Assembly 2', commandslist)
 
     def Activated(self):
@@ -53,6 +54,6 @@ class Assembly2Workbench (Workbench):
                          'assembly2_forkImportedPart',
                          'assembly2_deletePartsConstraints'])
 
-    Icon = ':/icons/workBenchIcon.svg'
+    Icon = ':/assembly2/icons/workBenchIcon.svg'
 
 Gui.addWorkbench(Assembly2Workbench())
