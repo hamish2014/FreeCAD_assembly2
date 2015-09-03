@@ -74,7 +74,7 @@ class AngleConstraintCommand:
      def GetResources(self): 
           msg = 'create an angular constraint between two planes'
           return {
-               'Pixmap' : os.path.join( __dir__ , 'angleConstraint.svg' ) , 
+               'Pixmap' : ':/icons/angleConstraint.svg', 
                'MenuText': msg, 
                'ToolTip': msg,
                } 
@@ -91,7 +91,7 @@ class RedefineConstraintCommand:
              PlaneSelectionGate(), 
              self.UpdateConstraint,
              taskDialog_title ='redefine angular constraint', 
-             taskDialog_iconPath = os.path.join( __dir__ , 'angleConstraint.svg' ), 
+             taskDialog_iconPath = ':/icons/angleConstraint.svg', 
              taskDialog_text = selection_text )
 
     def UpdateConstraint(self, selection):

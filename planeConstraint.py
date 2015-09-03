@@ -88,7 +88,7 @@ class PlaneConstraintCommand:
                
      def GetResources(self): 
           return {
-               'Pixmap' : os.path.join( __dir__ , 'planeConstraint.svg' ) , 
+               'Pixmap' : ':/icons/planeConstraint.svg', 
                'MenuText': 'Add Plane Constraint', 
                'ToolTip': 'Add an Plane Constraint between two objects'
                } 
@@ -105,7 +105,7 @@ class RedefineConstraintCommand:
                     PlaneSelectionGate(), 
                     self.UpdateConstraint, 
                     taskDialog_title ='add plane constraint', 
-                    taskDialog_iconPath = os.path.join( __dir__ , 'planeConstraint.svg' ), 
+                    taskDialog_iconPath = ':/icons/planeConstraint.svg', 
                     taskDialog_text = selection_text,
                     secondSelectionGate = PlaneSelectionGate2() )
 

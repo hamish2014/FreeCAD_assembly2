@@ -85,7 +85,7 @@ class SphericalSurfaceConstraintCommand:
 
     def GetResources(self): 
         return {
-            'Pixmap' : os.path.join( __dir__ , 'sphericalSurfaceConstraint.svg' ) , 
+            'Pixmap' : ':/icons/sphericalSurfaceConstraint.svg', 
             'MenuText': 'Add SphericalSurface Constraint', 
             'ToolTip': 'Add an SphericalSurface Constraint between two objects'
             } 
@@ -102,7 +102,7 @@ class RedefineSphericalSurfaceConstraintCommand:
             SphericalSurfaceSelectionGate(), 
             self.UpdateConstraint,
             taskDialog_title ='redefine spherical surface constraint', 
-            taskDialog_iconPath = os.path.join( __dir__ , 'sphericalSurfaceConstraint.svg' ), 
+            taskDialog_iconPath = ':/icons/sphericalSurfaceConstraint.svg', 
             taskDialog_text = selection_text
             )
     def UpdateConstraint(self, selection):
