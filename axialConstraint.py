@@ -79,7 +79,7 @@ class AxialConstraintCommand:
                     )
      def GetResources(self): 
           return {
-               'Pixmap' : ':/icons/axialConstraint.svg', 
+               'Pixmap' : os.path.join( __dir__ , 'axialConstraint.svg' ) , 
                'MenuText': 'Add Axial Constraint', 
                'ToolTip': 'Add an Axial Constraint between two objects'
                } 
@@ -95,7 +95,7 @@ class RedefineConstraintCommand:
              AxialSelectionGate(), 
              self.UpdateConstraint,
              taskDialog_title ='redefine axial constraint', 
-             taskDialog_iconPath = ':/icons/axialConstraint.svg', 
+             taskDialog_iconPath = os.path.join( __dir__ , 'axialConstraint.svg' ), 
              taskDialog_text = selection_text
              )
         #

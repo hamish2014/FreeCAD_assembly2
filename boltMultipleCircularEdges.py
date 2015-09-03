@@ -31,7 +31,7 @@ class boltMultipleCircularEdgesCommand:
     def GetResources(self): 
         msg = 'Bolt Multiple Circular Edges'
         return {
-            'Pixmap' : ':/icons/boltMultipleCircularEdges.svg', 
+            'Pixmap' : iconPath, 
             'MenuText': msg, 
             'ToolTip': msg
             } 
@@ -47,7 +47,7 @@ class RapidBoltingTaskDialog:
 to which the bolt is to be mated
 3) press Ok ''' )
         self.form.setWindowTitle( 'Bolt Multiple Circular Edges' )    
-        self.form.setWindowIcon( QtGui.QIcon( ':/icons/boltMultipleCircularEdges.svg' ) )
+        self.form.setWindowIcon( QtGui.QIcon( iconPath ) )
     def reject(self):
         FreeCADGui.Selection.removeSelectionGate()
         FreeCADGui.Control.closeDialog()

@@ -59,7 +59,7 @@ class CheckAssemblyCommand:
     def GetResources(self): 
         msg = 'Check assembly for part overlap/interferance'
         return {
-            'Pixmap' : ':/icons/checkAssembly.svg', 
+            'Pixmap' : os.path.join( __dir__ , 'checkAssembly.svg' ) , 
             'MenuText': msg, 
             'ToolTip':  msg
             } 
