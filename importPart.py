@@ -11,6 +11,7 @@ if __name__ == '__main__': #then testing library.
 
 from assembly2lib import *
 from assembly2lib import __dir__
+import Part
 from PySide import QtGui
 import os, numpy, shutil, copy, time, posixpath, ntpath
 from lib3D import *
@@ -29,7 +30,15 @@ def importPart( filename, partName=None ):
         doc = [ d for d in FreeCAD.listDocuments().values() if d.FileName == filename][0]
     else:
         currentDoc = FreeCAD.ActiveDocument.Name
-        doc = FreeCAD.open(filename)
+        if filename.lower().endswith('.fcstd'):
+            doc = FreeCAD.open(filename)
+        else: #trying shaping import http://forum.freecadweb.org/viewtopic.php?f=22&t=12434&p=99772#p99772
+            doc = FreeCAD.newDocument( os.path.basename(filename) )
+            shapeobj = doc.addObject("Part::Feature","part")
+            myShape=Part.Shape()
+            myShape.read(filename)
+            shapeobj.Shape = myShape
+                                       
         FreeCAD.setActiveDocument(currentDoc)
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
@@ -117,7 +126,7 @@ class ImportPartCommand:
             QtGui.qApp.activeWindow(),
             "Select FreeCAD document to import part from"
             )
-        dialog.setNameFilter("FreeCAD Document (*.fcstd)")
+        dialog.setNameFilter("Supported Formats (*.FCStd *.brep *.brp *.imp *.iges *.igs *.obj *.step *.stp);;All files (*.*)")
         if dialog.exec_():
             filename = dialog.selectedFiles()[0]
         else:
