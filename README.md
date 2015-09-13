@@ -29,10 +29,10 @@ To use this workbench clone this git repository under your FreeCAD MyScripts dir
 On a Linux Debian based system such as Ubuntu, installation can be done through BASH as follows
 
 ```bash
-$ sudo apt-get install git python-numpy python-pyside
-$ mkdir ~/.FreeCAD/Mod
-$ cd ~/.FreeCAD/Mod
-$ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
+  $ sudo apt-get install git python-numpy python-pyside
+  $ mkdir ~/.FreeCAD/Mod
+  $ cd ~/.FreeCAD/Mod
+  $ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
 ```
 
 FreeCAD you will now have a new workbench-entry called "Assembly 2".
@@ -40,6 +40,7 @@ Once installed, use git to upgrade to the latest version through BASH as follows
 ```bash
   $ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
   $ git pull
+  $ rm *.pyc
 ```
 
 Alternatilvely, on an *Ubuntu* system the freecad-community PPA can be used:
@@ -57,11 +58,11 @@ Windows Installation Instructions
   * create new directory named "assembly2"
   * unzip downloaded repository in "C:\PortableApps\FreeCAD 0_15\Mod\assembly2"
   
-FreeCAD you will now have a new workbench-entry called "Assembly 2".
+FreeCAD will now have a new workbench-entry called "Assembly 2".
 
 *Pyside and Numpy are integrated in the FreeCAD 0.15 dev-Snapshots, so these Python packages do not need to be installed individually*
 
-To update to the latest version, redownload the git repository and overwrite the contents of the assembly2 folder.
+To update to the latest version, delete the assembly2 folder and redownload the git repository.
 
 Bugs
 ----
