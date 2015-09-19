@@ -38,7 +38,7 @@ def parseSelection(selection, objectToUpdate=None):
           for prop in ["Object1","Object2","SubElement1","SubElement2"]:
                c.setEditorMode(prop, 1) 
           c.Proxy = ConstraintObjectProxy()
-          c.ViewObject.Proxy = 0 
+          c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/angleConstraint.svg')
      else:
           debugPrint(2, "redefining %s" % objectToUpdate.Name )
           c = objectToUpdate

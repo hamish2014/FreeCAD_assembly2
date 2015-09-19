@@ -14,6 +14,7 @@ import FreeCADGui
 import Part
 from PySide import QtGui, QtCore
 from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
+from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy
 
 path_assembly2 = os.path.dirname(__file__)
 #path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')
@@ -122,25 +123,7 @@ class ConstraintObjectProxy:
     def callSolveConstraints(self):
         from assembly2solver import solveConstraints
         solveConstraints( FreeCAD.ActiveDocument )
-
-class ImportedPartViewProviderProxy:
-    def onDelete(self, feature, subelements): # subelements is a tuple of strings
-        viewObject = feature
-        obj = viewObject.Object
-        doc = obj.Document
-        debugPrint(2, 'ConstraintObjectViewProviderProxy.onDelete: removing constraints refering to %s (label:%s)' % (obj.Name, obj.Label))
-        deleteList = []
-        for c in doc.Objects:
-            if 'ConstraintInfo' in c.Content:
-                if obj.Name in [ c.Object1, c.Object2 ]:
-                    deleteList.append(c)
-        if len(deleteList) > 0:
-            debugPrint(3, "  delete list %s" % str(deleteList) )
-            for c in deleteList:
-                debugPrint(2, "  - removing constraint %s" % c.Name )
-                doc.removeObject(c.Name)
-        return True # If False is returned the object won't be deleted
-
+    
 class SelectConstraintObjectsCommand:
     def Activated(self):
         constraintObj = FreeCADGui.Selection.getSelectionEx()[0].Object

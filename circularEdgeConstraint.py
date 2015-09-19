@@ -44,7 +44,7 @@ def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lo
             c.setEditorMode(prop, 1) 
         
         c.Proxy = ConstraintObjectProxy()
-        c.ViewObject.Proxy = 0 
+        c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/circularEdgeConstraint.svg')
     else:
         debugPrint(2, "redefining %s" % objectToUpdate.Name )
         c = objectToUpdate
