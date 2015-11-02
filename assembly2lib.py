@@ -96,19 +96,23 @@ class SelectionTaskDialogForm(QtGui.QWidget):
         self.setLayout(vbox)
 
 
-def findUnusedObjectName(base, counterStart=1, fmt='%02i'):
+def findUnusedObjectName(base, counterStart=1, fmt='%02i', document=None):
     i = counterStart
     objName = '%s%s' % (base, fmt%i)
-    usedNames = [ obj.Name for obj in FreeCAD.ActiveDocument.Objects ]
+    if document == None:
+        document = FreeCAD.ActiveDocument
+    usedNames = [ obj.Name for obj in document.Objects ]    
     while objName in usedNames:
         i = i + 1
         objName = '%s%s' % (base, fmt%i)
     return objName
 
-def findUnusedLabel(base, counterStart=1, fmt='%02i'):
+def findUnusedLabel(base, counterStart=1, fmt='%02i', document=None):
     i = counterStart
     label = '%s%s' % (base, fmt%i)
-    usedLabels = [ obj.Label for obj in FreeCAD.ActiveDocument.Objects ]
+    if document == None:
+        document = FreeCAD.ActiveDocument
+    usedLabels = [ obj.Label for obj in document.Objects ]
     while label in usedLabels:
         i = i + 1
         label = '%s%s' % (base, fmt%i)
@@ -132,8 +136,9 @@ class SelectConstraintObjectsCommand:
         FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj1Name) )
         FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj2Name) )
     def GetResources(self): 
-        return { 'MenuText': 'Select Objects' } 
-FreeCADGui.addCommand('selectConstraintObjects', SelectConstraintObjectsCommand())
+        return { 'MenuText': 'Select Objects' }
+if FreeCAD.GuiUp:
+    FreeCADGui.addCommand('selectConstraintObjects', SelectConstraintObjectsCommand())
 
 class SelectConstraintElementsCommand:
     def Activated(self):
@@ -143,8 +148,9 @@ class SelectConstraintElementsCommand:
         FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj1Name), constraintObj.SubElement1 )
         FreeCADGui.Selection.addSelection( FreeCAD.ActiveDocument.getObject(obj2Name), constraintObj.SubElement2 )
     def GetResources(self): 
-        return { 'MenuText': 'Select Object Elements' } 
-FreeCADGui.addCommand('selectConstraintElements', SelectConstraintElementsCommand())
+        return { 'MenuText': 'Select Object Elements' }
+if FreeCAD.GuiUp:
+    FreeCADGui.addCommand('selectConstraintElements', SelectConstraintElementsCommand())
 
 def printSelection(selection):
     entries = []

@@ -29,17 +29,20 @@ def importPart( filename, partName=None ):
     if doc_already_open:
         doc = [ d for d in FreeCAD.listDocuments().values() if d.FileName == filename][0]
     else:
-        currentDoc = FreeCAD.ActiveDocument.Name
+        #currentDoc = FreeCAD.ActiveDocument.Name
+        doc_assembly = FreeCAD.ActiveDocument
         if filename.lower().endswith('.fcstd'):
-            doc = FreeCAD.open(filename)
-        else: #trying shaping import http://forum.freecadweb.org/viewtopic.php?f=22&t=12434&p=99772#p99772
+            debugPrint(4, '  opening %s' % filename)
+            doc = FreeCAD.openDocument(filename)
+            debugPrint(4, '  succesfully opened %s' % filename)
+        else: #trying shaping import http://forum.freecadweb.org/viewtopic.php?f=22&t=12434&p=99772#p99772x
             doc = FreeCAD.newDocument( os.path.basename(filename) )
             shapeobj = doc.addObject("Part::Feature","part")
             myShape=Part.Shape()
             myShape.read(filename)
             shapeobj.Shape = myShape
-                                       
-        FreeCAD.setActiveDocument(currentDoc)
+        #FreeCAD.setActiveDocument(currentDoc) #causes crash see http://www.freecadweb.org/tracker/view.php?id=2322#bugnotes
+        
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
                        and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0] # len(obj.Shape.Faces) > 0 to avoid sketches
@@ -49,12 +52,12 @@ def importPart( filename, partName=None ):
         subAssemblyImport = True
         debugPrint(2, 'Importing subassembly from %s' % filename)
         tempPartName = 'import_temporary_part'
-        obj_to_copy = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",tempPartName)
+        obj_to_copy = doc_assembly.addObject("Part::FeaturePython",tempPartName)
         obj_to_copy.Proxy = Proxy_muxAssemblyObj()
         obj_to_copy.ViewObject.Proxy = ImportedPartViewProviderProxy()
         obj_to_copy.Shape =  muxObjects(doc)
         if (not updateExistingPart) or \
-                (updateExistingPart and getattr( FreeCAD.ActiveDocument.getObject(partName),'updateColors',True)):
+                (updateExistingPart and getattr( doc_assembly.getObject(partName),'updateColors',True)):
             muxMapColors(doc, obj_to_copy)
     else: 
         subAssemblyImport = False
@@ -70,24 +73,24 @@ def importPart( filename, partName=None ):
         obj_to_copy  = visibleObjects[0]
 
     if updateExistingPart:
-        obj = FreeCAD.ActiveDocument.getObject(partName)
+        obj = doc_assembly.getObject(partName)
         prevPlacement = obj.Placement
         if not hasattr(obj, 'updateColors'):
             obj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = True
-        importUpdateConstraintSubobjects( FreeCAD.ActiveDocument, obj, obj_to_copy )
+        importUpdateConstraintSubobjects( doc_assembly, obj, obj_to_copy )
     else:        
-        partName = findUnusedObjectName( doc.Label + '_' )
+        partName = findUnusedObjectName( doc.Label + '_', document=doc_assembly )
         try:
-            obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
+            obj = doc_assembly.addObject("Part::FeaturePython",partName)
         except UnicodeEncodeError:
-            safeName = findUnusedObjectName('import_')
-            obj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython", safeName)
-            obj.Label = findUnusedLabel( doc.Label + '_' )
+            safeName = findUnusedObjectName('import_', document=doc_assembly)
+            obj = doc_assembly.addObject("Part::FeaturePython", safeName)
+            obj.Label = findUnusedLabel( doc.Label + '_', document=doc_assembly )
         obj.addProperty("App::PropertyFile",    "sourceFile",    "importPart").sourceFile = filename
         obj.addProperty("App::PropertyFloat", "timeLastImport","importPart")
         obj.setEditorMode("timeLastImport",1)  
         obj.addProperty("App::PropertyBool","fixedPosition","importPart")
-        obj.fixedPosition = not any([i.fixedPosition for i in FreeCAD.ActiveDocument.Objects if hasattr(i, 'fixedPosition') ])
+        obj.fixedPosition = not any([i.fixedPosition for i in doc_assembly.Objects if hasattr(i, 'fixedPosition') ])
         obj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = True
     obj.Shape = obj_to_copy.Shape.copy() 
     if updateExistingPart:
@@ -103,10 +106,10 @@ def importPart( filename, partName=None ):
     obj.timeLastImport = os.path.getmtime( obj.sourceFile )
     #clean up
     if subAssemblyImport:
-        FreeCAD.ActiveDocument.removeObject(tempPartName)
+        doc_assembly.removeObject(tempPartName)
     if not doc_already_open: #then close again
         FreeCAD.closeDocument(doc.Name)
-        FreeCAD.setActiveDocument(currentDoc)  
+        FreeCAD.setActiveDocument(doc_assembly.Name)
     return obj
 
 class Proxy_importPart:
