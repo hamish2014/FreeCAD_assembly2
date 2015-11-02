@@ -19,6 +19,7 @@ from assembly2solver import solveConstraints
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
 
 def importPart( filename, partName=None ):
+    doc_assembly = FreeCAD.ActiveDocument
     updateExistingPart = partName <> None
     if updateExistingPart:
         FreeCAD.Console.PrintMessage("updating part %s from %s\n" % (partName,filename))
@@ -29,8 +30,6 @@ def importPart( filename, partName=None ):
     if doc_already_open:
         doc = [ d for d in FreeCAD.listDocuments().values() if d.FileName == filename][0]
     else:
-        #currentDoc = FreeCAD.ActiveDocument.Name
-        doc_assembly = FreeCAD.ActiveDocument
         if filename.lower().endswith('.fcstd'):
             debugPrint(4, '  opening %s' % filename)
             doc = FreeCAD.openDocument(filename)
@@ -41,7 +40,6 @@ def importPart( filename, partName=None ):
             myShape=Part.Shape()
             myShape.read(filename)
             shapeobj.Shape = myShape
-        #FreeCAD.setActiveDocument(currentDoc) #causes crash see http://www.freecadweb.org/tracker/view.php?id=2322#bugnotes
         
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
