@@ -177,5 +177,5 @@ class ConstraintMirrorObjectProxy:
         if obj.getGroupOfProperty( prop ) == 'ConstraintNfo':
             if hasattr( self, 'constraintObj_name' ):
                 constraintObj = obj.Document.getObject( self.constraintObj_name )
-                if constraintObj != None: #how no idea how this is even possible but anyway ...
+                if getattr(constraintObj, prop) != getattr( obj, prop):
                     setattr( constraintObj, prop, getattr( obj, prop) )

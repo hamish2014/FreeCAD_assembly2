@@ -245,7 +245,7 @@ class UpdateImportedPartsCommand:
                 if doc_assembly.getObject( obj.Object1 ) == None or doc_assembly.getObject( obj.Object2 ) == None: 
                     debugPrint(2, 'removing %s which refers to non-existent objects' % obj.Name)
                     doc_assembly.removeObject( obj.Name ) #required for FreeCAD 0.15 which does not support the on-delete method
-                elif not hasattr( obj.ViewObject.Proxy, 'mirrors_name'):
+                elif not hasattr( obj.ViewObject.Proxy, 'mirror_name'):
                     debugPrint(2, 'creating mirror of %s' % obj.Name)
                     doc_assembly.getObject( obj.Object2 ).touch()
                     obj.ViewObject.Proxy.mirror_name = create_constraint_mirror(  obj, obj.ViewObject.Proxy.iconPath )
