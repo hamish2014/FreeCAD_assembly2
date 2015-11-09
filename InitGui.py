@@ -37,7 +37,7 @@ class Assembly2Workbench (Workbench):
         if len(selection) == 1:
             obj = selection[0]
             if hasattr(obj,'Content'):
-                if 'ConstraintInfo' in obj.Content:
+                if 'ConstraintInfo' in obj.Content or 'ConstraintNfo' in obj.Content:
                     redefineCmd = {
                         'plane':'redefinePlaneConstraint',
                         'angle_between_planes':'redefineAngleConstraint',

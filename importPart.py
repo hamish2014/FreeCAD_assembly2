@@ -18,8 +18,9 @@ from lib3D import *
 from assembly2solver import solveConstraints
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
 
-def importPart( filename, partName=None ):
-    doc_assembly = FreeCAD.ActiveDocument
+def importPart( filename, partName=None, doc_assembly=None ):
+    if doc_assembly == None:
+        doc_assembly = FreeCAD.ActiveDocument
     updateExistingPart = partName <> None
     if updateExistingPart:
         FreeCAD.Console.PrintMessage("updating part %s from %s\n" % (partName,filename))
@@ -108,6 +109,7 @@ def importPart( filename, partName=None ):
     if not doc_already_open: #then close again
         FreeCAD.closeDocument(doc.Name)
         FreeCAD.setActiveDocument(doc_assembly.Name)
+        FreeCAD.ActiveDocument = doc_assembly
     return obj
 
 class Proxy_importPart:
@@ -186,8 +188,10 @@ class UpdateImportedPartsCommand:
         parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
         org_setting = parms.GetBool('autoSolveConstraintAttributesChanged', True)
         parms.SetBool('autoSolveConstraintAttributesChanged', False)
+        doc_assembly = FreeCAD.ActiveDocument
         solve_assembly_constraints = False
-        for obj in FreeCAD.ActiveDocument.Objects:
+        YesToAll_clicked = False
+        for obj in doc_assembly.Objects:
             if hasattr(obj, 'sourceFile'):
                 if not hasattr( obj, 'timeLastImport'):
                     obj.addProperty("App::PropertyFloat", "timeLastImport","importPart") #should default to zero which will force update.
@@ -195,7 +199,7 @@ class UpdateImportedPartsCommand:
                 if not os.path.exists( obj.sourceFile ):
                     debugPrint( 3, '%s.sourceFile %s is missing, attempting to repair it' % (obj.Name,  obj.sourceFile) )
                     replacement = None
-                    aFolder, aFilename = posixpath.split( FreeCAD.ActiveDocument.FileName )
+                    aFolder, aFilename = posixpath.split( doc_assembly.FileName )
                     sParts = path_split( posixpath, obj.sourceFile)
                     debugPrint( 3, '  obj.sourceFile parts %s' % sParts )
                     replacement = None
@@ -207,12 +211,19 @@ class UpdateImportedPartsCommand:
                                 newFn = posixpath.join( newFn,sParts[j] )
                             debugPrint( 4, '    checking %s' % newFn )
                             if os.path.exists( newFn ) and not newFn in previousRejects :
+                                if YesToAll_clicked:
+                                    replacement = newFn
+                                    break
                                 reply = QtGui.QMessageBox.question(
                                     QtGui.qApp.activeWindow(), "%s source file not found" % obj.Name,
                                     "Unable to find\n  %s \nUse \n  %s\n instead?" % (obj.sourceFile, newFn) , 
-                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
+                                    QtGui.QMessageBox.Yes | QtGui.QMessageBox.YesToAll | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
                                 if reply == QtGui.QMessageBox.Yes:
                                     replacement = newFn
+                                    break
+                                if reply == QtGui.QMessageBox.YesToAll:
+                                    replacement = newFn
+                                    YesToAll_clicked = True
                                     break
                                 else:
                                     previousRejects.append( newFn )
@@ -224,11 +235,25 @@ class UpdateImportedPartsCommand:
                         obj.timeLastImport = 0 #force update if users repairs link
                 if os.path.exists( obj.sourceFile ):
                     if os.path.getmtime( obj.sourceFile ) > obj.timeLastImport:
-                        importPart( obj.sourceFile, obj.Name )
+                        importPart( obj.sourceFile, obj.Name,  doc_assembly )
                         solve_assembly_constraints = True
         if solve_assembly_constraints:
-            solveConstraints( FreeCAD.ActiveDocument )
-        FreeCAD.ActiveDocument.recompute()
+            solveConstraints( doc_assembly )
+        # constraint mirror house keeping
+        for obj in doc_assembly.Objects: #for adding creating mirrored constraints in old files
+            if 'ConstraintInfo' in obj.Content:
+                if doc_assembly.getObject( obj.Object1 ) == None or doc_assembly.getObject( obj.Object2 ) == None: 
+                    debugPrint(2, 'removing %s which refers to non-existent objects' % obj.Name)
+                    doc_assembly.removeObject( obj.Name ) #required for FreeCAD 0.15 which does not support the on-delete method
+                elif not hasattr( obj.ViewObject.Proxy, 'mirrors_name'):
+                    debugPrint(2, 'creating mirror of %s' % obj.Name)
+                    doc_assembly.getObject( obj.Object2 ).touch()
+                    obj.ViewObject.Proxy.mirror_name = create_constraint_mirror(  obj, obj.ViewObject.Proxy.iconPath )
+            elif 'ConstraintNfo' in obj.Content: #constraint mirror
+                if  doc_assembly.getObject( obj.ViewObject.Proxy.constraintObj_name ) == None:
+                    debugPrint(2, 'removing %s which mirror non-existent constraint' % obj.Name)
+                    doc_assembly.removeObject( obj.Name ) #clean up for FreeCAD 0.15 which does not support the on-delete method
+        doc_assembly.recompute()
         parms.SetBool('autoSolveConstraintAttributesChanged', org_setting )
         
     def GetResources(self): 
@@ -256,10 +281,9 @@ def duplicateImportedPart( part ):
     newObj.addProperty("App::PropertyBool","updateColors","importPart").updateColors = getattr(part,'updateColors',True)
     newObj.Shape = part.Shape.copy()
     for p in part.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on their role in the assembly.
-        if hasattr(newObj.ViewObject, p) and p not in ['DiffuseColor']:
+        if hasattr(newObj.ViewObject, p) and p not in ['DiffuseColor','Proxy']:
             setattr(newObj.ViewObject, p, getattr( part.ViewObject, p))
-    newObj.ViewObject.DiffuseColor = copy.copy( part.ViewObject.DiffuseColor )
-            
+    newObj.ViewObject.DiffuseColor = copy.copy( part.ViewObject.DiffuseColor )        
     newObj.Proxy = Proxy_importPart()
     newObj.ViewObject.Proxy = ImportedPartViewProviderProxy()
     newObj.Placement.Base = part.Placement.Base

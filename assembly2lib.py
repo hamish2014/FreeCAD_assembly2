@@ -14,7 +14,7 @@ import FreeCADGui
 import Part
 from PySide import QtGui, QtCore
 from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
-from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy
+from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy, create_constraint_mirror
 
 path_assembly2 = os.path.dirname(__file__)
 #path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')
@@ -123,7 +123,23 @@ class ConstraintObjectProxy:
         parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
         if parms.GetBool('autoSolveConstraintAttributesChanged', True):
             self.callSolveConstraints()
-            obj.touch()
+            #obj.touch()
+    def onChanged(self, obj, prop):
+        if hasattr(self, 'mirror_name'):
+            cMirror = obj.Document.getObject( self.mirror_name )
+            if cMirror.Proxy == None:
+                return #this occurs during document loading ...
+            if obj.getGroupOfProperty( prop ) == 'ConstraintInfo':
+                cMirror.Proxy.disable_onChanged = True
+                setattr( cMirror, prop, getattr( obj, prop) )
+                cMirror.Proxy.disable_onChanged = False
+
+    def reduceDirectionChoices( self, obj, value):
+        if hasattr(self, 'mirror_name'):
+            cMirror = obj.Document.getObject( self.mirror_name )
+            cMirror.directionConstraint = ["aligned","opposed"] #value should be updated in onChanged call due to assignment in 2 lines
+        obj.directionConstraint = ["aligned","opposed"]
+        obj.directionConstraint = value
     def callSolveConstraints(self):
         from assembly2solver import solveConstraints
         solveConstraints( FreeCAD.ActiveDocument )

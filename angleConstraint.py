@@ -29,25 +29,27 @@ def parseSelection(selection, objectToUpdate=None):
           debugPrint(2, "creating %s" % cName )
           c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
           c.addProperty("App::PropertyString","Type","ConstraintInfo").Type = 'angle_between_planes'
-          c.addProperty("App::PropertyString","Object1","ConstraintInfo")
-          c.addProperty("App::PropertyString","SubElement1","ConstraintInfo")
-          c.addProperty("App::PropertyString","Object2","ConstraintInfo")
-          c.addProperty("App::PropertyString","SubElement2","ConstraintInfo")
+          c.addProperty("App::PropertyString","Object1","ConstraintInfo").Object1 = cParms[0][0]
+          c.addProperty("App::PropertyString","SubElement1","ConstraintInfo").SubElement1 = cParms[0][1]
+          c.addProperty("App::PropertyString","Object2","ConstraintInfo").Object2 = cParms[1][0]
+          c.addProperty("App::PropertyString","SubElement2","ConstraintInfo").SubElement2 = cParms[1][1]
           c.addProperty("App::PropertyAngle","angle","ConstraintInfo")
-          c.setEditorMode('Type',1)
-          for prop in ["Object1","Object2","SubElement1","SubElement2"]:
+          c.Object1 = cParms[0][0]
+          c.SubElement1 = cParms[0][1]
+          c.Object2 = cParms[1][0]
+          c.SubElement2 = cParms[1][1]
+          for prop in ["Object1","Object2","SubElement1","SubElement2","Type"]:
                c.setEditorMode(prop, 1) 
           c.Proxy = ConstraintObjectProxy()
           c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/angleConstraint.svg')
      else:
           debugPrint(2, "redefining %s" % objectToUpdate.Name )
           c = objectToUpdate
+          c.Object1 = cParms[0][0]
+          c.SubElement1 = cParms[0][1]
+          c.Object2 = cParms[1][0]
+          c.SubElement2 = cParms[1][1]
           updateObjectProperties(c)
-
-     c.Object1 = cParms[0][0]
-     c.SubElement1 = cParms[0][1]
-     c.Object2 = cParms[1][0]
-     c.SubElement2 = cParms[1][1]
 
      c.Proxy.callSolveConstraints()
          

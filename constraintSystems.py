@@ -481,8 +481,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
             a = vM.rotate( self.obj1Name, self.a1_r, vM.X )
             b = vM.rotate( self.obj2Name, self.a2_r, vM.X )
             self.constraintValue = "aligned"  if dotProduct( a,b ) > 0 else "opposed"
-            self.constraintObj.directionConstraint = ["aligned","opposed"]
-            self.constraintObj.directionConstraint = self.constraintValue    
+            self.constraintObj.Proxy.reduceDirectionChoices( self.constraintObj, self.constraintValue )
         if success:
             self.updateDegreesOfFreedomAnalytically()
         #else:
