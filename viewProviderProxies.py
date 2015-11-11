@@ -113,8 +113,8 @@ class ConstraintViewProviderProxy:
         doc = obj.Document
         if isinstance( obj.Proxy, ConstraintMirrorObjectProxy ):
             doc.removeObject(  obj.Proxy.constraintObj_name ) # also delete the original constraint which obj mirrors
-        elif hasattr( obj.Proxy, 'mirrorName'): # the original constraint, #isinstance( obj.Proxy,  ConstraintObjectProxy ) not done since ConstraintObjectProxy not defined in namespace 
-            doc.removeObject( obj.Proxy.mirrorName ) # also delete mirror
+        elif hasattr( obj.Proxy, 'mirror_name'): # the original constraint, #isinstance( obj.Proxy,  ConstraintObjectProxy ) not done since ConstraintObjectProxy not defined in namespace 
+            doc.removeObject( obj.Proxy.mirror_name ) # also delete mirror
         return True
 
 
