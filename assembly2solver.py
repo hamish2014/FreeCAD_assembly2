@@ -56,7 +56,7 @@ def findBaseObject( doc, objectNames  ):
         debugPrint( 1, 'assembly 2 solver: assigning %s a fixed position' % objectNames[0])
         return objectNames[0]
 
-def solveConstraints( doc ):
+def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True ):
     if not constraintsObjectsAllExist(doc):
         return
     T_start = time.time()
@@ -102,20 +102,22 @@ def solveConstraints( doc ):
             else:
                 raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
         except Assembly2SolverError, msg:
-            FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
-            FreeCAD.Console.PrintError(msg)
+            if printErrors:
+                FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
+                FreeCAD.Console.PrintError(msg)
             solved = False
             break
         except:
-            FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
-            FreeCAD.Console.PrintError( traceback.format_exc())
+            if printErrors:
+                FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
+                FreeCAD.Console.PrintError( traceback.format_exc())
             solved = False
             break
     if solved:
         debugPrint(4,'placement X %s' % constraintSystem.variableManager.X )
         variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
         debugPrint(2,'Constraint system solved in %2.2fs; resulting system has %i degrees-of-freedom' % (time.time()-T_start, len( constraintSystem.degreesOfFreedom)))
-    elif QtGui.qApp <> None: #i.e. GUI active
+    elif showFailureErrorDialog and  QtGui.qApp <> None: #i.e. GUI active
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
         flags = QtGui.QMessageBox.StandardButton.Yes 
         flags |= QtGui.QMessageBox.StandardButton.No
