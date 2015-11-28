@@ -251,7 +251,7 @@ class UpdateImportedPartsCommand:
                     obj.ViewObject.Proxy.mirror_name = create_constraint_mirror(  obj, obj.ViewObject.Proxy.iconPath )
             elif 'ConstraintNfo' in obj.Content: #constraint mirror
                 if  doc_assembly.getObject( obj.ViewObject.Proxy.constraintObj_name ) == None:
-                    debugPrint(2, 'removing %s which mirror non-existent constraint' % obj.Name)
+                    debugPrint(2, 'removing %s which mirrors/links to a non-existent constraint' % obj.Name)
                     doc_assembly.removeObject( obj.Name ) #clean up for FreeCAD 0.15 which does not support the on-delete method
         doc_assembly.recompute()
         parms.SetBool('autoSolveConstraintAttributesChanged', org_setting )

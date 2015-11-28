@@ -158,10 +158,10 @@ def create_constraint_mirror( constraintObj, iconPath ):
 
 class ConstraintMirrorObjectProxy:
     def __init__(self, obj, constraintObj ):
-        obj.Proxy = self
         self.constraintObj_name = constraintObj.Name
         constraintObj.Proxy.mirror_name = obj.Name
         self.disable_onChanged = False
+        obj.Proxy = self
         
     def execute(self, obj):
         return #no work required in onChanged causes touched in original constraint ...
@@ -177,5 +177,6 @@ class ConstraintMirrorObjectProxy:
         if obj.getGroupOfProperty( prop ) == 'ConstraintNfo':
             if hasattr( self, 'constraintObj_name' ):
                 constraintObj = obj.Document.getObject( self.constraintObj_name )
-                if getattr(constraintObj, prop) != getattr( obj, prop):
-                    setattr( constraintObj, prop, getattr( obj, prop) )
+                if hasattr(constraintObj, prop) and hasattr( obj, prop):
+                    if getattr(constraintObj, prop) != getattr( obj, prop):
+                        setattr( constraintObj, prop, getattr( obj, prop) )
