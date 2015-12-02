@@ -177,6 +177,8 @@ class ConstraintMirrorObjectProxy:
         if obj.getGroupOfProperty( prop ) == 'ConstraintNfo':
             if hasattr( self, 'constraintObj_name' ):
                 constraintObj = obj.Document.getObject( self.constraintObj_name )
-                if hasattr(constraintObj, prop) and hasattr( obj, prop):
+                try:
                     if getattr(constraintObj, prop) != getattr( obj, prop):
                         setattr( constraintObj, prop, getattr( obj, prop) )
+                except AttributeError, msg:
+                    pass #loading issues...
