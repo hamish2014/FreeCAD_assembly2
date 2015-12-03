@@ -60,7 +60,7 @@ class ImportedPartViewProviderProxy:
         if hasattr(self, 'Object'):
             importedPart = self.Object
         else:
-            return None
+            return []
         #if hasattr(self, 'object_Name'):
         #    importedPart = FreeCAD.ActiveDocument.getObject( self.object_Name )
         #    if importedPart == None:
