@@ -103,6 +103,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
         obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )        
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( obj.sourceFile )
+    obj.purgeTouched() #prevent obj.Proxy.execute being called when document recomputed.
     #clean up
     if subAssemblyImport:
         doc_assembly.removeObject(tempPartName)
@@ -185,9 +186,6 @@ def path_convert( path, pathLibFrom, pathLibTo):
 class UpdateImportedPartsCommand:
     def Activated(self):
         #disable proxies solving the system as their objects are updated
-        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
-        org_setting = parms.GetBool('autoSolveConstraintAttributesChanged', True)
-        parms.SetBool('autoSolveConstraintAttributesChanged', False)
         doc_assembly = FreeCAD.ActiveDocument
         solve_assembly_constraints = False
         YesToAll_clicked = False
@@ -254,7 +252,7 @@ class UpdateImportedPartsCommand:
                     debugPrint(2, 'removing %s which mirrors/links to a non-existent constraint' % obj.Name)
                     doc_assembly.removeObject( obj.Name ) #clean up for FreeCAD 0.15 which does not support the on-delete method
         doc_assembly.recompute()
-        parms.SetBool('autoSolveConstraintAttributesChanged', org_setting )
+
         
     def GetResources(self): 
         return {
