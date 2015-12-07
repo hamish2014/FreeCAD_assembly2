@@ -103,7 +103,6 @@ def importPart( filename, partName=None, doc_assembly=None ):
         obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )        
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( obj.sourceFile )
-    obj.purgeTouched() #prevent obj.Proxy.execute being called when document recomputed.
     #clean up
     if subAssemblyImport:
         doc_assembly.removeObject(tempPartName)
@@ -577,6 +576,7 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
                     newSE =  d_min.SE2
                     debugPrint(2,'  updating %s.%s   %s->%s' % (c.Name, SubElement, subElementName, newSE))
                     setattr(c, SubElement, newSE) 
+                    c.purgeTouched() #prevent constraint Proxy.execute being called when document recomputed.
                 else:
                     debugPrint(3,'  leaving %s.%s as is, since subElement in old and new shape are equal' % (c.Name, SubElement))
 
