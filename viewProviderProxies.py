@@ -85,7 +85,11 @@ class ConstraintViewProviderProxy:
         self.constraintObj_name = constraintObj.Name
         constraintObj.purgeTouched()
         if createMirror:
-            self.mirror_name = create_constraint_mirror(  constraintObj, iconPath )
+            part1 = constraintObj.Document.getObject( constraintObj.Object1 )
+            part2 = constraintObj.Document.getObject( constraintObj.Object2 )
+            if hasattr( getattr(part1.ViewObject,'Proxy',None),'claimChildren') \
+               or hasattr( getattr(part1.ViewObject,'Proxy',None),'claimChildren'):
+                self.mirror_name = create_constraint_mirror(  constraintObj, iconPath )
         
     def getIcon(self):
         return self.iconPath

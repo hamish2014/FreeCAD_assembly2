@@ -220,6 +220,16 @@ def updateObjectProperties( c ):
         if not hasattr(c, 'lockRotation'):
             debugPrint(3,'updating properties of %s, to add lockRotation (default=false)' % c.Name )
             c.addProperty("App::PropertyBool","lockRotation","ConstraintInfo")
+    if FreeCAD.GuiUp:
+        if not isinstance( c.ViewObject.Proxy , ConstraintViewProviderProxy):
+            iconPaths = {
+                'angle_between_planes':':/assembly2/icons/angleConstraint.svg',
+                'axial':':/assembly2/icons/axialConstraint.svg',
+                'circularEdge':':/assembly2/icons/circularEdgeConstraint.svg',
+                'plane':':/assembly2/icons/planeConstraint.svg',
+                'sphericalSurface': ':/assembly2/icons/sphericalSurfaceConstraint.svg'
+            }
+            c.ViewObject.Proxy = ConstraintViewProviderProxy( c, iconPaths[c.Type] )
     
 def getObjectFaceFromName( obj, faceName ):
     assert faceName.startswith('Face')
