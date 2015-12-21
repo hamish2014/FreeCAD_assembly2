@@ -107,3 +107,68 @@ class RedefineCircularEdgeConstraintCommand:
     def GetResources(self): 
         return { 'MenuText': 'Redefine' } 
 FreeCADGui.addCommand('redefineCircularEdgeConstraint', RedefineCircularEdgeConstraintCommand())
+
+
+class FlipLastConstraintsDirectionCommand:
+    def Activated(self):
+        constraints = [ obj for obj in FreeCAD.ActiveDocument.Objects 
+                        if 'ConstraintInfo' in obj.Content ]
+        if len(constraints) == 0:
+            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Command Aborted", 'Flip aborted since no assembly2 constraints in active document.')
+            return
+        lastConstraintAdded = constraints[-1]
+        if hasattr( lastConstraintAdded, 'directionConstraint' ):
+            if lastConstraintAdded.directionConstraint == "none":
+                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Command Aborted", 'Flip aborted since direction of the last constraint is unset')
+                return
+            if lastConstraintAdded.directionConstraint == "aligned":
+                lastConstraintAdded.directionConstraint = "opposed"
+            else:
+                lastConstraintAdded.directionConstraint = "aligned"
+        elif hasattr( lastConstraintAdded, 'angle' ):
+            if lastConstraintAdded.angle.Value <= 0:
+                lastConstraintAdded.angle = lastConstraintAdded.angle.Value + 180.0
+            else:
+                lastConstraintAdded.angle = lastConstraintAdded.angle.Value - 180.0
+        else:
+            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Command Aborted", 'Flip aborted since the last constraint added does not have a direction or an angle attribute.')
+            return
+        FreeCAD.ActiveDocument.recompute()
+
+    def GetResources(self): 
+        return {
+            'Pixmap' : ':/assembly2/icons/flipConstraint.svg' , 
+            'MenuText': "Flip last constraint's direction", 
+            'ToolTip': 'Flip the direction of the last constraint added'
+            } 
+
+FreeCADGui.addCommand('flipLastConstraintsDirection', FlipLastConstraintsDirectionCommand())
+
+
+
+class LockRotationOfLastConstraintAddedCommand:
+    def Activated(self):
+        constraints = [ obj for obj in FreeCAD.ActiveDocument.Objects 
+                        if 'ConstraintInfo' in obj.Content ]
+        if len(constraints) == 0:
+            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Command Aborted", 'Set LockRotation=True aborted since no assembly2 constraints in active document.')
+            return
+        lastConstraintAdded = constraints[-1]
+        if hasattr( lastConstraintAdded, 'lockRotation' ):
+            if not lastConstraintAdded.lockRotation:
+                lastConstraintAdded.lockRotation = True
+                FreeCAD.ActiveDocument.recompute()
+            else:
+                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Information", 'Last constraints LockRotation attribute already set to True.')
+        else:
+            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Command Aborted", 'Set LockRotation=True aborted since the last constraint added does not the LockRotation attribute.')
+            return
+
+    def GetResources(self): 
+        return {
+            'Pixmap' : ':/assembly2/icons/lockRotation.svg' , 
+            'MenuText': "Set lockRotation->True for the last constraint added", 
+            'ToolTip': 'Set lockRotation->True for the last constraint added'
+            } 
+
+FreeCADGui.addCommand('lockLastConstraintsRotation', LockRotationOfLastConstraintAddedCommand())

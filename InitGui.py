@@ -13,7 +13,6 @@ class Assembly2Workbench (Workbench):
             'addAxialConstraint', 
             'addAngleConstraint', 
             'addSphericalSurfaceConstraint',
-            'boltMultipleCircularEdges',
             'degreesOfFreedomAnimation', 
             'assembly2SolveConstraints',
             'muxAssembly',
@@ -21,6 +20,12 @@ class Assembly2Workbench (Workbench):
             'assembly2_checkAssembly'
             ]
         self.appendToolbar('Assembly 2', commandslist)
+        shortcut_commandslist = [
+            'flipLastConstraintsDirection',
+            'lockLastConstraintsRotation',
+            'boltMultipleCircularEdges',
+            ]
+        self.appendToolbar('Assembly 2 shortcuts', shortcut_commandslist )
         self.treecmdList = ['importPart', 'updateImportedPartsCommand']
         FreeCADGui.addIconPath( ':/assembly2/icons' )
         FreeCADGui.addPreferencePage( ':/assembly2/ui/assembly2_prefs.ui','Assembly2' )
