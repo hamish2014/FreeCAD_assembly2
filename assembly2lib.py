@@ -150,6 +150,14 @@ class ConstraintObjectProxy:
         else:
             solverCache = None
         solveConstraints( FreeCAD.ActiveDocument, cache = solverCache )
+
+def removeConstraint( constraint ):
+    'required as constraint.Proxy.onDelete only called when deleted through GUI'
+    doc = constraint.Document
+    debugPrint(2, "removing constraint %s" % constraint.Name )
+    if constraint.ViewObject != None: #do not this check is actually nessary ...
+        constraint.ViewObject.Proxy.onDelete( constraint.ViewObject, None )
+    doc.removeObject( constraint.Name )
     
 
 class SelectConstraintObjectsCommand:

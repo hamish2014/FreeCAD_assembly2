@@ -155,9 +155,7 @@ Delete constraint "%s"?
 """ % (constraintObj.Name, constraintObj.Name)
         response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!", message, flags)
         if response == QtGui.QMessageBox.Yes:
-            name = constraintObj.Name
-            doc.removeObject( name )
-            FreeCAD.Console.PrintError("removed constraint %s" % name )
+            removeConstraint( constraintObj )
         #elif response == QtGui.QMessageBox.Ignore:
         #    variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
     return constraintSystem if solved else None

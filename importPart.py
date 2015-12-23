@@ -448,8 +448,7 @@ class DeletePartsConstraints:
             response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Delete constraints?", msg, flags )
             if response == QtGui.QMessageBox.Yes:
                 for c in deleteList:
-                    FreeCAD.Console.PrintMessage("removing constraint %s" % c.Name)
-                    FreeCAD.ActiveDocument.removeObject(c.Name)
+                    removeConstraint(c)
     def GetResources(self): 
         return { 
             'MenuText': 'delete constraints', 
