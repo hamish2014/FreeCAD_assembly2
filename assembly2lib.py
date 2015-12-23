@@ -118,10 +118,11 @@ def findUnusedLabel(base, counterStart=1, fmt='%02i', document=None):
         label = '%s%s' % (base, fmt%i)
     return label
 
+
 class ConstraintObjectProxy:
     def execute(self, obj):
-        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
-        if parms.GetBool('autoSolveConstraintAttributesChanged', True):
+        preferences = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+        if preferences.GetBool('autoSolveConstraintAttributesChanged', True):
             self.callSolveConstraints()
             #obj.touch()
     def onChanged(self, obj, prop):
@@ -142,8 +143,15 @@ class ConstraintObjectProxy:
         obj.directionConstraint = value
     def callSolveConstraints(self):
         from assembly2solver import solveConstraints
-        solveConstraints( FreeCAD.ActiveDocument )
+        preferences = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+        if preferences.GetBool('useCache', False):
+            import cache_assembly2
+            solverCache = cache_assembly2.defaultCache
+        else:
+            solverCache = None
+        solveConstraints( FreeCAD.ActiveDocument, cache = solverCache )
     
+
 class SelectConstraintObjectsCommand:
     def Activated(self):
         constraintObj = FreeCADGui.Selection.getSelectionEx()[0].Object

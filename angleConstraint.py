@@ -50,7 +50,8 @@ def parseSelection(selection, objectToUpdate=None):
           c.Object2 = cParms[1][0]
           c.SubElement2 = cParms[1][1]
           updateObjectProperties(c)
-
+     
+     c.purgeTouched()
      c.Proxy.callSolveConstraints()
          
 

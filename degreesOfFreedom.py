@@ -14,6 +14,7 @@ class PlacementDegreeOfFreedom:
     def __init__(self, parentSystem, objName, object_dof):
         self.system = parentSystem
         self.objName = objName
+        self.object_dof = object_dof
         self.vM = parentSystem.variableManager
         self.ind = parentSystem.variableManager.index[objName] + object_dof
         if self.ind % 6 < 3:
@@ -30,6 +31,9 @@ class PlacementDegreeOfFreedom:
             return pi/5
     def rotational(self):
         return self.ind % 6 > 2
+    def migrate_to_new_variableManager( self, new_vM):
+        self.vM = new_vM
+        self.ind =  new_vM.index[self.objName] + self.object_dof
     def str(self, indent=''):
         return '%s<Placement DegreeOfFreedom %s-%s value:%f>' % (indent, self.objName, ['x','y','z','azimuth','elavation','rotation'][self.ind % 6], self.getValue())
     def __repr__(self):
@@ -56,6 +60,9 @@ class LinearMotionDegreeOfFreedom:
         return maxStep_linearDisplacement #inf
     def rotational(self):
         return False
+    def migrate_to_new_variableManager( self, new_vM):
+        self.vM = new_vM
+        self.objInd =  new_vM.index[self.objName]
     def str(self, indent=''):
         return '%s<LinearMotion DegreeOfFreedom %s direction:%s value:%f>' % (indent, self.objName, self.directionVector, self.getValue())
     def __repr__(self):
@@ -151,6 +158,9 @@ class AxisRotationDegreeOfFreedom:
         return pi/5
     def rotational(self):
         return True
+    def migrate_to_new_variableManager( self, new_vM):
+        self.vM = new_vM
+        self.objInd =  new_vM.index[self.objName]
     def str(self, indent=''):
         return '%s<AxisRotation DegreeOfFreedom %s axis:%s value:%f>' % (indent, self.objName, self.axis, self.getValue())
     def __repr__(self):

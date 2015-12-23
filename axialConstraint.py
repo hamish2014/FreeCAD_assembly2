@@ -55,6 +55,7 @@ def parseSelection(selection, objectToUpdate=None):
           c.SubElement2 = cParms[1][1]
           updateObjectProperties(c)
 
+     c.purgeTouched()
      c.Proxy.callSolveConstraints()
 
 selection_text = '''Selection options:

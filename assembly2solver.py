@@ -56,7 +56,7 @@ def findBaseObject( doc, objectNames  ):
         debugPrint( 1, 'assembly 2 solver: assigning %s a fixed position' % objectNames[0])
         return objectNames[0]
 
-def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True ):
+def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=None ):
     if not constraintsObjectsAllExist(doc):
         return
     T_start = time.time()
@@ -76,14 +76,20 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True ):
     
 
     solved = True
-    for constraintObj in constraintObjectQue:
+    if cache != None:
+        constraintSystem, que_start = cache.retrieve( constraintSystem, constraintObjectQue)
+        debugPrint(3,"cached solution available for first %i out-off %i constraints" % (que_start, len(constraintObjectQue) ) )
+    else:
+        que_start = 0
+
+    for constraintObj in constraintObjectQue[que_start:]:
         debugPrint( 3, '  parsing %s, type:%s' % (constraintObj.Name, constraintObj.Type ))
         try:
             cArgs = [variableManager, constraintObj]
             if not constraintSystem.containtsObject( constraintObj.Object1) and not constraintSystem.containtsObject( constraintObj.Object2):
                 constraintSystem = AddFreeObjectsUnion(constraintSystem, *cArgs)
             if constraintObj.Type == 'plane':
-                if constraintObj.SubElement2.startswith('Face'): #otherwise vertext
+                if constraintObj.SubElement2.startswith('Face'): #otherwise vertex
                     constraintSystem = AxisAlignmentUnion(constraintSystem, *cArgs,  constraintValue = constraintObj.directionConstraint )
                 constraintSystem = PlaneOffsetUnion(constraintSystem,  *cArgs, constraintValue = constraintObj.offset.Value)
             elif constraintObj.Type == 'angle_between_planes':
@@ -101,6 +107,8 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True ):
                 constraintSystem = VertexUnion(constraintSystem,  *cArgs, constraintValue=0)
             else:
                 raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
+            if cache:
+                cache.record_levels.append( constraintSystem.numberOfParentSystems() )
         except Assembly2SolverError, msg:
             if printErrors:
                 FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
@@ -115,6 +123,8 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True ):
             break
     if solved:
         debugPrint(4,'placement X %s' % constraintSystem.variableManager.X )
+        if cache:
+            cache.record( constraintSystem, constraintObjectQue, que_start)
         variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
         debugPrint(2,'Constraint system solved in %2.2fs; resulting system has %i degrees-of-freedom' % (time.time()-T_start, len( constraintSystem.degreesOfFreedom)))
     elif showFailureErrorDialog and  QtGui.qApp <> None: #i.e. GUI active
@@ -146,7 +156,13 @@ Delete constraint "%s"?
 
 class Assembly2SolveConstraintsCommand:
     def Activated(self):
-        solveConstraints( FreeCAD.ActiveDocument )
+        preferences = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+        if preferences.GetBool('useCache', False):
+            import cache_assembly2
+            solverCache = cache_assembly2.defaultCache
+        else:
+            solverCache = None
+        solveConstraints( FreeCAD.ActiveDocument, cache = solverCache )
     def GetResources(self): 
         return {
             'Pixmap' : ':/assembly2/icons/assembly2SolveConstraints.svg', 
@@ -166,9 +182,18 @@ if __name__ == '__main__':
     print('Testing assembly 2 solver on assemblies under tests/')
     parser = argparse.ArgumentParser(description="Test assembly 2 solver.")
     parser.add_argument('--lastTestCaseOnly', action='store_true')
+    parser.add_argument('--doNotTestCache', action='store_true')
     args = parser.parse_args()
 
+    if args.doNotTestCache:
+        solverCache = None
+    else:
+        import cache_assembly2
+        solverCache = cache_assembly2.SolverCache()
+
     debugPrint.level = 4
+    t_solver = 0
+    t_cache = 0
     t_start = time.time()
     testFiles = sorted(glob.glob('tests/*.fcstd')) 
     if args.lastTestCaseOnly:
@@ -176,9 +201,22 @@ if __name__ == '__main__':
     for testFile in testFiles:
         print(testFile)
         doc =  FreeCAD.open(testFile)
-        constraintSystem = solveConstraints( doc )
+        t_start_solver = time.time()
+        constraintSystem = solveConstraints( doc, cache=solverCache )
+        t_solver = t_solver + time.time() - t_start_solver
         if constraintSystem == None:
             print('Failed on %s' % testFile)
             exit()
+        if solverCache != None:
+            print('\n\n')
+            t_start_cache = time.time()
+            solverCache.debugMode = 1
+            constraintSystem = solveConstraints( doc, cache=solverCache )
+            solverCache.debugMode = 0
+            t_cache = t_cache  + time.time() - t_start_cache 
+            constraintSystem.update()
         print('\n\n\n')
-    print('All %i tests passed, time taken %3.2fs' % (len(testFiles), time.time() - t_start))
+    print('All %i tests passed:' % len(testFiles) )
+    print('   time assembly2 solver:  %3.2fs' % t_solver )
+    print('   time cached solutions:  %3.2fs' % t_cache )
+    print('   total running time:     %3.2fs' % (time.time() - t_start) )
