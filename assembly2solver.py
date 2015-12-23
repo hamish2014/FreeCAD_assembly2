@@ -77,8 +77,9 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
 
     solved = True
     if cache != None:
+        t_cache_start = time.time()
         constraintSystem, que_start = cache.retrieve( constraintSystem, constraintObjectQue)
-        debugPrint(3,"cached solution available for first %i out-off %i constraints" % (que_start, len(constraintObjectQue) ) )
+        debugPrint(3,"~cached solution available for first %i out-off %i constraints (retrieved in %3.2fs)" % (que_start, len(constraintObjectQue), time.time() - t_cache_start ) )
     else:
         que_start = 0
 
@@ -123,9 +124,16 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
             break
     if solved:
         debugPrint(4,'placement X %s' % constraintSystem.variableManager.X )
+
+        t_cache_record_start = time.time()
         if cache:
             cache.record( constraintSystem, constraintObjectQue, que_start)
+        debugPrint( 4,'  time cache.record %3.2fs' % (time.time()-t_cache_record_start) )
+
+        t_update_freecad_start = time.time()
         variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
+        debugPrint( 4,'  time to update FreeCAD placement variables %3.2fs' % (time.time()-t_update_freecad_start) )
+
         debugPrint(2,'Constraint system solved in %2.2fs; resulting system has %i degrees-of-freedom' % (time.time()-T_start, len( constraintSystem.degreesOfFreedom)))
     elif showFailureErrorDialog and  QtGui.qApp <> None: #i.e. GUI active
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/

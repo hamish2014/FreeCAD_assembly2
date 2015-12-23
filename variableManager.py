@@ -58,16 +58,20 @@ class VariableManager:
         self.X0 = numpy.array(X)
         self.X = self.X0.copy()
 
-    def updateFreeCADValues(self, X):
+    def updateFreeCADValues(self, X, tol_base = 10.0**-8, tol_rotation = 10**-6):
         for objectName in self.index.keys():
             i = self.index[objectName]
             obj = self.doc.getObject(objectName)
-            obj.Placement.Base.x = X[i]
-            obj.Placement.Base.y = X[i+1]
-            obj.Placement.Base.z = X[i+2]
+            #obj.Placement.Base.x = X[i]
+            #obj.Placement.Base.y = X[i+1]
+            #obj.Placement.Base.z = X[i+2]
+            if norm( numpy.array(obj.Placement.Base) - X[i:i+3] ) > tol_base: #for speed considerations only update placement variables if change in values occurs
+                obj.Placement.Base = tuple( X[i:i+3] )
             azi, ela, theta =  X[i+3:i+6]
             axis = azimuth_and_elevation_angles_to_axis( azi, ela )
-            obj.Placement.Rotation.Q = quaternion( theta, *axis )
+            new_Q = quaternion( theta, *axis ) #tuple type
+            if norm( numpy.array(obj.Placement.Rotation.Q) - numpy.array(new_Q)) > tol_rotation:
+                obj.Placement.Rotation.Q = new_Q
 
     def bounds(self):
         return [ [ -inf, inf], [ -inf, inf], [ -inf, inf], [-pi,pi], [-pi,pi], [-pi,pi] ] * len(self.index)
