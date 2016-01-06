@@ -5,10 +5,24 @@ from assembly2lib import *
 from PySide import QtCore
 
 try:
-    from dimensioning import getDrawingPageGUIVars, DimensioningProcessTracker
+    from dimensioning import getDrawingPageGUIVars, DimensioningProcessTracker,  Proxy_DimensionObject_prototype
     import previewDimension
     dimensioningTracker = DimensioningProcessTracker()
     drawing_dimensioning_installed = True
+    class Proxy_unfold( Proxy_DimensionObject_prototype ):
+        def __init__(self, obj, selections, svgFun):
+            self.selections = [] #to be compdabile with Proxy_DimensionObject_prototype
+            self.svgFun = None
+            obj.X = dimensioningTracker.placement_x
+            obj.Y = dimensioningTracker.placement_y
+            obj.Proxy = self
+        def execute( self, obj ):
+            origSvg = obj.ViewResult
+            newTransform = 'transform="rotate(%f,%f,%f) translate(%f,%f) scale(%f,%f)" ' %  (obj.Rotation, obj.X, obj.Y, obj.X,  obj.Y, obj.Scale, obj.Scale)
+            p1 = origSvg.find('transform')
+            p2 = origSvg.find('>')
+            obj.ViewResult = origSvg[:p1] + newTransform +  origSvg[p2:]
+    dimensioningTracker.ProxyClass = Proxy_unfold
 except ImportError:
     drawing_dimensioning_installed = False
 
@@ -36,23 +50,22 @@ class PartsList:
         #building table body
         width = sum( c.width for c in columns )
         for i in range(len(entries) +2):
-            addLine( x, y + i*rowHeight, x+width, y + i*rowHeight )
-        y_bottom = y + i*rowHeight
-        addLine( x, y, x, y_bottom )
+            addLine( 0, i*rowHeight, width, i*rowHeight )
+        y_bottom = i*rowHeight
+        addLine( 0, 0, 0, y_bottom )
         columnOffsets = [0]
         for c in columns:
             columnOffsets.append( columnOffsets[-1] + c.width )
-            addLine( x+columnOffsets[-1], y, x+columnOffsets[-1], y_bottom )
+            addLine( columnOffsets[-1], 0, columnOffsets[-1], y_bottom )
         def addText(row,col,text):
-            x1 = x + columnOffsets[col] + fontPadding
-            y1 = y + (row+1)*rowHeight - fontPadding
+            x1 = columnOffsets[col] + fontPadding
+            y1 = (row+1)*rowHeight - fontPadding
             XML_body.append('<text x="%f" y="%f" fill="%s" style="font-size:%i">%s</text>' % (x1,y1,fontColor,fontSize,text))
         for i,c in enumerate(columns):
             addText(0,i,c.heading)
             for j, entry in enumerate(entries):
                 addText( j+1, i,  c.entryFor(j, entry))
-
-        XML = '''<g> %s </g>''' % ('\n'.join(XML_body) )
+        XML = '''<g transform="translate(%f,%f)" > %s </g>''' % ( x, y, '\n'.join(XML_body) )
         debugPrint(4, 'partList.XML %s' % XML)
         return XML
 
@@ -90,6 +103,8 @@ def partsListSvg(x,y):
         )
 
 def clickHandler( x, y):
+    dimensioningTracker.placement_x = x
+    dimensioningTracker.placement_y = y
     FreeCADGui.Control.closeDialog()
     return 'createDimension:%s' % findUnusedObjectName('dimPartsList')
 
@@ -100,6 +115,7 @@ class AddPartsList:
             return
         V = getDrawingPageGUIVars() #needs to be done before dialog show, else Qt active is dialog and not freecads
         dimensioningTracker.activate( V )
+        dimensioningTracker.dialogIconPath = ':/assembly2/icons/partsList.svg'
         P = PartsList()
         for obj in FreeCAD.ActiveDocument.Objects:
             if 'importPart' in obj.Content:
