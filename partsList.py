@@ -5,24 +5,12 @@ from assembly2lib import *
 from PySide import QtCore
 
 try:
-    from dimensioning import getDrawingPageGUIVars, DimensioningProcessTracker,  Proxy_DimensionObject_prototype
-    import previewDimension
-    dimensioningTracker = DimensioningProcessTracker()
+    from dimensioning import getDrawingPageGUIVars, PlacementClick
+    import previewDimension, table_dd #Added 12 April 2016
+    from svgLib_dd import SvgTextRenderer
+    #dimensioningTracker = DimensioningProcessTracker()
+    d = table_dd.d
     drawing_dimensioning_installed = True
-    class Proxy_unfold( Proxy_DimensionObject_prototype ):
-        def __init__(self, obj, selections, svgFun):
-            self.selections = [] #to be compdabile with Proxy_DimensionObject_prototype
-            self.svgFun = None
-            obj.X = dimensioningTracker.placement_x
-            obj.Y = dimensioningTracker.placement_y
-            obj.Proxy = self
-        def execute( self, obj ):
-            origSvg = obj.ViewResult
-            newTransform = 'transform="rotate(%f,%f,%f) translate(%f,%f) scale(%f,%f)" ' %  (obj.Rotation, obj.X, obj.Y, obj.X,  obj.Y, obj.Scale, obj.Scale)
-            p1 = origSvg.find('transform')
-            p2 = origSvg.find('>')
-            obj.ViewResult = origSvg[:p1] + newTransform +  origSvg[p2:]
-    dimensioningTracker.ProxyClass = Proxy_unfold
 except ImportError:
     drawing_dimensioning_installed = False
 
@@ -36,40 +24,6 @@ class PartsList:
             self.entries[index].count = self.entries[index].count + 1
         except ValueError:
             self.entries.append(PartListEntry( obj ))
-    def svg(self, x, y, columns,
-            strokeWidth = 0.4,
-            fontSize = 4.0,
-            fontColor = 'rgb(0,0,0)',
-            fontPadding = 1.6,
-            ):
-        entries = [ e for e in self.entries if e.parentDirectory in self.directoryMask ]
-        rowHeight = fontSize + 2*fontPadding
-        XML_body = []
-        def addLine(x1,y1,x2,y2):
-            XML_body.append('<line x1="%f" y1="%f" x2="%f" y2="%f" style="stroke:rgb(0,0,0);stroke-width:%1.2f" />' % (x1, y1, x2, y2, strokeWidth))
-        #building table body
-        width = sum( c.width for c in columns )
-        for i in range(len(entries) +2):
-            addLine( 0, i*rowHeight, width, i*rowHeight )
-        y_bottom = i*rowHeight
-        addLine( 0, 0, 0, y_bottom )
-        columnOffsets = [0]
-        for c in columns:
-            columnOffsets.append( columnOffsets[-1] + c.width )
-            addLine( columnOffsets[-1], 0, columnOffsets[-1], y_bottom )
-        def addText(row,col,text):
-            x1 = columnOffsets[col] + fontPadding
-            y1 = (row+1)*rowHeight - fontPadding
-            XML_body.append('<text x="%f" y="%f" fill="%s" style="font-size:%i">%s</text>' % (x1,y1,fontColor,fontSize,text))
-        for i,c in enumerate(columns):
-            addText(0,i,c.heading)
-            for j, entry in enumerate(entries):
-                addText( j+1, i,  c.entryFor(j, entry))
-        XML = '''<g transform="translate(%f,%f)" > %s </g>''' % ( x, y, '\n'.join(XML_body) )
-        debugPrint(4, 'partList.XML %s' % XML)
-        return XML
-
-
 class PartListEntry:
     def __init__(self, obj):
         self.obj = obj
@@ -80,56 +34,33 @@ class PartListEntry:
     def __eq__(self, b):
         return  self.sourceFile == b.sourceFile
 
-class PartListColumn:
-    def __init__(self, heading, width, entryFor):
-        self.heading = heading
-        self.width = width
-        self.entryFor = entryFor
 
-def partsListSvg(x,y):
-    d = dimensioningTracker
-    columns = [
-        PartListColumn(d.column_part_label,       d.column_part_width,       lambda ind,entry: '%i' % (ind+1)),
-        PartListColumn(d.column_sourceFile_label, d.column_sourceFile_width, lambda ind,entry: '%s' % os.path.basename(entry.sourceFile).replace('.fcstd','')),
-        PartListColumn(d.column_quantity_label,   d.column_quantity_width,   lambda ind,entry: '%i' % entry.count),
-        ]
-    return dimensioningTracker.partsList.svg( 
-        x, y,
-        columns,
-        strokeWidth = d.strokeWidth,
-        fontSize = d.fontSize,
-        fontColor = d.fontColor,
-        fontPadding = d.fontPadding
-        )
+def parts_list_clickHandler( x, y ):
+    d.selections = [ PlacementClick( x, y) ]
+    return 'createDimension:%s' % findUnusedObjectName('partsList')
 
-def clickHandler( x, y):
-    dimensioningTracker.placement_x = x
-    dimensioningTracker.placement_y = y
-    FreeCADGui.Control.closeDialog()
-    return 'createDimension:%s' % findUnusedObjectName('dimPartsList')
 
 class AddPartsList:
     def Activated(self):
         if not drawing_dimensioning_installed:
-            QtGui.QMessageBox.critical( QtGui.qApp.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning)' )
+            QtGui.QMessageBox.critical( QtGui.qApp.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning). Release from 12 April 2016 or later required.' )
             return
         V = getDrawingPageGUIVars() #needs to be done before dialog show, else Qt active is dialog and not freecads
-        dimensioningTracker.activate( V )
-        dimensioningTracker.dialogIconPath = ':/assembly2/icons/partsList.svg'
+        d.activate( V, dialogIconPath= ':/assembly2/icons/partsList.svg')
         P = PartsList()
         for obj in FreeCAD.ActiveDocument.Objects:
             if 'importPart' in obj.Content:
                 debugPrint(3, 'adding %s to parts list' % obj.Name)
-                P.addObject(obj)
-        dimensioningTracker.partsList = P
-        
-        dimensioningTracker.taskPanelDialog =  PartsListTaskDialog()
-        FreeCADGui.Control.showDialog( dimensioningTracker.taskPanelDialog )
-        previewDimension.initializePreview( dimensioningTracker, partsListSvg, clickHandler )
+                P.addObject( PartListEntry(obj) )
+        d.partsList = P
+        for pref in d.preferences:
+            pref.dimensioningProcess = d #required to be compadible with drawing dimensioning
+        d.taskDialog =  PartsListTaskDialog()
+        FreeCADGui.Control.showDialog( d.taskDialog )
+        previewDimension.initializePreview( d, table_dd.table_preview, parts_list_clickHandler )
         
     def GetResources(self): 
         tip = 'create a parts list from the objects imported using the assembly 2 workbench'
-        from assembly2lib import __dir__
         return {
             'Pixmap' : ':/assembly2/icons/partsList.svg' , 
             'MenuText': tip, 
@@ -167,12 +98,12 @@ class PartsListTaskDialog:
         form.lineEdit_fontColor.setText(                       parms.GetString('fontColor','rgb(0,0,0)') )
         form.doubleSpinBox_padding.setValue(                   parms.GetFloat('padding', 1.5))
         filtersAdded = []
-        for entry in dimensioningTracker.partsList.entries:
+        for entry in d.partsList.entries:
             if not entry.parentDirectory in filtersAdded:
                 item = QtGui.QListWidgetItem('%s' % entry.parentDirectory, form.listWidget_directoryFilter)
                 item.setCheckState( QtCore.Qt.CheckState.Checked )
                 filtersAdded.append( entry.parentDirectory )
-        dimensioningTracker.partsList.directoryMask = filtersAdded
+        d.partsList.directoryMask = filtersAdded
         form.listWidget_directoryFilter.itemChanged.connect( self.update_directoryFilter )  
 
     def setDefaults(self):
@@ -191,34 +122,54 @@ class PartsListTaskDialog:
 
 
     def getValues(self, notUsed=None):
-        d = dimensioningTracker
         form = self.form
-        d.column_part_width =       form.doubleSpinBox_column_part_width.value()
-        d.column_sourceFile_width = form.doubleSpinBox_column_sourceFile_width.value()
-        d.column_quantity_width =   form.doubleSpinBox_column_quantity_width.value()
-
-        d.column_part_label =       form.lineEdit_column_part_label.text()
-        d.column_sourceFile_label = form.lineEdit_column_sourceFile_label.text()
-        d.column_quantity_label =   form.lineEdit_column_quantity_label.text()
-
-        d.fontSize = form.doubleSpinBox_fontSize.value()
-        d.fontColor = form.lineEdit_fontColor.text()
-
-        d.fontPadding = form.doubleSpinBox_padding.value()
-        d.strokeWidth =  form.doubleSpinBox_lineWidth.value()
+        contents = [
+            form.lineEdit_column_part_label.text(),
+            form.lineEdit_column_sourceFile_label.text(),
+            form.lineEdit_column_quantity_label.text()
+            ]
+        partsList = d.partsList
+        entries = [ e for e in partsList.entries if e.parentDirectory in partsList.directoryMask ]
+        for ind, entry in enumerate(entries):
+            contents.extend([
+                str(ind+1),
+                os.path.basename(entry.sourceFile).replace('.fcstd',''),
+                str(entry.count)
+                ])
+        d.dimensionConstructorKWs = dict(
+            column_widths = [
+                form.doubleSpinBox_column_part_width.value(),
+                form.doubleSpinBox_column_sourceFile_width.value(),
+                form.doubleSpinBox_column_quantity_width.value()
+                ],
+            contents = contents,
+            row_heights = [
+                form.doubleSpinBox_fontSize.value() + 2*form.doubleSpinBox_padding.value()
+                ],
+            border_width = form.doubleSpinBox_lineWidth.value(),
+            border_color='rgb(0,0,0)',
+            padding_x = form.doubleSpinBox_padding.value(), 
+            padding_y = form.doubleSpinBox_padding.value(), 
+            extra_rows= 0,
+            textRenderer_table = SvgTextRenderer(
+                u'inherit', 
+                u'%1.2f pt' % form.doubleSpinBox_fontSize.value(), 
+                form.lineEdit_fontColor.text() 
+                )
+            )
     
     def update_directoryFilter(self, *args):
         try:
-            del dimensioningTracker.partsList.directoryMask[:]
+            del d.partsList.directoryMask[:]
             listWidget = self.form.listWidget_directoryFilter
             for index in range(listWidget.count()):
                 item = listWidget.item(index)
                 if item.checkState() ==  QtCore.Qt.CheckState.Checked:
-                    dimensioningTracker.partsList.directoryMask.append( item.text() )
+                    d.partsList.directoryMask.append( item.text() )
+            self.getValues()
         except:
             import traceback
             FreeCAD.Console.PrintError(traceback.format_exc())
-
 
     def reject(self):
         previewDimension.removePreviewGraphicItems( recomputeActiveDocument = True )
