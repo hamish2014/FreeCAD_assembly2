@@ -17,6 +17,7 @@ import os, numpy, shutil, copy, time, posixpath, ntpath
 from lib3D import *
 from assembly2solver import solveConstraints
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
+import ImportGui
 
 def importPart( filename, partName=None, doc_assembly=None ):
     if doc_assembly == None:
@@ -37,10 +38,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
             debugPrint(4, '  succesfully opened %s' % filename)
         else: #trying shaping import http://forum.freecadweb.org/viewtopic.php?f=22&t=12434&p=99772#p99772x
             doc = FreeCAD.newDocument( os.path.basename(filename) )
-            shapeobj = doc.addObject("Part::Feature","part")
-            myShape=Part.Shape()
-            myShape.read(filename)
-            shapeobj.Shape = myShape
+            shapeobj=ImportGui.insert(filename,doc.Name)
         
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
