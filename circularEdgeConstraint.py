@@ -14,8 +14,8 @@ def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lo
         if s1.ObjectName <> s2.ObjectName:
             if CircularEdgeSelected(s1) and CircularEdgeSelected(s2):
                 validSelection = True
-                cParms = [ [s1.ObjectName, s1.SubElementNames[0] ],
-                           [s2.ObjectName, s2.SubElementNames[0] ] ]
+                cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
+                           [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]
 
     if not validSelection:
           msg = '''To add a circular edge constraint select two circular edges, each from a different part. Selection made:
@@ -44,7 +44,7 @@ def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lo
             c.setEditorMode(prop, 1) 
         
         c.Proxy = ConstraintObjectProxy()
-        c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/circularEdgeConstraint.svg')
+        c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/circularEdgeConstraint.svg', True, cParms[1][2], cParms[0][2])
     else:
         debugPrint(2, "redefining %s" % objectToUpdate.Name )
         c = objectToUpdate

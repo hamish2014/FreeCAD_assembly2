@@ -16,8 +16,8 @@ def parseSelection(selection, objectToUpdate=None):
                if ( planeSelected(s1) or LinearEdgeSelected(s1)) \
                         and ( planeSelected(s2) or LinearEdgeSelected(s2)):
                     validSelection = True
-                    cParms = [ [s1.ObjectName, s1.SubElementNames[0] ],
-                               [s2.ObjectName, s2.SubElementNames[0] ] ]
+                    cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
+                               [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]
      if not validSelection:
           msg = '''Angle constraint requires a selection of 2 planes or two straight lines, each from different objects.Selection made:
 %s'''  % printSelection(selection)
@@ -41,7 +41,7 @@ def parseSelection(selection, objectToUpdate=None):
           for prop in ["Object1","Object2","SubElement1","SubElement2","Type"]:
                c.setEditorMode(prop, 1) 
           c.Proxy = ConstraintObjectProxy()
-          c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/angleConstraint.svg')
+          c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/angleConstraint.svg', True, cParms[1][2], cParms[0][2])
      else:
           debugPrint(2, "redefining %s" % objectToUpdate.Name )
           c = objectToUpdate
