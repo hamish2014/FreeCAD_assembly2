@@ -137,8 +137,11 @@ def create_constraint_mirror( constraintObj, iconPath, origLabel= '', mirrorLabe
     if origLabel == '':
         cMirror.Label = constraintObj.Label + '_'
     else:
-        cMirror.Label = constraintObj.Label + '__' + mirrorLabel + '__' + extraLabel
-        constraintObj.Label = constraintObj.Label + '__' + origLabel + '__' + extraLabel
+        cMirror.Label = constraintObj.Label + '__' + mirrorLabel
+        constraintObj.Label = constraintObj.Label + '__' + origLabel
+        if extraLabel != '':
+             cMirror.Label += '__' + extraLabel
+             constraintObj.Label += '__' + extraLabel
     for pName in constraintObj.PropertiesList:
         if constraintObj.getGroupOfProperty( pName ) == 'ConstraintInfo':
             #if constraintObj.getTypeIdOfProperty( pName ) == 'App::PropertyEnumeration':
