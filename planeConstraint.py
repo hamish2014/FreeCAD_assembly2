@@ -21,8 +21,8 @@ def parseSelection(selection, objectToUpdate=None):
                     s2, s1 = s1, s2
                if planeSelected(s1) and (planeSelected(s2) or vertexSelected(s2)):
                     validSelection = True
-                    cParms = [ [s1.ObjectName, s1.SubElementNames[0] ],
-                               [s2.ObjectName, s2.SubElementNames[0] ] ]
+                    cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
+                               [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]
      if not validSelection:
           msg = '''Plane constraint requires a selection of either
 - 2 planes, or
@@ -34,6 +34,9 @@ Selection made:
           return 
 
      if objectToUpdate == None:
+          extraText, extraOk = QtGui.QInputDialog.getText(QtGui.qApp.activeWindow(), "Axis", "Axis for constraint Label", QtGui.QLineEdit.Normal, "0")
+          if not extraOk:
+               return
           cName = findUnusedObjectName('planeConstraint')
           debugPrint(2, "creating %s" % cName )
           c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
@@ -51,7 +54,7 @@ Selection made:
           for prop in ["Object1","Object2","SubElement1","SubElement2"]:
                c.setEditorMode(prop, 1) 
           c.Proxy = ConstraintObjectProxy()
-          c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/planeConstraint.svg') 
+          c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/planeConstraint.svg', True, cParms[1][2], cParms[0][2], extraText) 
      else:
           debugPrint(2, "redefining %s" % objectToUpdate.Name )
           c = objectToUpdate

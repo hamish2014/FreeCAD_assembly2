@@ -80,7 +80,7 @@ class ImportedPartViewProviderProxy:
     
 
 class ConstraintViewProviderProxy:
-    def __init__( self, constraintObj, iconPath, createMirror=True ):
+    def __init__( self, constraintObj, iconPath, createMirror=True, origLabel = '', mirrorLabel = '', extraLabel = '' ):
         self.iconPath = iconPath
         self.constraintObj_name = constraintObj.Name
         constraintObj.purgeTouched()
@@ -89,7 +89,7 @@ class ConstraintViewProviderProxy:
             part2 = constraintObj.Document.getObject( constraintObj.Object2 )
             if hasattr( getattr(part1.ViewObject,'Proxy',None),'claimChildren') \
                or hasattr( getattr(part2.ViewObject,'Proxy',None),'claimChildren'):
-                self.mirror_name = create_constraint_mirror(  constraintObj, iconPath )
+                self.mirror_name = create_constraint_mirror(  constraintObj, iconPath, origLabel, mirrorLabel, extraLabel )
         
     def getIcon(self):
         return self.iconPath
@@ -130,11 +130,18 @@ class ConstraintMirrorViewProviderProxy( ConstraintViewProviderProxy ):
         vobj.addDisplayMode( coin.SoGroup(),"Standard" )
 
 
-def create_constraint_mirror( constraintObj, iconPath ):
+def create_constraint_mirror( constraintObj, iconPath, origLabel= '', mirrorLabel='', extraLabel = '' ):
     #FreeCAD.Console.PrintMessage("creating constraint mirror\n")
     cName = constraintObj.Name + '_mirror'
     cMirror =  constraintObj.Document.addObject("App::FeaturePython", cName)
-    cMirror.Label = constraintObj.Label + '_'
+    if origLabel == '':
+        cMirror.Label = constraintObj.Label + '_'
+    else:
+        cMirror.Label = constraintObj.Label + '__' + mirrorLabel
+        constraintObj.Label = constraintObj.Label + '__' + origLabel
+        if extraLabel != '':
+             cMirror.Label += '__' + extraLabel
+             constraintObj.Label += '__' + extraLabel
     for pName in constraintObj.PropertiesList:
         if constraintObj.getGroupOfProperty( pName ) == 'ConstraintInfo':
             #if constraintObj.getTypeIdOfProperty( pName ) == 'App::PropertyEnumeration':
