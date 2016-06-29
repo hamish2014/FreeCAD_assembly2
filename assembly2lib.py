@@ -14,7 +14,7 @@ import FreeCADGui
 import Part
 from PySide import QtGui, QtCore
 from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
-from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy, create_constraint_mirror
+from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy, create_constraint_mirror, group_constraints_under_parts
 
 path_assembly2 = os.path.dirname(__file__)
 #path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')

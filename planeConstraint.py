@@ -12,6 +12,11 @@ class PlaneSelectionGate2:
           s2 = SelectionExObject(doc, obj, sub)
           return planeSelected(s2) or vertexSelected(s2)
 
+def promt_user_for_axis_for_constraint_label():
+     preferences = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+     return preferences.GetBool('promtUserForAxisConstraintLabel', False)
+     
+
 def parseSelection(selection, objectToUpdate=None):
      validSelection = False
      if len(selection) == 2:
@@ -34,9 +39,12 @@ Selection made:
           return 
 
      if objectToUpdate == None:
-          extraText, extraOk = QtGui.QInputDialog.getText(QtGui.qApp.activeWindow(), "Axis", "Axis for constraint Label", QtGui.QLineEdit.Normal, "0")
-          if not extraOk:
-               return
+          if promt_user_for_axis_for_constraint_label():
+               extraText, extraOk = QtGui.QInputDialog.getText(QtGui.qApp.activeWindow(), "Axis", "Axis for constraint Label", QtGui.QLineEdit.Normal, "0")
+               if not extraOk:
+                    return
+          else:
+               extraText = ''
           cName = findUnusedObjectName('planeConstraint')
           debugPrint(2, "creating %s" % cName )
           c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)

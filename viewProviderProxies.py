@@ -2,13 +2,19 @@ import FreeCAD
 from pivy import coin
 import traceback
 
+def group_constraints_under_parts():
+    preferences = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+    return preferences.GetBool('groupConstraintsUnderParts', True)
+
+def allow_deletetion_when_activice_doc_ne_object_doc():
+    parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
+    return parms.GetBool('allowDeletetionFromExternalDocuments', False) 
+
 class ImportedPartViewProviderProxy:   
     def onDelete(self, viewObject, subelements): # subelements is a tuple of strings
-        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
-        if not parms.GetBool('allowDeletetionFromExternalDocuments', False):
-            if FreeCAD.activeDocument() != viewObject.Object.Document:
-                FreeCAD.Console.PrintMessage("preventing deletetion of %s since active document != %s. Disable behavior in assembly2 preferences.\n" % (viewObject.Object.Label, viewObject.Object.Document.Name) )
-                return False
+        if not allow_deletetion_when_activice_doc_ne_object_doc() and FreeCAD.activeDocument() != viewObject.Object.Document:
+            FreeCAD.Console.PrintMessage("preventing deletetion of %s since active document != %s. Disable behavior in assembly2 preferences.\n" % (viewObject.Object.Label, viewObject.Object.Document.Name) )
+            return False
         obj = viewObject.Object
         doc = obj.Document
         #FreeCAD.Console.PrintMessage('ConstraintObjectViewProviderProxy.onDelete: removing constraints refering to %s (label:%s)\n' % (obj.Name, obj.Label))
@@ -61,6 +67,9 @@ class ImportedPartViewProviderProxy:
             importedPart = self.Object
         else:
             return []
+        if not group_constraints_under_parts():
+            return []
+
         #if hasattr(self, 'object_Name'):
         #    importedPart = FreeCAD.ActiveDocument.getObject( self.object_Name )
         #    if importedPart == None:
@@ -84,7 +93,7 @@ class ConstraintViewProviderProxy:
         self.iconPath = iconPath
         self.constraintObj_name = constraintObj.Name
         constraintObj.purgeTouched()
-        if createMirror:
+        if createMirror and group_constraints_under_parts():
             part1 = constraintObj.Document.getObject( constraintObj.Object1 )
             part2 = constraintObj.Document.getObject( constraintObj.Object2 )
             if hasattr( getattr(part1.ViewObject,'Proxy',None),'claimChildren') \
@@ -107,12 +116,10 @@ class ConstraintViewProviderProxy:
 
     def onDelete(self, viewObject, subelements): # subelements is a tuple of strings
         'does not seem to be called when an object is deleted pythonatically'
-        parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
-        if not parms.GetBool('allowDeletetionFromExternalDocuments', False):
-            if FreeCAD.activeDocument() != viewObject.Object.Document:
-                FreeCAD.Console.PrintMessage("preventing deletetion of %s since active document != %s. Disable behavior in assembly2 preferences.\n" % (viewObject.Object.Label, viewObject.Object.Document.Name) )
-                return False
-                #add code to delete constraint mirrors, or original
+        if not allow_deletetion_when_activice_doc_ne_object_doc() and FreeCAD.activeDocument() != viewObject.Object.Document:
+            FreeCAD.Console.PrintMessage("preventing deletetion of %s since active document != %s. Disable behavior in assembly2 preferences.\n" % (viewObject.Object.Label, viewObject.Object.Document.Name) )
+            return False
+            #add code to delete constraint mirrors, or original
         obj = viewObject.Object
         doc = obj.Document
         if isinstance( obj.Proxy, ConstraintMirrorObjectProxy ):

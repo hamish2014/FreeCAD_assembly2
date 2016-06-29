@@ -17,7 +17,6 @@ import os, numpy, shutil, copy, time, posixpath, ntpath
 from lib3D import *
 from assembly2solver import solveConstraints
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
-import ImportGui
 
 def importPart( filename, partName=None, doc_assembly=None ):
     if doc_assembly == None:
@@ -37,6 +36,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
             doc = FreeCAD.openDocument(filename)
             debugPrint(4, '  succesfully opened %s' % filename)
         else: #trying shaping import http://forum.freecadweb.org/viewtopic.php?f=22&t=12434&p=99772#p99772x
+            import ImportGui
             doc = FreeCAD.newDocument( os.path.basename(filename) )
             shapeobj=ImportGui.insert(filename,doc.Name)
         
@@ -235,21 +235,27 @@ class UpdateImportedPartsCommand:
         if solve_assembly_constraints:
             solveConstraints( doc_assembly )
         # constraint mirror house keeping
+
         for obj in doc_assembly.Objects: #for adding creating mirrored constraints in old files
             if 'ConstraintInfo' in obj.Content:
                 if doc_assembly.getObject( obj.Object1 ) == None or doc_assembly.getObject( obj.Object2 ) == None: 
                     debugPrint(2, 'removing %s which refers to non-existent objects' % obj.Name)
                     doc_assembly.removeObject( obj.Name ) #required for FreeCAD 0.15 which does not support the on-delete method
-                elif not hasattr( obj.ViewObject.Proxy, 'mirror_name'):
-                    if isinstance( doc_assembly.getObject( obj.Object1 ).Proxy, Proxy_importPart) \
-                     or isinstance( doc_assembly.getObject( obj.Object2 ).Proxy, Proxy_importPart):
-                        debugPrint(2, 'creating mirror of %s' % obj.Name)
-                        doc_assembly.getObject( obj.Object2 ).touch()
-                        obj.ViewObject.Proxy.mirror_name = create_constraint_mirror(  obj, obj.ViewObject.Proxy.iconPath )
+                if group_constraints_under_parts():
+                    if not hasattr( obj.ViewObject.Proxy, 'mirror_name'):
+                        if isinstance( doc_assembly.getObject( obj.Object1 ).Proxy, Proxy_importPart) \
+                                or isinstance( doc_assembly.getObject( obj.Object2 ).Proxy, Proxy_importPart):
+                            debugPrint(2, 'creating mirror of %s' % obj.Name)
+                            doc_assembly.getObject( obj.Object2 ).touch()
+                            obj.ViewObject.Proxy.mirror_name = create_constraint_mirror(  obj, obj.ViewObject.Proxy.iconPath )
             elif 'ConstraintNfo' in obj.Content: #constraint mirror
                 if  doc_assembly.getObject( obj.ViewObject.Proxy.constraintObj_name ) == None:
                     debugPrint(2, 'removing %s which mirrors/links to a non-existent constraint' % obj.Name)
                     doc_assembly.removeObject( obj.Name ) #clean up for FreeCAD 0.15 which does not support the on-delete method
+                elif not group_constraints_under_parts():
+                     debugPrint(2, 'removing %s since group_constraints_under_parts=False' % obj.Name)
+                     doc_assembly.removeObject( obj.Name ) 
+                     delattr( doc_assembly.getObject( obj.ViewObject.Proxy.constraintObj_name ),  'mirror_name' )
             elif hasattr(obj,'Proxy') and isinstance( obj.Proxy, Proxy_importPart) and not isinstance( obj.ViewObject.Proxy, ImportedPartViewProviderProxy):
                 obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
                 debugPrint(2, '%s.ViewObject.Proxy = ImportedPartViewProviderProxy()'%obj.Name)
