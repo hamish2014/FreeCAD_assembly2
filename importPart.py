@@ -254,8 +254,8 @@ class UpdateImportedPartsCommand:
                     doc_assembly.removeObject( obj.Name ) #clean up for FreeCAD 0.15 which does not support the on-delete method
                 elif not group_constraints_under_parts():
                      debugPrint(2, 'removing %s since group_constraints_under_parts=False' % obj.Name)
-                     doc_assembly.removeObject( obj.Name ) 
                      delattr( doc_assembly.getObject( obj.ViewObject.Proxy.constraintObj_name ),  'mirror_name' )
+                     doc_assembly.removeObject( obj.Name ) 
             elif hasattr(obj,'Proxy') and isinstance( obj.Proxy, Proxy_importPart) and not isinstance( obj.ViewObject.Proxy, ImportedPartViewProviderProxy):
                 obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
                 debugPrint(2, '%s.ViewObject.Proxy = ImportedPartViewProviderProxy()'%obj.Name)

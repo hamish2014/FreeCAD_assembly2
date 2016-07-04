@@ -1,4 +1,4 @@
-import FreeCAD
+import FreeCAD, FreeCADGui
 from pivy import coin
 import traceback
 
@@ -86,7 +86,40 @@ class ImportedPartViewProviderProxy:
                     if obj.Object1 == importedPart.Name:
                         children.append( obj )
         return children
-    
+
+    def setupContextMenu(self, ViewObject, popup_menu):
+        ''' for playing around in an iPythonConsole:
+        from PySide import *
+        app = QtGui.QApplication([])
+        menu = QtGui.QMenu()
+        '''
+        #self.pop_up_menu_items = [] #worried about the garbage collector ...
+        #popup_menu.addSeparator()
+        #menu = popup_menu.addMenu('Assembly 2')
+        #PopUpMenuItem( self, menu, 'edit', 'assembly2_editImportedPart' )
+        #if self.Object.Document == FreeCAD.ActiveDocument:
+        #    for label, cmd in [
+        #        [ 'move', 'assembly2_movePart'],
+        #        [ 'duplicate', 'assembly2_duplicatePart'],
+        #        [ 'fork', 'assembly2_forkImportedPart'],
+        #        [ 'delete constraints', 'assembly2_deletePartsConstraints']
+        #        ]:
+        #         PopUpMenuItem( self, menu, label, cmd )
+        # abandoned since context menu not shown when contextMenu activated in viewer
+
+class PopUpMenuItem:
+    def __init__( self, proxy, menu, label, Freecad_cmd ):
+        self.Object = proxy.Object
+        self.Freecad_cmd =  Freecad_cmd
+        action = menu.addAction(label)
+        action.triggered.connect( self.execute )
+        proxy.pop_up_menu_items.append( self )
+    def execute( self ):
+        try:
+            FreeCADGui.runCommand( self.Freecad_cmd )
+        except:
+            FreeCAD.Console.PrintError( traceback.format_exc() )
+
 
 class ConstraintViewProviderProxy:
     def __init__( self, constraintObj, iconPath, createMirror=True, origLabel = '', mirrorLabel = '', extraLabel = '' ):

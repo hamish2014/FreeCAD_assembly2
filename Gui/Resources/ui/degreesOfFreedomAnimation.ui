@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>301</width>
-    <height>460</height>
+    <height>558</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -241,6 +241,16 @@
        <widget class="QPushButton" name="pushButton_set_as_default">
         <property name="text">
          <string>set as default</string>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QLabel" name="label_4">
+        <property name="text">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Usage note:&lt;/p&gt;&lt;p&gt;The DOF animation tool is intended to aid users in fully constraining their assembly.&lt;/p&gt;&lt;p&gt;To animate a mechanisms motion use the animate constaint command. The animate constraint command is acessible via a constraint's popup/context menu.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="wordWrap">
+         <bool>true</bool>
         </property>
        </widget>
       </item>

@@ -3,7 +3,7 @@ import assembly2lib #QtCore.QResource.registerResource happens in assembly2lib
 class Assembly2Workbench (Workbench): 
     MenuText = 'Assembly 2'
     def Initialize(self):
-        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, sphericalSurfaceConstraint, checkAssembly, boltMultipleCircularEdges
+        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, sphericalSurfaceConstraint, checkAssembly, boltMultipleCircularEdges, animate_constraint
         commandslist = [
             'importPart', 
             'updateImportedPartsCommand', 
@@ -50,14 +50,20 @@ class Assembly2Workbench (Workbench):
                         'circularEdge' : 'redefineCircularEdgeConstraint',
                         'sphericalSurface' : 'redefineSphericalSurfaceConstraint'
                         }[ obj.Type ]
-                    self.appendContextMenu( "Assembly2", [redefineCmd,'selectConstraintObjects','selectConstraintElements'])
-                if 'sourceFile' in  obj.Content:
-                    self.appendContextMenu( "Assembly2", 
-                        ['assembly2_movePart',
-                         'assembly2_duplicatePart',
-                         'assembly2_editImportedPart',
-                         'assembly2_forkImportedPart',
-                         'assembly2_deletePartsConstraints'])
+                    self.appendContextMenu( "Assembly2", [
+                            'assemly2_animate_constraint',
+                            redefineCmd,
+                            'selectConstraintObjects',
+                            'selectConstraintElements'])
+            if 'sourceFile' in  obj.Content:
+                self.appendContextMenu( 
+                    "Assembly2", 
+                    [ 'assembly2_movePart',
+                      'assembly2_duplicatePart',
+                      'assembly2_editImportedPart',
+                      'assembly2_forkImportedPart',
+                      'assembly2_deletePartsConstraints']
+                    )
 
     Icon = ':/assembly2/icons/workBenchIcon.svg'
 
