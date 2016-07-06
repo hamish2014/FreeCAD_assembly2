@@ -56,7 +56,8 @@ def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lo
 
     c.purgeTouched()
     if callSolveConstraints:
-        c.Proxy.callSolveConstraints()    
+        c.Proxy.callSolveConstraints()  
+        repair_tree_view()
     #FreeCADGui.Selection.clearSelection()
     #FreeCADGui.Selection.addSelection(c)
     return c

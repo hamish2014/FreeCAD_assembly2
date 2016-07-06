@@ -57,6 +57,7 @@ def parseSelection(selection, objectToUpdate=None):
 
      c.purgeTouched()
      c.Proxy.callSolveConstraints()
+     repair_tree_view()
 
 selection_text = '''Selection options:
   - cylindrical surface

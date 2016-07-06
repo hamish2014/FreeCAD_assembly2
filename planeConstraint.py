@@ -74,6 +74,7 @@ Selection made:
 
      c.purgeTouched()
      c.Proxy.callSolveConstraints()
+     repair_tree_view()
          
 
 selection_text = '''Selection 1 options:

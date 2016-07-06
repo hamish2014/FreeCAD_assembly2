@@ -87,3 +87,4 @@ def boltSelection():
             )
     solveConstraints( doc )
     FreeCAD.ActiveDocument.commitTransaction()
+    repair_tree_view()

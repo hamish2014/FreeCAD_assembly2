@@ -233,3 +233,53 @@ class ConstraintMirrorObjectProxy:
                         setattr( constraintObj, prop, getattr( obj, prop) )
                 except AttributeError, msg:
                     pass #loading issues...
+
+def repair_tree_view():
+    from PySide import QtGui
+    doc = FreeCAD.ActiveDocument
+    matches = []
+    def search_children_recursively( node ):
+        for c in node.children():
+            if isinstance(c,QtGui.QTreeView) and isinstance(c, QtGui.QTreeWidget):
+                matches.append(c)
+            search_children_recursively( c)
+    search_children_recursively(QtGui.qApp.activeWindow())
+    for m in matches:
+        tree_nodes =  get_treeview_nodes(m) 
+        def get_node_by_label( label ):
+            if tree_nodes.has_key( label ) and len( tree_nodes[label] ) == 1:
+                return tree_nodes[label][0]
+            elif not tree_nodes.has_key( obj.Label ):
+                FreeCAD.Console.PrintWarning( "  repair_tree_view: skipping %s since no node with text(0) == %s\n" % ( label, label) )
+            else:
+                FreeCAD.Console.PrintWarning( "  repair_tree_view: skipping %s since multiple nodes matching label\n" % ( label, label) )
+        if tree_nodes.has_key( doc.Label ):
+            #FreeCAD.Console.PrintMessage( tree_nodes )
+            for imported_obj in doc.Objects:
+                if isinstance( imported_obj.ViewObject.Proxy, ImportedPartViewProviderProxy ):
+                    if get_node_by_label( imported_obj.Label ):
+                        node_imported_obj =  get_node_by_label( imported_obj.Label )
+                        for constraint_obj in imported_obj.ViewObject.Proxy.claimChildren():
+                            if get_node_by_label( constraint_obj.Label ):
+                                node_constraint_obj = get_node_by_label( constraint_obj.Label )
+                                if id( node_constraint_obj.parent()) != id(node_imported_obj):
+                                    FreeCAD.Console.PrintMessage("repair_tree_view: %s under %s and not %s, repairing\n" % (constraint_obj.Label, node_constraint_obj.parent().text(0),  imported_obj.Label ))
+                                    wrong_parent = node_constraint_obj.parent()
+                                    wrong_parent.removeChild( node_constraint_obj )
+                                    node_imported_obj.addChild( node_constraint_obj )
+            #break
+
+def get_treeview_nodes( treeWidget ):
+    from PySide import QtGui
+    tree_nodes = {}
+    def walk( node ):
+        key =  node.text(0)
+        #print(key)
+        if not tree_nodes.has_key( key ):
+            tree_nodes[ key ] = []
+        tree_nodes[key].append( node )
+        for i in range( node.childCount() ):
+            walk( node.child( i ) )
+    walk( treeWidget.itemAt(0,0) )
+    return tree_nodes
+
