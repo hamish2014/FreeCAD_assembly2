@@ -1,8 +1,8 @@
 FreeCAD_assembly2
 =================
 
-Assembly workbench for FreeCAD v0.15 with support for importing parts from external files.
-Please note that the Assembly 2 workbench is a work under progress and still contains bugs.
+Assembly workbench for FreeCAD v0.16 with support for importing parts from external files.
+Please note that the Assembly 2 workbench is no longer maintained.
 
 Intended work-flow:
   * each part in the assembly is designed in its own FreeCAD file
@@ -64,7 +64,3 @@ FreeCAD will now have a new workbench-entry called "Assembly 2".
 
 To update to the latest version, delete the assembly2 folder and redownload the git repository.
 
-Bugs
-----
-
-Please report bugs at https://github.com/hamish2014/FreeCAD_assembly2/issues
