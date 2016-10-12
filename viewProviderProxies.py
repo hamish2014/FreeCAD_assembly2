@@ -253,14 +253,20 @@ def repair_tree_view():
                 FreeCAD.Console.PrintWarning( "  repair_tree_view: skipping %s since no node with text(0) == %s\n" % ( label, label) )
             else:
                 FreeCAD.Console.PrintWarning( "  repair_tree_view: skipping %s since multiple nodes matching label\n" % ( label, label) )
-        if tree_nodes.has_key( doc.Label ):
+        if tree_nodes.has_key( doc.Label ): #all the code up until now has geen to find the QtGui.QTreeView widget (except for the get_node_by_label function)
             #FreeCAD.Console.PrintMessage( tree_nodes )
             for imported_obj in doc.Objects:
                 if isinstance( imported_obj.ViewObject.Proxy, ImportedPartViewProviderProxy ):
+                    #FreeCAD.Console.PrintMessage( 'checking claim children for %s\n' % imported_obj.Label )
                     if get_node_by_label( imported_obj.Label ):
                         node_imported_obj =  get_node_by_label( imported_obj.Label )
+                        if not hasattr( imported_obj.ViewObject.Proxy, 'Object'):
+                            imported_obj.ViewObject.Proxy.Object = imported_obj # proxy.attach not called properly
+                            FreeCAD.Console.PrintMessage('repair_tree_view: %s.ViewObject.Proxy.Object = %s' % (imported_obj.Name, imported_obj.Name) )
                         for constraint_obj in imported_obj.ViewObject.Proxy.claimChildren():
-                            if get_node_by_label( constraint_obj.Label ):
+                            #FreeCAD.Console.PrintMessage('  - %s\n' % constraint_obj.Label )
+                            if get_node_by_label( constraint_obj.Label ): 
+                                #FreeCAD.Console.PrintMessage('     (found treeview node)\n')
                                 node_constraint_obj = get_node_by_label( constraint_obj.Label )
                                 if id( node_constraint_obj.parent()) != id(node_imported_obj):
                                     FreeCAD.Console.PrintMessage("repair_tree_view: %s under %s and not %s, repairing\n" % (constraint_obj.Label, node_constraint_obj.parent().text(0),  imported_obj.Label ))
