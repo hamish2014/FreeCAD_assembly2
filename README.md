@@ -2,65 +2,56 @@ FreeCAD_assembly2
 =================
 
 Assembly workbench for FreeCAD v0.16 with support for importing parts from external files.
-Please note that the Assembly 2 workbench is no longer maintained.
-
-Intended work-flow:
-  * each part in the assembly is designed in its own FreeCAD file
-  * a separate assembly FreeCAD file is created
-  * parts are imported to this assembly file using the Assembly 2 workbench
-  * spacial constraints are then added to assemble the imported parts
-
-Features
-  * circular edge constraint
-  * axial constraint
-  * plane constraint
-  * part importing 
-  * updating of parts already imported
-
-Limitations
-  * Poor constraint solver which may fail or take excessively long for complicated assemblies
-  * undo and other similar features not supported
+Although the original programmer of the workbench (hamish) is no longer active
+this workbench is still maintained as good as possible.
+Feel free to post issues and pull requests.
 
 
 Linux Installation Instructions
 -------------------------------
 
-To use this workbench clone this git repository under your FreeCAD MyScripts directory, and install the pyside and numpy python libraries.
-On a Linux Debian based system such as Ubuntu, installation can be done through BASH as follows
+For Ubuntu (Linux Mint) we recommend to add the community ppa to your systems software
+resources and install via the sysnaptic package manager the addon of your liking.
+Refer to here for more information:
+https://launchpad.net/~freecad-community/+archive/ubuntu/ppa
+
+On other Linux distros you may try to install manually via BASH and git:
 
 ```bash
 $ sudo apt-get install git python-numpy python-pyside
 $ mkdir ~/.FreeCAD/Mod
 $ cd ~/.FreeCAD/Mod
-$ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
+$ git clone https://github.com/hamish2014/FreeCAD_drawing_dimensioning.git
 ```
 
-FreeCAD you will now have a new workbench-entry called "Assembly 2".
-Once installed, use git to upgrade to the latest version through BASH as follows
+Once installed, use git to easily update to the latest version:
+
 ```bash
-$ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
+$ cd ~/.FreeCAD/Mod/FreeCAD_drawing_dimensioning
 $ git pull
 $ rm *.pyc
 ```
 
-Alternatilvely, on an *Ubuntu* system the freecad-community PPA can be used:
-
-  1.  Add **ppa:freecad-community/ppa** to your software sources ([What are PPAs and how do I use them?](http://askubuntu.com/questions/4983/what-are-ppas-and-how-do-i-use-them/5102#5102%29))
-  2.  sudo apt-get update
-  3.  sudo apt-get install freecad-extras-assembly2
-
-
 Windows Installation Instructions
 ---------------------------------
 
-  * download the git repository as ZIP
-  * assuming FreeCAD is installed in "C:\PortableApps\FreeCAD 0_15",  go to "C:\PortableApps\FreeCAD 0_15\Mod" within Windows Explorer
-  * create new directory named "assembly2"
-  * unzip downloaded repository in "C:\PortableApps\FreeCAD 0_15\Mod\assembly2"
-  
-FreeCAD will now have a new workbench-entry called "Assembly 2".
+Please use the FreeCAD-Addons-Installer provided here:
+https://github.com/FreeCAD/FreeCAD-addons
 
-*Pyside and Numpy are integrated in the FreeCAD 0.15 dev-Snapshots, so these Python packages do not need to be installed individually*
+For more in-depth information refer to the corresponding tutorial on the FreeCAD-Homepage:
+http://www.freecadweb.org/wiki/index.php?title=How_to_install_additional_workbenches
 
-To update to the latest version, delete the assembly2 folder and redownload the git repository.
+Mac Installation Instructions
+-----------------------------
 
+Copy or unzip the drawing dimensioning folder to the directory *FreeCAD.app*/Contents/Mod
+where *FreeCAD.app* is the folder where FreeCAD is installed. (thanks PLChris)
+
+For more in-depth information refer to the corresponding tutorial on the FreeCAD-Homepage:
+http://www.freecadweb.org/wiki/index.php?title=How_to_install_additional_workbenches
+
+Wiki
+----
+
+For instructions on usage of the workbench refer to the wiki (link on top of the page)
+[https://github.com/hamish2014/FreeCAD_assembly2/wiki]
