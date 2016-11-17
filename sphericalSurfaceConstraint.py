@@ -84,8 +84,8 @@ class SphericalSurfaceConstraintCommand:
     def GetResources(self): 
         return {
             'Pixmap' : ':/assembly2/icons/sphericalSurfaceConstraint.svg', 
-            'MenuText': 'Add SphericalSurface Constraint', 
-            'ToolTip': 'Add an SphericalSurface Constraint between two objects'
+            'MenuText': 'Add a spherical surface constraint', 
+            'ToolTip': 'Add a spherical surface constraint between two objects'
             } 
 
 FreeCADGui.addCommand('addSphericalSurfaceConstraint', SphericalSurfaceConstraintCommand())

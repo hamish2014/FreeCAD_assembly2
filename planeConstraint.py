@@ -101,8 +101,8 @@ class PlaneConstraintCommand:
      def GetResources(self): 
           return {
                'Pixmap' : ':/assembly2/icons/planeConstraint.svg', 
-               'MenuText': 'Add Plane Constraint', 
-               'ToolTip': 'Add an Plane Constraint between two objects'
+               'MenuText': 'Add plane constraint', 
+               'ToolTip': 'Add a plane constraint between two objects'
                } 
 
 FreeCADGui.addCommand('addPlaneConstraint', PlaneConstraintCommand())

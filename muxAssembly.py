@@ -65,7 +65,7 @@ class MuxAssemblyCommand:
 
        
     def GetResources(self): 
-        msg = 'Combine assembly into a single object ( use to create a drawing of the assembly, and so on...)'
+        msg = 'Combine selected parts of assembly into a single object (for example to create a drawing view)'
         return {
             'Pixmap' : ':/assembly2/icons/muxAssembly.svg', 
             'MenuText': msg, 

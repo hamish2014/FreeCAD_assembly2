@@ -21,13 +21,13 @@ On other Linux distros you may try to install manually via BASH and git:
 $ sudo apt-get install git python-numpy python-pyside
 $ mkdir ~/.FreeCAD/Mod
 $ cd ~/.FreeCAD/Mod
-$ git clone https://github.com/hamish2014/FreeCAD_drawing_dimensioning.git
+$ git clone https://github.com/hamish2014/FreeCAD_assembly2.git
 ```
 
 Once installed, use git to easily update to the latest version:
 
 ```bash
-$ cd ~/.FreeCAD/Mod/FreeCAD_drawing_dimensioning
+$ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
 $ git pull
 $ rm *.pyc
 ```

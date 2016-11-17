@@ -75,7 +75,7 @@ class AngleConstraintCommand:
                     taskDialog_text = selection_text )
                
      def GetResources(self): 
-          msg = 'create an angular constraint between two planes'
+          msg = 'Create an angular constraint between two planes'
           return {
                'Pixmap' : ':/assembly2/icons/angleConstraint.svg', 
                'MenuText': msg, 

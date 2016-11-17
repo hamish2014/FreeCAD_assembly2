@@ -12,7 +12,7 @@ class AnimateCommand:
         self.taskPanel = AnimateDegreesOfFreedomTaskPanel( constraintSystem )
         FreeCADGui.Control.showDialog( self.taskPanel )
     def GetResources(self): 
-        msg = 'animate degrees of freedom'
+        msg = 'Animate degrees of freedom'
         return {
             'Pixmap' : ':/assembly2/icons/degreesOfFreedomAnimation.svg', 
             'MenuText': msg, 

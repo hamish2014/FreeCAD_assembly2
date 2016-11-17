@@ -83,8 +83,8 @@ class CircularEdgeConstraintCommand:
     def GetResources(self): 
         return {
             'Pixmap' : ':/assembly2/icons/circularEdgeConstraint.svg' , 
-            'MenuText': 'Add CircularEdge Constraint', 
-            'ToolTip': 'Add an CircularEdge Constraint between two objects'
+            'MenuText': 'Add circular edge constraint', 
+            'ToolTip': 'Add a circular edge constraint between two objects'
             } 
 
 FreeCADGui.addCommand('addCircularEdgeConstraint', CircularEdgeConstraintCommand())

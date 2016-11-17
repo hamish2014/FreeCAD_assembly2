@@ -24,7 +24,7 @@ class AnimateConstraint_Command:
     def GetResources(self): 
         return {
             'MenuText': 'Animate', 
-            'ToolTip':  'Animate Constraint'
+            'ToolTip':  'Animate constraint'
             } 
 FreeCADGui.addCommand( 'assemly2_animate_constraint', AnimateConstraint_Command() )
 

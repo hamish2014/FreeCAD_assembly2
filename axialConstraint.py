@@ -80,8 +80,8 @@ class AxialConstraintCommand:
      def GetResources(self): 
           return {
                'Pixmap' : ':/assembly2/icons/axialConstraint.svg', 
-               'MenuText': 'Add Axial Constraint', 
-               'ToolTip': 'Add an Axial Constraint between two objects'
+               'MenuText': 'Add axial constraint', 
+               'ToolTip': 'Add an axial constraint between two objects'
                } 
 
 FreeCADGui.addCommand('addAxialConstraint', AxialConstraintCommand())

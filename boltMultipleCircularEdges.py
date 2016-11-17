@@ -26,7 +26,7 @@ class boltMultipleCircularEdgesCommand:
             else:
                 QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", 'Select only circular edges')
     def GetResources(self): 
-        msg = 'Bolt Multiple Circular Edges'
+        msg = 'Bolt multiple circular edges'
         return {
             'Pixmap' : ':/assembly2/icons/boltMultipleCircularEdges.svg', 
             'MenuText': msg, 
@@ -43,7 +43,7 @@ class RapidBoltingTaskDialog:
 2) add to the Selection the edges 
 to which the bolt is to be mated
 3) press Ok ''' )
-        self.form.setWindowTitle( 'Bolt Multiple Circular Edges' )    
+        self.form.setWindowTitle( 'Bolt multiple circular edges' )    
         self.form.setWindowIcon( QtGui.QIcon( ':/assembly2/icons/boltMultipleCircularEdges.svg' ) )
     def reject(self):
         FreeCADGui.Selection.removeSelectionGate()

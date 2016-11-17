@@ -60,7 +60,7 @@ class AddPartsList:
         previewDimension.initializePreview( d, table_dd.table_preview, parts_list_clickHandler )
         
     def GetResources(self): 
-        tip = 'create a parts list from the objects imported using the assembly 2 workbench'
+        tip = 'Create a part list from the objects imported using the assembly 2 workbench'
         return {
             'Pixmap' : ':/assembly2/icons/partsList.svg' , 
             'MenuText': tip, 
