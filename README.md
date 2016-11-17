@@ -1,10 +1,12 @@
 FreeCAD_assembly2
 =================
 
-Assembly workbench for FreeCAD v0.16 with support for importing parts from external files.
+Assembly workbench for FreeCAD v0.15, 0.16 and 0.17 with support for importing parts from external files.
 Although the original programmer of the workbench (hamish) is no longer active
 this workbench is still maintained as good as possible.
 Feel free to post issues and pull requests.
+Assembly2 requires numpy to be installed (bundled with FreeCAD since 0.15.4671).
+Thanks to Maurice (easyw-fc) assembly2 will work with files from FreeCAD 0.17.
 
 
 Linux Installation Instructions
@@ -44,8 +46,14 @@ http://www.freecadweb.org/wiki/index.php?title=How_to_install_additional_workben
 Mac Installation Instructions
 -----------------------------
 
-Copy or unzip the drawing dimensioning folder to the directory *FreeCAD.app*/Contents/Mod
-where *FreeCAD.app* is the folder where FreeCAD is installed. (thanks PLChris)
+* download the git repository as ZIP
+* assuming FreeCAD is installed in "/Applications/FreeCAD/v 0.15", go to "/Applications/FreeCAD/v 0.15" in the Browser, and select FreeCAD.app
+* right-click and select "Show Package Contents", a new window will appear with a folder named "Contents"
+* single-click on the folder "Contents" and select the folder "Mod"
+* in the folder "Mod" create a new folder named "assembly2"
+* unzip downloaded repository in the folder "Contents/Mod/assembly2"
+(Thanks piffpoof)
+
 
 For more in-depth information refer to the corresponding tutorial on the FreeCAD-Homepage:
 http://www.freecadweb.org/wiki/index.php?title=How_to_install_additional_workbenches
