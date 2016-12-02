@@ -53,8 +53,8 @@ class ConstraintSelectionObserver:
           FreeCADGui.Control.showDialog( self.taskDialog )
      def addSelection( self, docName, objName, sub, pnt ):
          debugPrint(4,'addSelection: docName,objName,sub = %s,%s,%s' % (docName, objName, sub))
-         debugPrint(1,'addSelection: docName,obj.Label,sub = %s,%s,%s' % (docName, obj.Label, sub)) # to print selection name
          obj = FreeCAD.ActiveDocument.getObject(objName)
+         debugPrint(1,'addSelection: docName,obj.Label,sub = %s,%s,%s' % (docName, obj.Label, sub)) # to print selection name
          self.selections.append( SelectionRecord( docName, objName, sub ))
          if len(self.selections) == 2:
              self.stopSelectionObservation()
