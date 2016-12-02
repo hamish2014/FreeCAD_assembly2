@@ -300,6 +300,20 @@ def cylindricalPlaneSelected( selection ):
                 return error_normalized < 10**-6
     return False
 
+def AxisOfPlaneSelected( selection ): #adding Planes/Faces selection for Axial constraints
+    if len( selection.SubElementNames ) == 1:
+        subElement = selection.SubElementNames[0]
+        if subElement.startswith('Face'):
+            face = getObjectFaceFromName( selection.Object, subElement)
+            if str(face.Surface) == '<Plane object>':
+                return True
+            else:
+                axis, center, error = fit_rotation_axis_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                #debugPrint(2,'fitted axis %s, center %s, error_normalized %e' % (axis, center,error_normalized))
+                return error_normalized < 10**-6
+    return False
+
 def getObjectEdgeFromName( obj, name ):
     assert name.startswith('Edge')
     ind = int( name[4:]) -1 
@@ -375,7 +389,9 @@ def getSubElementPos(obj, subElementName):
         face = getObjectFaceFromName(obj, subElementName)
         surface = face.Surface
         if str(surface) == '<Plane object>':
-            pos = surface.Position
+            pos = getObjectFaceFromName(obj, subElementName).Faces[0].BoundBox.Center
+            # axial constraint for Planes
+            # pos = surface.Position
         elif all( hasattr(surface,a) for a in ['Axis','Center','Radius'] ):
             pos = surface.Center
         elif str(surface).startswith('<SurfaceOfRevolution'):

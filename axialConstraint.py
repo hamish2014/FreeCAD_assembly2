@@ -9,7 +9,8 @@ class AxialSelectionGate:
 
 def ValidSelection(selectionExObj):
      return cylindricalPlaneSelected(selectionExObj)\
-         or LinearEdgeSelected(selectionExObj)
+         or LinearEdgeSelected(selectionExObj)\
+         or AxisOfPlaneSelected(selectionExObj)
 
 def parseSelection(selection, objectToUpdate=None):
      validSelection = False
@@ -62,7 +63,8 @@ def parseSelection(selection, objectToUpdate=None):
 
 selection_text = '''Selection options:
   - cylindrical surface
-  - edge '''
+  - edge 
+  - face '''
 
 class AxialConstraintCommand:
      def Activated(self):
