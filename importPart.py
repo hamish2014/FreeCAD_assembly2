@@ -116,6 +116,8 @@ class Proxy_importPart:
 
 class ImportPartCommand:
     def Activated(self):
+        if FreeCADGui.ActiveDocument == None:
+            FreeCAD.newDocument()
         view = FreeCADGui.activeDocument().activeView()
         #filename, filetype = QtGui.QFileDialog.getOpenFileName(
         #    QtGui.qApp.activeWindow(),
