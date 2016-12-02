@@ -17,6 +17,7 @@ import os, numpy, shutil, copy, time, posixpath, ntpath
 from lib3D import *
 from assembly2solver import solveConstraints
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
+from viewProviderProxies import group_constraints_under_parts
 
 def importPart( filename, partName=None, doc_assembly=None ):
     if doc_assembly == None:
