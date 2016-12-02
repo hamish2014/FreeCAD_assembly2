@@ -14,7 +14,8 @@ import FreeCADGui
 import Part
 from PySide import QtGui, QtCore
 from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
-from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy, create_constraint_mirror, group_constraints_under_parts, repair_tree_view
+from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy,\
+     create_constraint_mirror, repair_tree_view
 
 path_assembly2 = os.path.dirname(__file__)
 #path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')
@@ -32,6 +33,7 @@ def debugPrint( level, msg ):
     if level <= debugPrint.level:
         FreeCAD.Console.PrintMessage(msg + '\n')
 debugPrint.level = 4 if hasattr(os,'uname') and os.uname()[1].startswith('antoine') else 2
+#debugPrint.level = 4 #maui to debug
 
 def formatDictionary( d, indent):
     return '%s{' % indent + '\n'.join(['%s%s:%s' % (indent,k,d[k]) for k in sorted(d.keys())]) + '}'
@@ -51,6 +53,7 @@ class ConstraintSelectionObserver:
           FreeCADGui.Control.showDialog( self.taskDialog )
      def addSelection( self, docName, objName, sub, pnt ):
          debugPrint(4,'addSelection: docName,objName,sub = %s,%s,%s' % (docName, objName, sub))
+         debugPrint(1,'addSelection: docName,obj.Label,sub = %s,%s,%s' % (docName, obj.Label, sub)) # to print selection name
          obj = FreeCAD.ActiveDocument.getObject(objName)
          self.selections.append( SelectionRecord( docName, objName, sub ))
          if len(self.selections) == 2:

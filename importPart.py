@@ -42,7 +42,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
 
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
-                       and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0 and 'Body' not in obj.Name] # len(obj.Shape.Faces) > 0 to avoid sketches
+                       and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0 and 'Body' not in obj.Name] # len(obj.Shape.Faces) > 0 to avoid sketches, skip Body
 
     debugPrint(3, '%s objects %s' % (doc.Name, doc.Objects))
     if any([ 'importPart' in obj.Content for obj in doc.Objects]) and not len(visibleObjects) == 1:

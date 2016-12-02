@@ -20,6 +20,7 @@ def parseSelection(selection, objectToUpdate=None):
                     validSelection = True
                     cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
                                [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]
+                    debugPrint(4,'cParms = %s' % (cParms))
      if not validSelection:
           msg = '''To add an axial constraint select two cylindrical surfaces or two straight lines, each from a different part. Selection made:
 %s'''  % printSelection(selection)
