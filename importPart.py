@@ -99,6 +99,13 @@ def importPart( filename, partName=None, doc_assembly=None ):
         obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
     if getattr(obj,'updateColors',True):
         obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )
+        #obj.ViewObject.Transparency = copy.copy( obj_to_copy.ViewObject.Transparency )   # .Transparency property
+        tsp = copy.copy( obj_to_copy.ViewObject.Transparency )   #  .Transparency workaround for FC 0.17 @ Nov 2016
+        if tsp < 100 and tsp<>0:
+            obj.ViewObject.Transparency = tsp+1
+        if tsp == 100:
+            obj.ViewObject.Transparency = tsp-1
+        obj.ViewObject.Transparency = tsp   # .Transparency workaround end 
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( filename )
     #clean up
