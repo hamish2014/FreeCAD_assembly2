@@ -42,7 +42,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
 
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
-                       and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0 and 'Body' not in obj.Name] # len(obj.Shape.Faces) > 0 to avoid sketches
+                       and hasattr(obj,'Shape') and len(obj.Shape.Faces) > 0 and 'Body' not in obj.Name] # len(obj.Shape.Faces) > 0 to avoid sketches, skip Body
 
     debugPrint(3, '%s objects %s' % (doc.Name, doc.Objects))
     if any([ 'importPart' in obj.Content for obj in doc.Objects]) and not len(visibleObjects) == 1:
@@ -99,6 +99,13 @@ def importPart( filename, partName=None, doc_assembly=None ):
         obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
     if getattr(obj,'updateColors',True):
         obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )
+        #obj.ViewObject.Transparency = copy.copy( obj_to_copy.ViewObject.Transparency )   # .Transparency property
+        tsp = copy.copy( obj_to_copy.ViewObject.Transparency )   #  .Transparency workaround for FC 0.17 @ Nov 2016
+        if tsp < 100 and tsp<>0:
+            obj.ViewObject.Transparency = tsp+1
+        if tsp == 100:
+            obj.ViewObject.Transparency = tsp-1
+        obj.ViewObject.Transparency = tsp   # .Transparency workaround end 
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( filename )
     #clean up
@@ -116,6 +123,8 @@ class Proxy_importPart:
 
 class ImportPartCommand:
     def Activated(self):
+        if FreeCADGui.ActiveDocument == None:
+            FreeCAD.newDocument()
         view = FreeCADGui.activeDocument().activeView()
         #filename, filetype = QtGui.QFileDialog.getOpenFileName(
         #    QtGui.qApp.activeWindow(),

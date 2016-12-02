@@ -14,7 +14,8 @@ import FreeCADGui
 import Part
 from PySide import QtGui, QtCore
 from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
-from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy, create_constraint_mirror, group_constraints_under_parts, repair_tree_view
+from viewProviderProxies import ImportedPartViewProviderProxy, ConstraintViewProviderProxy,\
+     create_constraint_mirror, repair_tree_view
 
 path_assembly2 = os.path.dirname(__file__)
 #path_assembly2_icons =  os.path.join( path_assembly2, 'Resources', 'icons')
@@ -32,6 +33,7 @@ def debugPrint( level, msg ):
     if level <= debugPrint.level:
         FreeCAD.Console.PrintMessage(msg + '\n')
 debugPrint.level = 4 if hasattr(os,'uname') and os.uname()[1].startswith('antoine') else 2
+#debugPrint.level = 4 #maui to debug
 
 def formatDictionary( d, indent):
     return '%s{' % indent + '\n'.join(['%s%s:%s' % (indent,k,d[k]) for k in sorted(d.keys())]) + '}'
@@ -52,6 +54,7 @@ class ConstraintSelectionObserver:
      def addSelection( self, docName, objName, sub, pnt ):
          debugPrint(4,'addSelection: docName,objName,sub = %s,%s,%s' % (docName, objName, sub))
          obj = FreeCAD.ActiveDocument.getObject(objName)
+         debugPrint(1,'addSelection: docName,obj.Label,sub = %s,%s,%s' % (docName, obj.Label, sub)) # to print selection name
          self.selections.append( SelectionRecord( docName, objName, sub ))
          if len(self.selections) == 2:
              self.stopSelectionObservation()
@@ -297,6 +300,20 @@ def cylindricalPlaneSelected( selection ):
                 return error_normalized < 10**-6
     return False
 
+def AxisOfPlaneSelected( selection ): #adding Planes/Faces selection for Axial constraints
+    if len( selection.SubElementNames ) == 1:
+        subElement = selection.SubElementNames[0]
+        if subElement.startswith('Face'):
+            face = getObjectFaceFromName( selection.Object, subElement)
+            if str(face.Surface) == '<Plane object>':
+                return True
+            else:
+                axis, center, error = fit_rotation_axis_to_surface1(face.Surface)
+                error_normalized = error / face.BoundBox.DiagonalLength
+                #debugPrint(2,'fitted axis %s, center %s, error_normalized %e' % (axis, center,error_normalized))
+                return error_normalized < 10**-6
+    return False
+
 def getObjectEdgeFromName( obj, name ):
     assert name.startswith('Edge')
     ind = int( name[4:]) -1 
@@ -372,7 +389,9 @@ def getSubElementPos(obj, subElementName):
         face = getObjectFaceFromName(obj, subElementName)
         surface = face.Surface
         if str(surface) == '<Plane object>':
-            pos = surface.Position
+            pos = getObjectFaceFromName(obj, subElementName).Faces[0].BoundBox.Center
+            # axial constraint for Planes
+            # pos = surface.Position
         elif all( hasattr(surface,a) for a in ['Axis','Center','Radius'] ):
             pos = surface.Center
         elif str(surface).startswith('<SurfaceOfRevolution'):

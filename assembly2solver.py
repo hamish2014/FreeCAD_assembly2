@@ -54,6 +54,7 @@ def findBaseObject( doc, objectNames  ):
         debugPrint( 1, 'This allows for part updating, parts list support, object copying (shift + assembly2 move) and also tells the solver which objects to treat as fixed.')
         debugPrint( 1, 'since no objects have the fixedPosition attribute, fixing the postion of the first object in the first constraint')
         debugPrint( 1, 'assembly 2 solver: assigning %s a fixed position' % objectNames[0])
+        debugPrint( 1, 'assembly 2 solver: assigning %s, %s a fixed position' % (objectNames[0], doc.getObject(objectNames[0]).Label))
         return objectNames[0]
 
 def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=None ):
