@@ -328,7 +328,7 @@ def CircularEdgeSelected( selection ):
                 return False
             if hasattr( edge.Curve, 'Radius' ):
                 return True
-            elif isinstance(edge.Curve, Part.Line):
+            elif isinstance(edge.Curve, (Part.Line,Part.LineSegment)):
                 return False
             else:
                 BSpline = edge.Curve.toBSpline()
@@ -349,7 +349,7 @@ def LinearEdgeSelected( selection ):
             edge = getObjectEdgeFromName( selection.Object, subElement)
             if not hasattr(edge, 'Curve'): #issue 39
                 return False
-            if isinstance(edge.Curve, Part.Line):
+            if isinstance(edge.Curve, (Part.Line,Part.LineSegment)):
                 return True
             elif hasattr( edge.Curve, 'Radius' ):
                 return False
@@ -359,7 +359,7 @@ def LinearEdgeSelected( selection ):
                     arcs = BSpline.toBiArcs(10**-6)
                 except:  #FreeCAD exception thrown ()
                     return False
-                if all(isinstance(a, Part.Line) for a in arcs):
+                if all(isinstance(a, (Part.Line,Part.LineSegment)) for a in arcs):
                     lines = arcs
                     D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
                     return numpy.std( D, axis=0 ).max() < 10**-9
@@ -407,7 +407,7 @@ def getSubElementPos(obj, subElementName):
                 pos = center
     elif subElementName.startswith('Edge'):
         edge = getObjectEdgeFromName(obj, subElementName)
-        if isinstance(edge.Curve, Part.Line):
+        if isinstance(edge.Curve, (Part.Line,Part.LineSegment)):
             pos = edge.Curve.StartPoint
         elif hasattr( edge.Curve, 'Center'): #circular curve
             pos = edge.Curve.Center
@@ -419,7 +419,7 @@ def getSubElementPos(obj, subElementName):
                 sigma = numpy.std( centers, axis=0 )
                 if max(sigma) < 10**-6: #then circular curce
                     pos = centers[0]
-            if all(isinstance(a, Part.Line) for a in arcs):
+            if all(isinstance(a, (Part.Line,Part.LineSegment)) for a in arcs):
                 lines = arcs
                 D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
                 if numpy.std( D, axis=0 ).max() < 10**-9: #then linear curve
@@ -452,7 +452,7 @@ def getSubElementAxis(obj, subElementName):
                 axis = axis_fitted
     elif subElementName.startswith('Edge'):
         edge = getObjectEdgeFromName(obj, subElementName)
-        if isinstance(edge.Curve, Part.Line):
+        if isinstance(edge.Curve, (Part.Line,Part.LineSegment)):
             axis = edge.Curve.tangent(0)[0]
         elif hasattr( edge.Curve, 'Axis'): #circular curve
             axis =  edge.Curve.Axis
@@ -464,7 +464,7 @@ def getSubElementAxis(obj, subElementName):
                 sigma = numpy.std( centers, axis=0 )
                 if max(sigma) < 10**-6: #then circular curce
                     axis = a.Axis
-            if all(isinstance(a, Part.Line) for a in arcs):
+            if all(isinstance(a, (Part.Line,Part.LineSegment)) for a in arcs):
                 lines = arcs
                 D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
                 if numpy.std( D, axis=0 ).max() < 10**-9: #then linear curve
