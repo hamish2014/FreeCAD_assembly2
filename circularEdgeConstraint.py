@@ -2,21 +2,24 @@ from assembly2lib import *
 from lib3D import *
 from pivy import coin
 from PySide import QtGui
-         
-class CircularEdgeSelectionGate:
-    def allow(self, doc, obj, sub):
-        return CircularEdgeSelected( SelectionExObject(doc, obj, sub) )
 
+class CircularEdgeSelectionGate:
+     def allow(self, doc, obj, sub):
+          return ValidSelectionFunct(SelectionExObject(doc, obj, sub),doc, obj, sub)
+
+def ValidSelectionFunct(selectionExObj, doc, obj, sub):
+     return CircularEdgeSelected( SelectionExObject(doc, obj, sub) )\
+         or AxisOfPlaneSelected(selectionExObj)
+         
 def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lockRotation = False):
     validSelection = False
     if len(selection) == 2:
         s1, s2 = selection
         if s1.ObjectName <> s2.ObjectName:
-            if CircularEdgeSelected(s1) and CircularEdgeSelected(s2):
-                validSelection = True
-                cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
-                           [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]
-
+            validSelection = True
+            cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
+                       [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]
+            debugPrint(4,'cParms = %s' % (cParms))
     if not validSelection:
           msg = '''To add a circular edge constraint select two circular edges, each from a different part. Selection made:
 %s'''  % printSelection(selection)
@@ -63,7 +66,7 @@ def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lo
     return c
     
 
-selection_text = '''Select 2 circular edges'''
+selection_text = '''Select circular edges or faces'''
 
 class CircularEdgeConstraintCommand:
     def Activated(self):
