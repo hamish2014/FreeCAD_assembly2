@@ -6,29 +6,39 @@ class Proxy_muxAssemblyObj:
     def execute(self, shape):
         pass
 
-def muxObjects( doc ):
+def muxObjects(doc, mode=0):
     'combines all the imported shape object in doc into one shape'
     faces = []
-    'for obj in doc.Objects:'
-    for obj in doc.getSelection():
+
+    if mode == 1:
+        objects = doc.getSelection()
+    else:
+        objects = doc.Objects
+
+    for obj in objects:
         if 'importPart' in obj.Content:
             debugPrint(3, '  - parsing "%s"' % (obj.Name))
             faces = faces + obj.Shape.Faces
     return Part.makeShell(faces)
 
-def muxMapColors( doc, muxedObj):
+def muxMapColors(doc, muxedObj, mode=0):
     'call after muxedObj.Shape =  muxObjects(doc)'
     diffuseColors = []
     faceMap = {}
-    'for obj in doc.Objects:'
-    for obj in doc.getSelection():
+
+    if mode == 1:
+        objects = doc.getSelection()
+    else:
+        objects = doc.Objects
+
+    for obj in objects:
         if 'importPart' in obj.Content:
             for i, face in enumerate(obj.Shape.Faces):
                 if i < len(obj.ViewObject.DiffuseColor):
                     clr = obj.ViewObject.DiffuseColor[i]
                 else:
                     clr = obj.ViewObject.DiffuseColor[0]
-                faceMap[faceMapKey(face)] = clr   
+                faceMap[faceMapKey(face)] = clr
     for f in muxedObj.Shape.Faces:
         try:
             key = faceMapKey(f)
@@ -64,8 +74,8 @@ class MuxAssemblyCommand:
             debugPrint(2, 'updating assembly mux "%s"' % (muxedObj.Name))'''
             #deleted to force a creation of a new one any time
         'muxedObj.Shape = muxObjects( FreeCAD.ActiveDocument )'
-        muxedObj.Shape = muxObjects( FreeCADGui.Selection )
-        muxMapColors(FreeCADGui.Selection, muxedObj)
+        muxedObj.Shape = muxObjects(FreeCADGui.Selection, 1)
+        muxMapColors(FreeCADGui.Selection, muxedObj, 1)
         'muxMapColors(FreeCAD.ActiveDocument, muxedObj)'
         FreeCAD.ActiveDocument.recompute()
 
