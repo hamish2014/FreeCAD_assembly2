@@ -1,6 +1,7 @@
 from assembly2lib import *
 import Part
 import os, numpy
+from random import random, choice
 
 class Proxy_muxAssemblyObj:
     def execute(self, shape):
@@ -53,39 +54,130 @@ def muxMapColors(doc, muxedObj, mode=0):
 def faceMapKey(face):
     c = sum([ [ v.Point.x, v.Point.y, v.Point.z] for v in face.Vertexes ], [])
     return tuple(c)
-   
-class MuxAssemblyCommand:
-    def Activated(self):
-        #first check if assembly mux part already existings
-        '''checkResult = [ obj  for obj in FreeCAD.ActiveDocument.Objects
-                        if hasattr(obj, 'type') and obj.type == 'muxedAssembly' ]
-        if len(checkResult) == 0:'''
-        #deleted to force a creation of a new one any time
-        partName = 'muxedAssembly'
+
+def createMuxedAssembly(name=None):
+        partName='muxedAssembly'
+        if name!=None:
+            partName = name
         debugPrint(2, 'creating assembly mux "%s"' % (partName))
         muxedObj = FreeCAD.ActiveDocument.addObject("Part::FeaturePython",partName)
         muxedObj.Proxy = Proxy_muxAssemblyObj()
         muxedObj.ViewObject.Proxy = 0
         muxedObj.addProperty("App::PropertyString","type")
         muxedObj.type = 'muxedAssembly'
+        muxedObj.addProperty("App::PropertyBool","ReadOnly")
+        muxedObj.ReadOnly = False
         FreeCADGui.ActiveDocument.getObject(muxedObj.Name).Visibility = False
-        '''else:
-            muxedObj = checkResult[0]
-            debugPrint(2, 'updating assembly mux "%s"' % (muxedObj.Name))'''
-            #deleted to force a creation of a new one any time
-        'muxedObj.Shape = muxObjects( FreeCAD.ActiveDocument )'
-        muxedObj.Shape = muxObjects(FreeCADGui.Selection, 1)
-        muxMapColors(FreeCADGui.Selection, muxedObj, 1)
-        'muxMapColors(FreeCAD.ActiveDocument, muxedObj)'
+        muxedObj.addProperty("App::PropertyStringList","muxedObjectList")
+        tmplist=[]
+        for objlst in FreeCADGui.Selection.getSelection():
+            if 'importPart' in objlst.Content:
+                 tmplist.append(objlst.Name)
+        muxedObj.muxedObjectList=tmplist
+        if len(tmplist)>0:
+            #there are objects selected, mux them
+            muxedObj.Shape = muxObjects(FreeCADGui.Selection, 1)
+            muxMapColors(FreeCADGui.Selection, muxedObj, 1)
+        else:
+            #mux all objects (original behavior) 
+            for objlst in FreeCAD.ActiveDocument.Objects:
+                if 'importPart' in objlst.Content:
+                    tmplist.append(objlst.Name)
+            muxedObj.muxedObjectList=tmplist
+            if len(tmplist)>0:
+                muxedObj.Shape = muxObjects(FreeCAD.ActiveDocument, 0)
+                muxMapColors(FreeCAD.ActiveDocument, muxedObj, 0)
+            else:
+                debugPrint(2, 'Nothing to Mux')
+
+
+   
+class MuxAssemblyCommand:
+    def Activated(self):
+        #we have to handle the mux name here
+        createMuxedAssembly()
         FreeCAD.ActiveDocument.recompute()
 
        
     def GetResources(self):
-        msg = 'Combine selected parts into a single object (for example to create a drawing of the assembly)'
+        msg = 'Combine all parts into a single object \n\
+or combine all selected parts into a single object\n(for example to create a drawing of the whole or part of the assembly)'
         return {
             'Pixmap' : ':/assembly2/icons/muxAssembly.svg',
             'MenuText': msg,
             'ToolTip': msg
             }
 
+class MuxAssemblyRefreshCommand:
+    def Activated(self):
+        
+        #first list all muxes in active document
+        allMuxesList=[]
+        for objlst in FreeCAD.ActiveDocument.Objects:
+            if hasattr(objlst,'type'):
+                if 'muxedAssembly' in objlst.type:
+                    if objlst.ReadOnly==False:
+                        allMuxesList.append(objlst.Name)
+        #Second, create a list of selected objects and check if there is a mux
+        allSelMuxesList=[]
+        for objlst in FreeCADGui.Selection.getSelection():
+            tmpobj = FreeCAD.ActiveDocument.getObject(objlst.Name)
+            if 'muxedAssembly' in tmpobj.type:
+                if tmpobj.ReadOnly==False:
+                    allSelMuxesList.append(objlst.Name)
+        refreshMuxesList=[]
+        if len(allSelMuxesList) > 0 :
+            refreshMuxesList=allSelMuxesList
+            debugPrint(2, 'there are %d muxes in selected objects' % len(allSelMuxesList))
+        else:
+            if len(allMuxesList) > 0 :
+                debugPrint(2, 'there are %d muxes in Active Document' % len(allMuxesList))
+                refreshMuxesList=allMuxesList
+            #ok there are at least 1 mux to refresh, we have to retrieve the object list for each mux 
+        if len(refreshMuxesList)>0:
+            FreeCADGui.Selection.clearSelection()
+            for muxesobj in refreshMuxesList:
+                for newselobjs in FreeCAD.ActiveDocument.getObject(muxesobj).muxedObjectList:
+                    FreeCADGui.Selection.addSelection(FreeCAD.ActiveDocument.getObject(newselobjs))
+                tmpstr=FreeCAD.ActiveDocument.getObject(muxesobj).Label
+                FreeCAD.ActiveDocument.removeObject(muxesobj)
+                debugPrint(2, 'Refreshing Assembly Mux '+muxesobj)
+                createMuxedAssembly(tmpstr)
+                
+        else:        
+            debugPrint(2, 'there are no muxes in Active Document' )
+        FreeCADGui.Selection.clearSelection()
+        FreeCAD.ActiveDocument.recompute()
+        
+
+    def GetResources(self):
+        msg = 'Refresh all muxedAssembly\n\
+or refresh all selected muxedAssembly\n\
+use the ReadOnly property to avoid accidental refresh'
+        return {
+            'Pixmap' : ':/assembly2/icons/muxAssemblyRefresh.svg',
+            'MenuText': msg,
+            'ToolTip': msg
+        }
+            
+            
+            
 FreeCADGui.addCommand('muxAssembly', MuxAssemblyCommand())
+FreeCADGui.addCommand('muxAssemblyRefresh', MuxAssemblyRefreshCommand())
+
+
+
+class RandomColorAllCommand:
+    def Activated(self):
+        randomcolors=(0.1,0.18,0.33,0.50,0.67,0.78,0.9)
+        for objs in FreeCAD.ActiveDocument.Objects:
+            if 'importPart' in objs.Content: 
+                FreeCADGui.ActiveDocument.getObject(objs.Name).ShapeColor=(choice(randomcolors),choice(randomcolors),choice(randomcolors))
+
+    def GetResources(self):
+        return {
+            'MenuText': 'Apply a random color to all imported objects',
+            'ToolTip': 'Apply a random color to all imported objects'
+            }
+
+FreeCADGui.addCommand('assembly2_randomColorAll', RandomColorAllCommand())
