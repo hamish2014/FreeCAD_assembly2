@@ -16,6 +16,7 @@ class Assembly2Workbench (Workbench):
             'degreesOfFreedomAnimation', 
             'assembly2SolveConstraints',
             'muxAssembly',
+            'muxAssemblyRefresh',
             'addPartsList',
             'assembly2_checkAssembly'
             ]
@@ -62,7 +63,8 @@ class Assembly2Workbench (Workbench):
                       'assembly2_duplicatePart',
                       'assembly2_editImportedPart',
                       'assembly2_forkImportedPart',
-                      'assembly2_deletePartsConstraints']
+                      'assembly2_deletePartsConstraints',
+                      'assembly2_randomColorAll']
                     )
 
     Icon = ':/assembly2/icons/workBenchIcon.svg'
