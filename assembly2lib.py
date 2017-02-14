@@ -414,7 +414,7 @@ def getSubElementPos(obj, subElementName):
     elif subElementName.startswith('Edge'):
         edge = getObjectEdgeFromName(obj, subElementName)
         if isLine(edge.Curve):
-            pos = edge.Curve.StartPoint
+            pos = edge.Vertexes[-1].Point
         elif hasattr( edge.Curve, 'Center'): #circular curve
             pos = edge.Curve.Center
         else:
