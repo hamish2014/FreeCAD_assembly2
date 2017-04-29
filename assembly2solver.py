@@ -108,13 +108,13 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
             elif constraintObj.Type == 'sphericalSurface':
                 constraintSystem = VertexUnion(constraintSystem,  *cArgs, constraintValue=0)
             else:
-                raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
+                raise NotImplementedError('constraintType %s not supported yet' % constraintObj.Type)
             if cache:
                 cache.record_levels.append( constraintSystem.numberOfParentSystems() )
-        except Assembly2SolverError, msg:
+        except Assembly2SolverError as e:
             if printErrors:
                 FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
-                FreeCAD.Console.PrintError(msg)
+                FreeCAD.Console.PrintError(e)
             solved = False
             break
         except:

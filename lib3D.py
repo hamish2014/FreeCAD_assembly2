@@ -14,7 +14,7 @@ def arcsin2( v, allowableNumericalError=10**-1 ):
     elif abs(v) -1 < allowableNumericalError:
         return pi/2 if v > 0 else -pi/2
     else:
-        raise ValueError,"arcsin2 called with invalid input of %s" % v
+        raise ValueError("arcsin2 called with invalid input of %s" % v)
 
 def arccos2( v, allowableNumericalError=10**-1 ):
     if -1 <= v and v <= 1:
@@ -22,7 +22,7 @@ def arccos2( v, allowableNumericalError=10**-1 ):
     elif abs(v) -1 < allowableNumericalError:
         return 0 if v > 0 else pi
     else:
-        raise ValueError,"arccos2 called with invalid input of %s" % v
+        raise ValueError("arccos2 called with invalid input of %s" % v)
 
 def normalize( v ):
     return v / norm(v)
@@ -216,7 +216,7 @@ def rotation_matrix_to_euler_ZYX_check_answer( R, angle1, angle2, angle3, tol=10
         print('rotation_matrix_to_euler_ZYX_check_answer:')
         print('    norm(R - euler_ZYX_rotation_matrix( angle1, angle2, angle3)) %e' % error)
     if error > tol:
-         raise RuntimeError,'rotation_matrix_to_euler_ZYX check failed!. locals %s' % locals()
+         raise RuntimeError('rotation_matrix_to_euler_ZYX check failed!. locals %s' % locals())
 def rotation_matrix_to_euler_ZYX_2(R, debug=False):
     axis, angle = rotation_matrix_axis_and_angle_2(R)
     q_1, q_2, q_3, q_0 = quaternion(angle, *axis)
@@ -243,7 +243,7 @@ def rotation_matrix_axis_and_angle(R, debug=False, checkAnswer=True, errorThresh
         msg = 'abs(a % pi) > angle_pi_tol and abs(pi - (a % pi)) > angle_pi_tol'
         axis, angle = rotation_matrix_axis_and_angle_2( R, errorThreshold=errorThreshold, debug=debug, msg=msg)
     if numpy.isnan( angle ):
-        raise RuntimeError,'locals %s' % locals() 
+        raise RuntimeError('locals %s' % locals() )
     return axis, angle
 def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7, msg=None):
     w, v = numpy.linalg.eig(R) #this method is not used at the primary method as numpy.linalg.eig does not return answers in high enough precision
@@ -264,7 +264,7 @@ def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7, msg=
             R_pickle_str = pickle.dumps(R)
             #R_abs_minus_identity = abs(R) - numpy.eye(3)
             print(R*R.transpose())
-            raise ValueError, 'rotation_matrix_axis_and_angle_2: no solution found! locals %s' % str(locals())
+            raise ValueError( 'rotation_matrix_axis_and_angle_2: no solution found! locals %s' % str(locals()))
     return axis, angle
 
 
@@ -288,7 +288,7 @@ def plane_degrees_of_freedom_check_answer( normalVector, d1, d2, disp=False, tol
         print(P)
         print(' error norm from eye(3) : %e' % error)
     if error > tol:
-        raise RuntimeError,'plane_degrees_of_freedom check failed!. locals %s' % locals()
+        raise RuntimeError('plane_degrees_of_freedom check failed!. locals %s' % locals())
 
 def planeIntersection( normalVector1, normalVector2, debug=False, checkAnswer=False ):
     return normalize ( crossProduct(normalVector1, normalVector2) )
@@ -304,7 +304,7 @@ def planeIntersection_check_answer( normalVector1, normalVector2, d,  disp=False
         error2 = abs(dotProduct( normalVector2, d*t ))
         if disp:print('    d*(%1.1f) -> error1 %e, error2 %e' % (t, error1, error2) )
         if error1 > tol or error2 > tol:
-            raise RuntimeError,' planeIntersection check failed!. locals %s' % locals()
+            raise RuntimeError(' planeIntersection check failed!. locals %s' % locals())
 
 
 
@@ -587,14 +587,14 @@ if __name__ == '__main__':
             angle_out = -angle_out
             axis_out = -axis_out
         if norm(axis - axis_out) > 10**-12 or norm(angle - angle_out) > 10**-9:
-            raise ValueError, "norm(axis - axis_out) > 10**-12 or norm(angle - angle_out) > 10**-9. \n  in:  axis %s, angle %s\n  out: axis %s, angle %s" % (axis,angle,axis_out,angle_out) 
+            raise ValueError("norm(axis - axis_out) > 10**-12 or norm(angle - angle_out) > 10**-9. \n  in:  axis %s, angle %s\n  out: axis %s, angle %s" % (axis,angle,axis_out,angle_out))
     print('testing axis_to_azimuth_and_elevation_angles & azimuth_and_elevation_angles_to_axis')
     for i,testcase in enumerate(testcases):
         axis, angle = testcase
         a,e = axis_to_azimuth_and_elevation_angles(*axis)
         axis_out = azimuth_and_elevation_angles_to_axis( a, e)
         if norm(axis - axis_out) > 10**-12:
-            raise ValueError, "norm(axis - axis_out) > 10**-12. \n  in:  axis %s \n  azimuth %f, elavation %f \n  out: axis %s" % (axis,a,e,axis_out)
+            raise ValueError("norm(axis - axis_out) > 10**-12. \n  in:  axis %s \n  azimuth %f, elavation %f \n  out: axis %s" % (axis,a,e,axis_out))
 
 
     print('\nchecking distance_between_axes function')
@@ -744,7 +744,7 @@ if __name__ == '__main__':
         print('  quatrian  v_ref %s, v %s, error %1.3e' % ( v, v_ref, error ) )
 
         if error > 10**-9 :
-            raise ValueError, 'Failure for v_ref %s, v %s, error %1.3e' % ( v, v_ref, error )
+            raise ValueError('Failure for v_ref %s, v %s, error %1.3e' % ( v, v_ref, error ))
     print('all test case passed')
 
     print('distance between axis and point')
@@ -787,5 +787,5 @@ if __name__ == '__main__':
             prettyPrintArray(U, '  ', '%1.2f')
             print('U U^T:')
             prettyPrintArray( W, '  ', '%1.2f' )
-            raise ValueError, 'gram_schmidt_orthonormalization test failed, error %e > 10**-9' % error
+            raise ValueError('gram_schmidt_orthonormalization test failed, error %e > 10**-9' % error)
     print('..passed')

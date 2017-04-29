@@ -96,7 +96,7 @@ class AxisRotationDegreeOfFreedom:
             if check_R_to_align_axis:
                 print('NOTE: checking AxisRotationDegreeOfFreedom self.R_to_align_axis')
                 if norm(  dotProduct(self.R_to_align_axis, axis_r) - axis ) > 10**-12:
-                    raise ValueError, " dotProduct(self.R_to_align_axis, axis_r) - axis ) [%e] > 10**-12" % norm(  dotProduct(self.R_to_align_axis, axis_r) - axis )
+                    raise ValueError(" dotProduct(self.R_to_align_axis, axis_r) - axis ) [%e] > 10**-12" % norm(  dotProduct(self.R_to_align_axis, axis_r) - axis ))
             
             if not hasattr(self, 'x_ref_r'):
                 self.x_ref_r, self.y_ref_r  =  plane_degrees_of_freedom( axis_r )
@@ -130,10 +130,10 @@ class AxisRotationDegreeOfFreedom:
         if refApproach:
             v = dotProduct( R_effective, self.x_ref_r)
             if tol != None and abs( dotProduct(v, self.axis) ) > tol:
-                raise ValueError, "abs( dotProduct(v, self.axis) ) > %e [error %e]" % (tol, abs( dotProduct(v, self.axis) ))
+                raise ValueError("abs( dotProduct(v, self.axis) ) > %e [error %e]" % (tol, abs( dotProduct(v, self.axis) )))
             angle = self.vectorsAngleInDofsCoordinateSystem(v)
         else: 
-            raise NotImplementedError,"does not work yet"
+            raise NotImplementedError("does not work yet")
             R_effective = azimuth_elevation_rotation_matrix( *self.vM.X[i+3:i+6] )
             R_about_axis = self.determine_R_about_axis(R_effective)
             axis, angle =  rotation_matrix_axis_and_angle( R_about_axis )
@@ -215,7 +215,7 @@ if __name__ == '__main__':
             d.setValue(value)
             returnedValue = d.getValue()
             if abs(returnedValue - value) > tol :
-                raise ValueError,"d.getValue() - value != %1.0e, [diff %e]" % (tol, returnedValue - value)
+                raise ValueError("d.getValue() - value != %1.0e, [diff %e]" % (tol, returnedValue - value))
 
     print('\nTesting AxisRotationDegreeOfFreedom')
     tol = 10**-14
@@ -232,4 +232,4 @@ if __name__ == '__main__':
             returnedValue = d.getValue()
             print('  d.getValue() %f value %f, diff %e' % (returnedValue, value, returnedValue - value))
             if abs(returnedValue - value) > tol :
-                raise ValueError,"d.getValue() - value != %1.0e, [diff %e]" % (tol, returnedValue - value)
+                raise ValueError("d.getValue() - value != %1.0e, [diff %e]" % (tol, returnedValue - value))

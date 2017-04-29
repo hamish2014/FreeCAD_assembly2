@@ -93,7 +93,7 @@ class ConstraintSystemPrototype:
         if abs( self.constraintEq_value( self.variableManager.X) ) > tol: #constraint violated
             self.solveConstraintEq_dofs = [ d for d in self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom  if not getattr(d,'locked',False) ]
             if len(self.solveConstraintEq_dofs) == 0: 
-                raise Assembly2SolverError,"%s no degrees-of-freedom to adjust to satify constraints:\n%s" % (self.str(), self.strSystemTree())
+                raise Assembly2SolverError("%s no degrees-of-freedom to adjust to satify constraints:\n%s" % (self.str(), self.strSystemTree()))
             else:
                 if self.analyticalSolution(): #if analytical solution then will update X
                 #if False:
@@ -119,7 +119,7 @@ class ConstraintSystemPrototype:
                         )
                     self.constraintEq_setY(yOpt) #this will automatically update X
             if abs( self.constraintEq_value(self.variableManager.X) ) > tol:
-                raise Assembly2SolverError,"%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.variableManager.X) ), tol, self.strSystemTree())
+                raise Assembly2SolverError("%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.variableManager.X) ), tol, self.strSystemTree()))
         else:
             pass
             #debugPrint(4+PLO, '    solveConstraintEq for %s already satisfied, neither numerical or analytical solution required' % self.str())
@@ -152,16 +152,16 @@ class ConstraintSystemPrototype:
         if debugPrint.level >= 6+PLO: dp('constraintEq_f, X %s, f(X) %s' % (self.variableManager.X,f_X))
         return f_X
     def constraintEq_value( self, X ):
-        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
+        raise Assembly2SolverError('ConstraintSystemPrototype not supposed to be called directly')
 
     def analyticalSolution(self):
         return False
 
     def generateDegreesOfFreedomAnalytically( self ):
-        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
+        raise Assembly2SolverError('ConstraintSystemPrototype not supposed to be called directly')
 
     def updateDegreesOfFreedomAnalytically( self ):
-        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'                    
+        raise Assembly2SolverError('ConstraintSystemPrototype not supposed to be called directly')
 
     def getPos(self, objName, subElement):
         obj =  self.variableManager.doc.getObject( objName )
@@ -251,7 +251,7 @@ class ConstraintSystemPrototype:
                              return 
 
                 
-        raise NotImplementedError,'generateDegreesOfFreedomNumerically Logic not programmed for the reduction of degrees of freedom with df_dy=%s, self.solveConstraintEq_dofs:\n%s' % (df_dy,'\n'.join(d.str('  ') for d in self.solveConstraintEq_dofs ))
+        raise NotImplementedError('generateDegreesOfFreedomNumerically Logic not programmed for the reduction of degrees of freedom with df_dy=%s, self.solveConstraintEq_dofs:\n%s' % (df_dy,'\n'.join(d.str('  ') for d in self.solveConstraintEq_dofs )))
 
     def updateDegreesOfFreedomNumerically( self ):
         if self.generateDegreesOfFreedomNumerically_case == 0:
@@ -668,7 +668,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
             if debugPrint.level >= 1: dp('numpy.isnan(dist)')
             if debugPrint.level >= 1: dp('  locals %s' % formatDictionary(locals(),' '*6) )
             if debugPrint.level >= 1: dp('  %s.__dict %s' % (self.label, formatDictionary( self.__dict__,' '*6 ) ) )   
-            raise ValueError, ' assembly2 AxisDistanceUnion numpy.isnan(dist) check console for details'
+            raise ValueError(' assembly2 AxisDistanceUnion numpy.isnan(dist) check console for details')
         return dist - self.constraintValue
 
     def analyticalSolution(self):
@@ -710,7 +710,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
         #first try to look for an object which has 3 linear motion degrees of freedom'
         success = False
         if self.constraintValue != 0:
-            raise NotImplementedError, '%s self.constraintValue != 0 not implemented yet' % self.label
+            raise NotImplementedError('%s self.constraintValue != 0 not implemented yet' % self.label)
         vM = self.variableManager
         axisVector = vM.rotate( self.obj1Name, self.a1_r, vM.X )
         self.dof_added = False

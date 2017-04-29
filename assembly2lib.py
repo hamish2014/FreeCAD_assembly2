@@ -435,7 +435,7 @@ def getSubElementPos(obj, subElementName):
     if pos != None:
         return numpy.array(pos)
     else:
-        raise NotImplementedError,"getSubElementPos Failed! Locals:\n%s" % formatDictionary(locals(),' '*4)
+        raise NotImplementedError("getSubElementPos Failed! Locals:\n%s" % formatDictionary(locals(),' '*4))
 
     
 def getSubElementAxis(obj, subElementName):
@@ -478,6 +478,6 @@ def getSubElementAxis(obj, subElementName):
     if axis != None:
         return numpy.array(axis)
     else:
-        raise NotImplementedError,"getSubElementAxis Failed! Locals:\n%s" % formatDictionary(locals(),' '*4)
+        raise NotImplementedError("getSubElementAxis Failed! Locals:\n%s" % formatDictionary(locals(),' '*4))
 
 

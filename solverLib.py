@@ -127,8 +127,8 @@ def solve_via_Newtons_method( f_org, x0, maxStep, grad_f=None, x_tol=10**-6, f_t
             b = numpy.array([b])
         try:
             x_c, residuals, rank, s = numpy.linalg.lstsq( A, b)
-        except ValueError, msg:
-            printF('  solve_via_Newtons_method numpy.linalg.lstsq failed: %s.  Setting x_c = x' % str(msg)) 
+        except ValueError as e:
+            printF('  solve_via_Newtons_method numpy.linalg.lstsq failed: %s.  Setting x_c = x' % str(e)) 
             x_c = x
         if debugPrintLevel > 1:
             if singleEq:
@@ -172,7 +172,7 @@ class SearchAnalyticsWrapper:
         return self.f_x[-1]
     def addNote(self, note):
         key = len(self.x)
-        assert not self.notes.has_key(key)
+        assert key not in self.notes
         self.notes[key] = note
     def __repr__(self):
         return '<SearchAnalyticsWrapper %i calls made>' % len(self.x)
@@ -186,7 +186,7 @@ class SearchAnalyticsWrapper:
         gradApprox = False
         for i in range(len(self.x)):
             y = norm( self.f_x[i] ) + 10**-9
-            if self.notes.has_key(i):
+            if i in self.notes:
                 if self.notes[i] == 'starting gradient approximation':
                     gradApprox = True
                 if self.notes[i] == 'finished gradient approximation':

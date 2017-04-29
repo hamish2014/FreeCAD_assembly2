@@ -54,7 +54,7 @@ class SolverCache:
             new_vM = rootSystem.variableManager
             old_vM = self.result.variableManager
             for objName in old_vM.index.keys():
-                if new_vM.index.has_key( objName ):
+                if obj_name in new_vM.index:
                     i_new = new_vM.index[ objName ]
                     i_old = old_vM.index[ objName ]
                     new_vM.X[ i_new: i_new+6] = old_vM.X[ i_old: i_old+6 ]
@@ -177,7 +177,7 @@ def copy_constraint_system( sys ):
     #/preparing to copy
     try:
         new_sys = copy.deepcopy( sys)
-    except RuntimeError, msg:
+    except RuntimeError as msg:
         debugPrint(1, '******** cache copy error: %s' % msg)
         debugPrint(1,'trying to determine were the object causing the crash is')
         for node in tree:
@@ -223,7 +223,7 @@ def update_variableManagers( obj, new_vM, history ): #vanurable to circular refe
             if not id(d) in history:
                 try:
                     d.migrate_to_new_variableManager( new_vM )
-                except AttributeError,msg:
+                except AttributeError as msg:
                     raise NotImplementedError,"%s.migrate_to_new_variableManager" % d
                 history.add( id(d) )
 
