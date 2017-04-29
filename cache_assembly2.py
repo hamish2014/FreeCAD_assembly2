@@ -46,7 +46,7 @@ class SolverCache:
             return rootSystem, 0
         else:
             tree = [ self.result ]
-            while tree[0].parentSystem <> None:
+            while tree[0].parentSystem != None:
                 tree.insert(0, tree[0].parentSystem)
             new_sys = copy_constraint_system( tree[ self.input_levels[i] ] )
             assert new_sys.numberOfParentSystems() == self.input_levels[i]
@@ -70,7 +70,7 @@ class SolverCache:
         self.result = constraintSystem
         #update_variableManagers( constraintSystem, self.vM ) #ensures all system nodes point to same vM, with out this different vM will result from partially solved systems
         root = constraintSystem
-        while root.parentSystem <> None:
+        while root.parentSystem != None:
             root = root.parentSystem
         self.rootParameters = rootParameters(root)
         self.input_levels = self.input_levels[:que_start] + self.record_levels 
@@ -165,7 +165,7 @@ def copy_constraint_system( sys ):
     del sys.variableManager.doc #FreeCAD documents cannot be copied
     sys.childSystem = None
     tree = [ sys ]
-    while tree[0].parentSystem <> None:
+    while tree[0].parentSystem != None:
         tree.insert(0, tree[0].parentSystem)
     constraint_objects = []
     for node in tree:
@@ -202,7 +202,7 @@ def copy_constraint_system( sys ):
         if cObj != None:
             node.constraintObj = cObj
     new_tree = [new_sys]
-    while new_tree[0].parentSystem <> None:
+    while new_tree[0].parentSystem != None:
         new_tree.insert(0, new_tree[0].parentSystem)
     for node, cObj in zip(new_tree, constraint_objects):
         if cObj != None:

@@ -129,7 +129,7 @@ class AxisRotationDegreeOfFreedom:
         R_effective = azimuth_elevation_rotation_matrix( *self.vM.X[i+3:i+6] )
         if refApproach:
             v = dotProduct( R_effective, self.x_ref_r)
-            if tol <> None and abs( dotProduct(v, self.axis) ) > tol:
+            if tol != None and abs( dotProduct(v, self.axis) ) > tol:
                 raise ValueError, "abs( dotProduct(v, self.axis) ) > %e [error %e]" % (tol, abs( dotProduct(v, self.axis) ))
             angle = self.vectorsAngleInDofsCoordinateSystem(v)
         else: 
@@ -139,7 +139,7 @@ class AxisRotationDegreeOfFreedom:
             axis, angle =  rotation_matrix_axis_and_angle( R_about_axis )
             print( axis )
             print( self.axis )
-            # does not work because   axis(R_about_axis) <> self.axis #which is damm weird if you ask me
+            # does not work because   axis(R_about_axis) != self.axis #which is damm weird if you ask me
         return angle
             
     def setValue( self, angle):
@@ -215,7 +215,7 @@ if __name__ == '__main__':
             d.setValue(value)
             returnedValue = d.getValue()
             if abs(returnedValue - value) > tol :
-                raise ValueError,"d.getValue() - value <> %1.0e, [diff %e]" % (tol, returnedValue - value)
+                raise ValueError,"d.getValue() - value != %1.0e, [diff %e]" % (tol, returnedValue - value)
 
     print('\nTesting AxisRotationDegreeOfFreedom')
     tol = 10**-14
@@ -232,4 +232,4 @@ if __name__ == '__main__':
             returnedValue = d.getValue()
             print('  d.getValue() %f value %f, diff %e' % (returnedValue, value, returnedValue - value))
             if abs(returnedValue - value) > tol :
-                raise ValueError,"d.getValue() - value <> %1.0e, [diff %e]" % (tol, returnedValue - value)
+                raise ValueError,"d.getValue() - value != %1.0e, [diff %e]" % (tol, returnedValue - value)

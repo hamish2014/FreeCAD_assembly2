@@ -65,7 +65,7 @@ class ConstraintSelectionObserver:
          if len(self.selections) == 2:
              self.stopSelectionObservation()
              self.parseSelectionFunction( self.selections)
-         elif self.secondSelectionGate <> None and len(self.selections) == 1:
+         elif self.secondSelectionGate != None and len(self.selections) == 1:
              FreeCADGui.Selection.removeSelectionGate()
              FreeCADGui.Selection.addSelectionGate( self.secondSelectionGate )
      def stopSelectionObservation(self):
@@ -87,7 +87,7 @@ class SelectionTaskDialog:
     def __init__(self, title, iconPath, textLines ):
         self.form = SelectionTaskDialogForm( textLines )
         self.form.setWindowTitle( title )    
-        if iconPath <> None:
+        if iconPath != None:
             self.form.setWindowIcon( QtGui.QIcon( iconPath ) )
     def reject(self):
         wb_globals['selectionObserver'].stopSelectionObservation()
@@ -432,7 +432,7 @@ def getSubElementPos(obj, subElementName):
                     return lines[0].value(0)
     elif subElementName.startswith('Vertex'):
         return  getObjectVertexFromName(obj, subElementName).Point
-    if pos <> None:
+    if pos != None:
         return numpy.array(pos)
     else:
         raise NotImplementedError,"getSubElementPos Failed! Locals:\n%s" % formatDictionary(locals(),' '*4)
@@ -475,7 +475,7 @@ def getSubElementAxis(obj, subElementName):
                 D = numpy.array([L.tangent(0)[0] for L in lines]) #D(irections)
                 if numpy.std( D, axis=0 ).max() < 10**-9: #then linear curve
                     return D[0]
-    if axis <> None:
+    if axis != None:
         return numpy.array(axis)
     else:
         raise NotImplementedError,"getSubElementAxis Failed! Locals:\n%s" % formatDictionary(locals(),' '*4)

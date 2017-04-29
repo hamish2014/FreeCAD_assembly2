@@ -113,7 +113,7 @@ def solve_via_Newtons_method( f_org, x0, maxStep, grad_f=None, x_tol=10**-6, f_t
             printF('  f(x) %s' % (-b))
         if norm(x_c) <= x_tol:
             break
-        if f_tol <> None:
+        if f_tol != None:
             if singleEq and abs(b) < f_tol:
                 break
             elif singleEq==False and all( abs(b) < f_tol ):

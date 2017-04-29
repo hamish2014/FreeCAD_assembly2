@@ -251,7 +251,7 @@ def rotation_matrix_axis_and_angle_2(R, debug=False, errorThreshold=10**-7, msg=
     eigErrors = abs(w -1) #errors from 1+0j
     i = (eigErrors == min(eigErrors)).tolist().index(True)
     axis = numpy.real(v[:,i])
-    if i <> 1:
+    if i != 1:
         angle = arccos2(  numpy.real( w[1] ) )
     else:
         angle = arccos2(  numpy.real( w[0] ) )
@@ -338,7 +338,7 @@ def distance_between_axes( p1, u1, p2, u2):
     u2_x, u2_y, u2_z = u2
 
     if numpy.array_equal( u1, u2 ) or numpy.array_equal( u1, -u2 ): #then
-        assert numpy.linalg.norm( u1 ) <> 0
+        assert numpy.linalg.norm( u1 ) != 0
         # generated using sympy 
         # > t, p1_x, p1_y, p1_z, p2_x, p2_y, p2_z, u1_x, u1_y, u1_z = symbols('t, p1_x, p1_y, p1_z, p2_x, p2_y, p2_z, u1_x, u1_y, u1_z')
         # > d_sqrd = (p1_x + u1_x*t - p2_x)**2 + (p1_y + u1_y*t - p2_y)**2  + (p1_z + u1_z*t - p2_z)**2
@@ -382,11 +382,11 @@ def distance_between_two_axes_3_points(p1,u1,p2,u2):
     # > t, p1_x, p1_y, p1_z, p2_x, p2_y, p2_z, u1_x, u1_y, u1_z = symbols('t, p1_x, p1_y, p1_z, p2_x, p2_y, p2_z, u1_x, u1_y, u1_z')
     # > d_sqrd = (p1_x + u1_x*t - p2_x)**2 + (p1_y + u1_y*t - p2_y)**2  + (p1_z + u1_z*t - p2_z)**2
     # > solve( diff( d_sqrd, t ), t ) # gives the expresssion for t_opt
-    assert numpy.linalg.norm( u1 ) <> 0
+    assert numpy.linalg.norm( u1 ) != 0
     p1_x, p1_y, p1_z = p1
     u1_x, u1_y, u1_z = u1
     #if not (u1_x**2 + u1_y**2 + u1_z**2) == 1:
-    #    raise ValueError, "(u1_x**2 + u1_y**2 + u1_z**2) <>1 but rather %f  " % ( u1_x**2 + u1_y**2 + u1_z**2 )
+    #    raise ValueError, "(u1_x**2 + u1_y**2 + u1_z**2) !=1 but rather %f  " % ( u1_x**2 + u1_y**2 + u1_z**2 )
     dist = 0
     for axis2_t in [-10, 0, 10]: #find point on axis 1 which is closest
         p2_x, p2_y, p2_z = p2 + axis2_t*u2
@@ -396,14 +396,14 @@ def distance_between_two_axes_3_points(p1,u1,p2,u2):
     return dist
 
 def distance_between_axis_and_point( p1,u1,p2 ):
-    assert numpy.linalg.norm( u1 ) <> 0
+    assert numpy.linalg.norm( u1 ) != 0
     d = p2 - p1
     offset = d - dotProduct(u1,d)*u1
     #print(norm(offset))
     return norm(offset)
 
 def distance_between_axis_and_point_old( p1, u1, p2 ):
-    assert numpy.linalg.norm( u1 ) <> 0
+    assert numpy.linalg.norm( u1 ) != 0
     p1_x, p1_y, p1_z = p1
     u1_x, u1_y, u1_z = u1
     p2_x, p2_y, p2_z = p2
@@ -438,8 +438,8 @@ def rotation_required_to_rotate_a_vector_to_be_aligned_to_another_vector2( v, v_
     A_matrixs = []
     for i in range(3):
         A_matrixs.append([ 
-                [v[j] for j in range(3) if j <> i],
-                [v_ref[j] for j in range(3) if j <> i]] )
+                [v[j] for j in range(3) if j != i],
+                [v_ref[j] for j in range(3) if j != i]] )
         #prettyPrintArray( A_matrixs[-1] )
     cond_number = map( numpy.linalg.cond,  A_matrixs)
     minloc = cond_number.index(min(cond_number)) 
@@ -583,7 +583,7 @@ if __name__ == '__main__':
         axis, angle = testcase
         q_1, q_2, q_3, q_0  = quaternion(angle, *axis)
         axis_out, angle_out = quaternion_to_axis_and_angle(q_1, q_2, q_3, q_0)
-        if numpy.sign( angle_out ) <> numpy.sign( angle):
+        if numpy.sign( angle_out ) != numpy.sign( angle):
             angle_out = -angle_out
             axis_out = -axis_out
         if norm(axis - axis_out) > 10**-12 or norm(angle - angle_out) > 10**-9:

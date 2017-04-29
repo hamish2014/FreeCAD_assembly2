@@ -15,7 +15,7 @@ def parseSelection(selection, objectToUpdate=None, callSolveConstraints=True, lo
     validSelection = False
     if len(selection) == 2:
         s1, s2 = selection
-        if s1.ObjectName <> s2.ObjectName:
+        if s1.ObjectName != s2.ObjectName:
             validSelection = True
             cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
                        [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]

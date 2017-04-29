@@ -50,7 +50,7 @@ class VariableManager:
             obj = doc.getObject(objectName)
             x, y, z = obj.Placement.Base.x, obj.Placement.Base.y, obj.Placement.Base.z
             axis, theta = quaternion_to_axis_and_angle( *obj.Placement.Rotation.Q )
-            if theta <> 0:
+            if theta != 0:
                 azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
             else:
                 azi, ela = 0, 0
@@ -103,7 +103,7 @@ class ReversePlacementTransformWithBoundsNormalization:
         x, y, z = obj.Placement.Base.x, obj.Placement.Base.y, obj.Placement.Base.z
         self.offset = numpy.array([x, y, z]) #placement offset
         axis, theta = quaternion_to_axis_and_angle( *obj.Placement.Rotation.Q )
-        if theta <> 0:
+        if theta != 0:
             azi, ela = axis_to_azimuth_and_elevation_angles(*axis)
         else:
             azi, ela = 0, 0
