@@ -68,7 +68,7 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
     for c in constraintObjectQue:
         for attr in ['Object1','Object2']:
             objectName = getattr(c, attr, None)
-            if objectName <> None and not objectName in objectNames:
+            if objectName != None and not objectName in objectNames:
                 objectNames.append( objectName )
     variableManager = VariableManager( doc, objectNames )
     debugPrint(3,' variableManager.X0 %s' % variableManager.X0 )
@@ -108,13 +108,13 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
             elif constraintObj.Type == 'sphericalSurface':
                 constraintSystem = VertexUnion(constraintSystem,  *cArgs, constraintValue=0)
             else:
-                raise NotImplementedError, 'constraintType %s not supported yet' % constraintObj.Type
+                raise NotImplementedError('constraintType %s not supported yet' % constraintObj.Type)
             if cache:
                 cache.record_levels.append( constraintSystem.numberOfParentSystems() )
-        except Assembly2SolverError, msg:
+        except Assembly2SolverError as e:
             if printErrors:
                 FreeCAD.Console.PrintError('UNABLE TO SOLVE CONSTRAINTS! info:')
-                FreeCAD.Console.PrintError(msg)
+                FreeCAD.Console.PrintError(e)
             solved = False
             break
         except:
@@ -136,7 +136,7 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
         debugPrint( 4,'  time to update FreeCAD placement variables %3.2fs' % (time.time()-t_update_freecad_start) )
 
         debugPrint(2,'Constraint system solved in %2.2fs; resulting system has %i degrees-of-freedom' % (time.time()-T_start, len( constraintSystem.degreesOfFreedom)))
-    elif showFailureErrorDialog and  QtGui.qApp <> None: #i.e. GUI active
+    elif showFailureErrorDialog and  QtGui.qApp != None: #i.e. GUI active
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
         flags = QtGui.QMessageBox.StandardButton.Yes 
         flags |= QtGui.QMessageBox.StandardButton.No

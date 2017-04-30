@@ -231,7 +231,7 @@ class ConstraintMirrorObjectProxy:
                 try:
                     if getattr(constraintObj, prop) != getattr( obj, prop):
                         setattr( constraintObj, prop, getattr( obj, prop) )
-                except AttributeError, msg:
+                except AttributeError as e:
                     pass #loading issues...
 
 def repair_tree_view():
@@ -247,13 +247,13 @@ def repair_tree_view():
     for m in matches:
         tree_nodes =  get_treeview_nodes(m) 
         def get_node_by_label( label ):
-            if tree_nodes.has_key( label ) and len( tree_nodes[label] ) == 1:
+            if label in tree_nodes and len( tree_nodes[label] ) == 1:
                 return tree_nodes[label][0]
-            elif not tree_nodes.has_key( obj.Label ):
+            elif not obj.Label in tree_nodes:
                 FreeCAD.Console.PrintWarning( "  repair_tree_view: skipping %s since no node with text(0) == %s\n" % ( label, label) )
             else:
                 FreeCAD.Console.PrintWarning( "  repair_tree_view: skipping %s since multiple nodes matching label\n" % ( label, label) )
-        if tree_nodes.has_key( doc.Label ): #all the code up until now has geen to find the QtGui.QTreeView widget (except for the get_node_by_label function)
+        if doc.Label in tree_nodes: #all the code up until now has geen to find the QtGui.QTreeView widget (except for the get_node_by_label function)
             #FreeCAD.Console.PrintMessage( tree_nodes )
             for imported_obj in doc.Objects:
                 try: #allow use of assembly2 contraints also on non imported objects
@@ -285,7 +285,7 @@ def get_treeview_nodes( treeWidget ):
     def walk( node ):
         key =  node.text(0)
         #print(key)
-        if not tree_nodes.has_key( key ):
+        if not key in tree_nodes:
             tree_nodes[ key ] = []
         tree_nodes[key].append( node )
         for i in range( node.childCount() ):

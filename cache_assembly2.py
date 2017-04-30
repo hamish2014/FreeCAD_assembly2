@@ -46,7 +46,7 @@ class SolverCache:
             return rootSystem, 0
         else:
             tree = [ self.result ]
-            while tree[0].parentSystem <> None:
+            while tree[0].parentSystem != None:
                 tree.insert(0, tree[0].parentSystem)
             new_sys = copy_constraint_system( tree[ self.input_levels[i] ] )
             assert new_sys.numberOfParentSystems() == self.input_levels[i]
@@ -54,7 +54,7 @@ class SolverCache:
             new_vM = rootSystem.variableManager
             old_vM = self.result.variableManager
             for objName in old_vM.index.keys():
-                if new_vM.index.has_key( objName ):
+                if obj_name in new_vM.index:
                     i_new = new_vM.index[ objName ]
                     i_old = old_vM.index[ objName ]
                     new_vM.X[ i_new: i_new+6] = old_vM.X[ i_old: i_old+6 ]
@@ -70,7 +70,7 @@ class SolverCache:
         self.result = constraintSystem
         #update_variableManagers( constraintSystem, self.vM ) #ensures all system nodes point to same vM, with out this different vM will result from partially solved systems
         root = constraintSystem
-        while root.parentSystem <> None:
+        while root.parentSystem != None:
             root = root.parentSystem
         self.rootParameters = rootParameters(root)
         self.input_levels = self.input_levels[:que_start] + self.record_levels 
@@ -165,7 +165,7 @@ def copy_constraint_system( sys ):
     del sys.variableManager.doc #FreeCAD documents cannot be copied
     sys.childSystem = None
     tree = [ sys ]
-    while tree[0].parentSystem <> None:
+    while tree[0].parentSystem != None:
         tree.insert(0, tree[0].parentSystem)
     constraint_objects = []
     for node in tree:
@@ -177,7 +177,7 @@ def copy_constraint_system( sys ):
     #/preparing to copy
     try:
         new_sys = copy.deepcopy( sys)
-    except RuntimeError, msg:
+    except RuntimeError as msg:
         debugPrint(1, '******** cache copy error: %s' % msg)
         debugPrint(1,'trying to determine were the object causing the crash is')
         for node in tree:
@@ -202,7 +202,7 @@ def copy_constraint_system( sys ):
         if cObj != None:
             node.constraintObj = cObj
     new_tree = [new_sys]
-    while new_tree[0].parentSystem <> None:
+    while new_tree[0].parentSystem != None:
         new_tree.insert(0, new_tree[0].parentSystem)
     for node, cObj in zip(new_tree, constraint_objects):
         if cObj != None:
@@ -223,7 +223,7 @@ def update_variableManagers( obj, new_vM, history ): #vanurable to circular refe
             if not id(d) in history:
                 try:
                     d.migrate_to_new_variableManager( new_vM )
-                except AttributeError,msg:
+                except AttributeError as msg:
                     raise NotImplementedError,"%s.migrate_to_new_variableManager" % d
                 history.add( id(d) )
 

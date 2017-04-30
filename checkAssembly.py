@@ -7,7 +7,7 @@ moduleVars = {}
 class CheckAssemblyCommand:
     def Activated(self):
         debugPrint(2, 'Conducting Assembly Part Overlap Check for: %s' % FreeCAD.ActiveDocument.Label)
-        objects = [obj for obj in FreeCAD.ActiveDocument.Objects if hasattr(obj, 'Shape') and obj.Name <> 'muxedAssembly']
+        objects = [obj for obj in FreeCAD.ActiveDocument.Objects if hasattr(obj, 'Shape') and obj.Name != 'muxedAssembly']
         n = len(objects)
         no_of_checks = 0.5*(n-1)*(n)
         moduleVars['progressDialog'] = QtGui.QProgressDialog("Checking assembly", "Cancel", 0, no_of_checks)#, QtGui.qApp.activeWindow()) with parent cancel does not work for some reason

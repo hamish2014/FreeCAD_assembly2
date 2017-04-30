@@ -79,7 +79,7 @@ class AnimateDegreesOfFreedomTaskPanel:
          self._startAnimation( [d for d in self.constraintSystem.degreesOfFreedom] )
 
     def reject(self): #or more correctly close, given the button settings
-        if  moduleVars.has_key('animation'):
+        if  'animation' in moduleVars:
             moduleVars['animation'].timer.stop()
             self.constraintSystem.variableManager.updateFreeCADValues(moduleVars['animation'].X_before_animation)
             del moduleVars['animation']

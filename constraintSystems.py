@@ -64,7 +64,7 @@ class ConstraintSystemPrototype:
             sys2ObjName = obj1Name
         if not parentSystem.containtsObject( obj2Name ):
             sys2ObjName = obj2Name
-        if sys2ObjName <> None:
+        if sys2ObjName != None:
             if getattr( doc.getObject( sys2ObjName  ), 'fixedPosition', False ):
                 self.sys2 = FixedObjectSystem( variableManager, sys2ObjName )
             else:
@@ -93,7 +93,7 @@ class ConstraintSystemPrototype:
         if abs( self.constraintEq_value( self.variableManager.X) ) > tol: #constraint violated
             self.solveConstraintEq_dofs = [ d for d in self.parentSystem.degreesOfFreedom + self.sys2.degreesOfFreedom  if not getattr(d,'locked',False) ]
             if len(self.solveConstraintEq_dofs) == 0: 
-                raise Assembly2SolverError,"%s no degrees-of-freedom to adjust to satify constraints:\n%s" % (self.str(), self.strSystemTree())
+                raise Assembly2SolverError("%s no degrees-of-freedom to adjust to satify constraints:\n%s" % (self.str(), self.strSystemTree()))
             else:
                 if self.analyticalSolution(): #if analytical solution then will update X
                 #if False:
@@ -119,7 +119,7 @@ class ConstraintSystemPrototype:
                         )
                     self.constraintEq_setY(yOpt) #this will automatically update X
             if abs( self.constraintEq_value(self.variableManager.X) ) > tol:
-                raise Assembly2SolverError,"%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.variableManager.X) ), tol, self.strSystemTree())
+                raise Assembly2SolverError("%s abs( self.constraintEq_value(self.X) ) > tol [%e > %e]. Constraint Tree:\n%s" % (self.str(), abs( self.constraintEq_value(self.variableManager.X) ), tol, self.strSystemTree()))
         else:
             pass
             #debugPrint(4+PLO, '    solveConstraintEq for %s already satisfied, neither numerical or analytical solution required' % self.str())
@@ -140,7 +140,7 @@ class ConstraintSystemPrototype:
         self.sys2.update()
 
     def update(self):
-        if self.parentSystem <> None:
+        if self.parentSystem != None:
             self.parentSystem.update()
         self.solveConstraintEq()  
 
@@ -152,16 +152,16 @@ class ConstraintSystemPrototype:
         if debugPrint.level >= 6+PLO: dp('constraintEq_f, X %s, f(X) %s' % (self.variableManager.X,f_X))
         return f_X
     def constraintEq_value( self, X ):
-        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
+        raise Assembly2SolverError('ConstraintSystemPrototype not supposed to be called directly')
 
     def analyticalSolution(self):
         return False
 
     def generateDegreesOfFreedomAnalytically( self ):
-        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'
+        raise Assembly2SolverError('ConstraintSystemPrototype not supposed to be called directly')
 
     def updateDegreesOfFreedomAnalytically( self ):
-        raise Assembly2SolverError, 'ConstraintSystemPrototype not supposed to be called directly'                    
+        raise Assembly2SolverError('ConstraintSystemPrototype not supposed to be called directly')
 
     def getPos(self, objName, subElement):
         obj =  self.variableManager.doc.getObject( objName )
@@ -181,7 +181,7 @@ class ConstraintSystemPrototype:
     def numberOfParentSystems(self):
         count = 0
         sys = self
-        while sys.parentSystem <> None:
+        while sys.parentSystem != None:
             sys = sys.parentSystem
             count = count + 1
         return count
@@ -190,7 +190,7 @@ class ConstraintSystemPrototype:
         txt = self.str(addDOFs=dofs)
         sys = self
         indent = ''
-        while sys.parentSystem <> None:
+        while sys.parentSystem != None:
             indent = indent+' '*4 if dofs else indent+' '*2
             if not isinstance(sys.sys2, EmptySystem):
                 txt = txt + '\n' + sys.sys2.str(indent, addDOFs=dofs)
@@ -220,15 +220,15 @@ class ConstraintSystemPrototype:
             else:
                 removeInd = None
                 if len(df_dy) - sum(df_dy == 0) == 1:
-                    if debugPrint.level >= 4: dp('  generateDegreesOfFreedomNumerically, len(df_dy) - sum(df_dy == 0) == 1, removing dof with gradient <> 0')
+                    if debugPrint.level >= 4: dp('  generateDegreesOfFreedomNumerically, len(df_dy) - sum(df_dy == 0) == 1, removing dof with gradient != 0')
                     removeInd = list(df_dy == 0).index(False)
                 elif len(df_dy) - sum(abs(df_dy) < max(abs(df_dy))*1e-6) == 1:
                     if debugPrint.level >= 4: dp('  generateDegreesOfFreedomNumerically, len(df_dy) - sum(abs(df_dy) < max(abs(df_dy))*1e-6) == 1, removing dof with largest gradient')
                     removeInd = list( abs(df_dy) == max(abs(df_dy)) ).index(True)
-                if removeInd <> None:
+                if removeInd != None:
                     self.generateDegreesOfFreedomNumerically_case = 0
                     if debugPrint.level >= 4: dp('    removing %s' % D[removeInd])
-                    self.degreesOfFreedom = [ d for i,d in enumerate(D) if i <> removeInd ]
+                    self.degreesOfFreedom = [ d for i,d in enumerate(D) if i != removeInd ]
                     return
                 else:
                      if debugPrint.level >= 4: dp('  generateDegreesOfFreedomNumerically, trivial reductions failed; attempting to determine non-perfect DOF by trail and error.')
@@ -251,7 +251,7 @@ class ConstraintSystemPrototype:
                              return 
 
                 
-        raise NotImplementedError,'generateDegreesOfFreedomNumerically Logic not programmed for the reduction of degrees of freedom with df_dy=%s, self.solveConstraintEq_dofs:\n%s' % (df_dy,'\n'.join(d.str('  ') for d in self.solveConstraintEq_dofs ))
+        raise NotImplementedError('generateDegreesOfFreedomNumerically Logic not programmed for the reduction of degrees of freedom with df_dy=%s, self.solveConstraintEq_dofs:\n%s' % (df_dy,'\n'.join(d.str('  ') for d in self.solveConstraintEq_dofs )))
 
     def updateDegreesOfFreedomNumerically( self ):
         if self.generateDegreesOfFreedomNumerically_case == 0:
@@ -360,7 +360,7 @@ class AxisAlignmentUnion(ConstraintSystemPrototype):
                     v_ref = vM.rotate( self.obj1Name, self.a1_r, vM.X )
                 axis_component_v_ref = dot(d.axis, v_ref)
                 axis_component_v     = dot(d.axis, v_ref)
-                # may still work axis alignment if axis_component_v_ref <> 0, axis_component_v <> 0
+                # may still work axis alignment if axis_component_v_ref != 0, axis_component_v != 0
                 # problem for angleUnions in this case, therefore checking at end if analytical solution will work at end.
                 v_angle = d.vectorsAngleInDofsCoordinateSystem( v ) #determining v_angle, v's angle will not be zero!!! THIS CAUSED ME GREY HAIR lol:)
                 v_ref_angle = d.vectorsAngleInDofsCoordinateSystem( v_ref ) 
@@ -668,7 +668,7 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
             if debugPrint.level >= 1: dp('numpy.isnan(dist)')
             if debugPrint.level >= 1: dp('  locals %s' % formatDictionary(locals(),' '*6) )
             if debugPrint.level >= 1: dp('  %s.__dict %s' % (self.label, formatDictionary( self.__dict__,' '*6 ) ) )   
-            raise ValueError, ' assembly2 AxisDistanceUnion numpy.isnan(dist) check console for details'
+            raise ValueError(' assembly2 AxisDistanceUnion numpy.isnan(dist) check console for details')
         return dist - self.constraintValue
 
     def analyticalSolution(self):
@@ -709,8 +709,8 @@ class AxisDistanceUnion(ConstraintSystemPrototype):
         self.degreesOfFreedom = []
         #first try to look for an object which has 3 linear motion degrees of freedom'
         success = False
-        if self.constraintValue <> 0:
-            raise NotImplementedError, '%s self.constraintValue <> 0 not implemented yet' % self.label
+        if self.constraintValue != 0:
+            raise NotImplementedError('%s self.constraintValue != 0 not implemented yet' % self.label)
         vM = self.variableManager
         axisVector = vM.rotate( self.obj1Name, self.a1_r, vM.X )
         self.dof_added = False

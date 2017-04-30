@@ -22,7 +22,7 @@ from viewProviderProxies import group_constraints_under_parts
 def importPart( filename, partName=None, doc_assembly=None ):
     if doc_assembly == None:
         doc_assembly = FreeCAD.ActiveDocument
-    updateExistingPart = partName <> None
+    updateExistingPart = partName != None
     if updateExistingPart:
         FreeCAD.Console.PrintMessage("updating part %s from %s\n" % (partName,filename))
     else:
@@ -59,7 +59,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
             muxMapColors(doc, obj_to_copy)
     else:
         subAssemblyImport = False
-        if len(visibleObjects) <> 1:
+        if len(visibleObjects) != 1:
             if not updateExistingPart:
                 msg = "A part can only be imported from a FreeCAD document with exactly one visible part. Aborting operation"
                 QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Value Error", msg )
@@ -102,7 +102,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
         obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )
         #obj.ViewObject.Transparency = copy.copy( obj_to_copy.ViewObject.Transparency )   # .Transparency property
         tsp = copy.copy( obj_to_copy.ViewObject.Transparency )   #  .Transparency workaround for FC 0.17 @ Nov 2016
-        if tsp < 100 and tsp<>0:
+        if tsp < 100 and tsp!=0:
             obj.ViewObject.Transparency = tsp+1
         if tsp == 100:
             obj.ViewObject.Transparency = tsp-1
@@ -169,7 +169,7 @@ FreeCADGui.addCommand('importPart', ImportPartCommand())
 def path_split( pathLib, path):
     parentPath, childPath = pathLib.split( path )
     parts = [childPath]
-    while childPath <> '':
+    while childPath != '':
         parentPath, childPath = pathLib.split( parentPath )
         parts.insert(0, childPath)
     parts[0] = parentPath
@@ -223,7 +223,7 @@ class UpdateImportedPartsCommand:
                     debugPrint( 3, '  obj.sourceFile parts %s' % sParts )
                     replacement = None
                     previousRejects = []
-                    while replacement == None and aFilename <> '':
+                    while replacement == None and aFilename != '':
                         for i in reversed(range(len(sParts))):
                             newFn = aFolder
                             for j in range(i,len(sParts)):
@@ -247,7 +247,7 @@ class UpdateImportedPartsCommand:
                                 else:
                                     previousRejects.append( newFn )
                         aFolder, aFilename = posixpath.split( aFolder )
-                    if replacement <> None:
+                    if replacement != None:
                         obj.sourceFile = replacement
                     else:
                         QtGui.QMessageBox.critical(  QtGui.qApp.activeWindow(), "Source file not found", "update of %s aborted!\nUnable to find %s" % (obj.Name, obj.sourceFile) )
@@ -554,14 +554,14 @@ class SubElementDifference:
             v1 = getSubElementAxis( obj1, SE1 )
             v2 = getSubElementAxis( obj2, SE2 )
             self.error1 = 1 - dot( T1.unRotate(v1), T2.unRotate(v2) )
-        if self.catergory <> 'other':
+        if self.catergory != 'other':
             p1 = getSubElementPos( obj1, SE1 )
             p2 = getSubElementPos( obj2, SE2 )
             self.error2 = norm( T1(p1) - T2(p2) )
         else:
             self.error2 = 1 - (SE1 == SE2) #subelements have the same name
     def __lt__(self, b):
-        if self.error1 <> b.error1:
+        if self.error1 != b.error1:
             return self.error1 < b.error1
         else:
             return self.error2 < b.error2
@@ -575,7 +575,7 @@ def subElements_equal(obj1, SE1, T1, obj2, SE2, T2):
             return diff.error1 == 0 and diff.error2 == 0
         else:
             return False
-    except (IndexError, AttributeError), msg:
+    except (IndexError, AttributeError) as e:
         return False
 
 
@@ -602,7 +602,7 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
                 SubElement = "SubElement2"
             else:
                 SubElement = None
-            if SubElement: #same as subElement <> None
+            if SubElement: #same as subElement != None
                 subElementName = getattr(c, SubElement)
                 debugPrint(3,'  updating %s.%s' % (c.Name, SubElement))
                 if not subElements_equal(  oldObject, subElementName, T_old, newObject, subElementName, T_new):

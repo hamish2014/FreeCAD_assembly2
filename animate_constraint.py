@@ -230,7 +230,7 @@ class ConstraintAnimator:
                 else:
                     self.timer_t_start = time.time()
                     dt = 0
-            if self.renderFrameHook <> None:
+            if self.renderFrameHook != None:
                 self.renderFrameHook( dt )
         except:
             FreeCAD.Console.PrintError(traceback.format_exc())
@@ -246,7 +246,7 @@ def Qt_label_widget( label, inputWidget, info_button_text=None ):
     hbox = QtGui.QHBoxLayout()
     hbox.addWidget( QtGui.QLabel(label) )
     hbox.addStretch(1)
-    if inputWidget <> None:
+    if inputWidget != None:
         hbox.addWidget(inputWidget)
     if info_button_text:
         hbox.addWidget( InfoButton(info_button_text) )
@@ -267,7 +267,7 @@ class RealParemeter:
     def __init__(self, name, defaultValue, label=None, info_button_text=None, **extraKWs):
         self.name = name
         self.defaultValue = defaultValue
-        self.label = label if label <> None else name
+        self.label = label if label != None else name
         self.info_button_text = info_button_text
         self.process_extraKWs(**extraKWs)
         self.initExtra()
