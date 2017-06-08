@@ -61,5 +61,5 @@ http://www.freecadweb.org/wiki/index.php?title=How_to_install_additional_workben
 Wiki
 ----
 
-For instructions on usage of the workbench refer to the wiki (link on top of the page)
-[https://github.com/hamish2014/FreeCAD_assembly2/wiki]
+For instructions on usage of the workbench refer to the wiki
+[link on top of the page](https://github.com/hamish2014/FreeCAD_assembly2/wiki).
