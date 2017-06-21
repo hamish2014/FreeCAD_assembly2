@@ -6,25 +6,25 @@ from PySide import QtGui
 class PlaneSelectionGate:
      def allow(self, doc, obj, sub):
           s = SelectionExObject(doc, obj, sub)
-          return planeSelected(s) or LinearEdgeSelected(s)
+          return planeSelected(s) or LinearEdgeSelected(s) or AxisOfPlaneSelected(s)
 
 def parseSelection(selection, objectToUpdate=None):
      validSelection = False
      if len(selection) == 2:
           s1, s2 = selection
-          if s1.ObjectName != s2.ObjectName:
-               if ( planeSelected(s1) or LinearEdgeSelected(s1)) \
-                        and ( planeSelected(s2) or LinearEdgeSelected(s2)):
+          if s1.ObjectName <> s2.ObjectName:
+               if ( planeSelected(s1) or LinearEdgeSelected(s1) or AxisOfPlaneSelected(s1)) \
+                        and ( planeSelected(s2) or LinearEdgeSelected(s2) or AxisOfPlaneSelected(s2)):
                     validSelection = True
                     cParms = [ [s1.ObjectName, s1.SubElementNames[0], s1.Object.Label ],
                                [s2.ObjectName, s2.SubElementNames[0], s2.Object.Label ] ]
      if not validSelection:
-          msg = '''Angle constraint requires a selection of 2 planes or two straight lines, each from different objects.Selection made:
+          msg = '''Angle constraint requires a selection of 2 planes or two straight lines/axis, each from different objects.Selection made:
 %s'''  % printSelection(selection)
           QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
           return 
 
-     if objectToUpdate == None:
+     if objectToUpdate is None:
           cName = findUnusedObjectName('angleConstraint')
           debugPrint(2, "creating %s" % cName )
           c = FreeCAD.ActiveDocument.addObject("App::FeaturePython", cName)
@@ -58,7 +58,8 @@ def parseSelection(selection, objectToUpdate=None):
 
 selection_text = '''Selection options:
   - plane surface
-  - edge '''
+  - edge 
+  - axis of plane selected'''
 
 class AngleConstraintCommand:
      def Activated(self):
