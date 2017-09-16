@@ -8,7 +8,7 @@ c.addProperty("App::PropertyString","Type","ConstraintInfo","Object 1").Type = '
 see http://www.freecadweb.org/wiki/index.php?title=Scripted_objects#Available_properties for more information
 '''
 
-import numpy, os
+import numpy, os, sys
 import FreeCAD
 import FreeCADGui
 import Part
@@ -28,6 +28,22 @@ assert resourcesLoaded
 
 __dir__ = path_assembly2
 wb_globals = {}
+__dir2__ = os.path.dirname(__file__)
+GuiPath = os.path.join( __dir2__, 'Gui' )
+
+def make_string(input):
+    if (sys.version_info > (3, 0)):  #py3
+        if isinstance(input, str):
+            return input
+        else:
+            input =  input.encode('utf-8')
+            return input
+    else:  #py2
+        if type(input) == unicode:
+            input =  input.encode('utf-8')
+            return input
+        else:
+            return input
 
 def isLine(param):
     if hasattr(Part,"LineSegment"):
@@ -65,7 +81,7 @@ class ConstraintSelectionObserver:
          if len(self.selections) == 2:
              self.stopSelectionObservation()
              self.parseSelectionFunction( self.selections)
-         elif self.secondSelectionGate != None and len(self.selections) == 1:
+         elif self.secondSelectionGate is not None and len(self.selections) == 1:
              FreeCADGui.Selection.removeSelectionGate()
              FreeCADGui.Selection.addSelectionGate( self.secondSelectionGate )
      def stopSelectionObservation(self):
