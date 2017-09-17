@@ -3,7 +3,8 @@ import assembly2lib #QtCore.QResource.registerResource happens in assembly2lib
 class Assembly2Workbench (Workbench): 
     MenuText = 'Assembly 2'
     def Initialize(self):
-        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, sphericalSurfaceConstraint, checkAssembly, boltMultipleCircularEdges, animate_constraint
+        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, \
+               sphericalSurfaceConstraint, checkAssembly, boltMultipleCircularEdges, animate_constraint, undo
         commandslist = [
             'importPart', 
             'updateImportedPartsCommand', 
@@ -13,6 +14,7 @@ class Assembly2Workbench (Workbench):
             'addAxialConstraint', 
             'addAngleConstraint', 
             'addSphericalSurfaceConstraint',
+            'a2_UndoConstraint',
             'degreesOfFreedomAnimation', 
             'assembly2SolveConstraints',
             'muxAssembly',
@@ -34,9 +36,15 @@ class Assembly2Workbench (Workbench):
 
     def Activated(self):
         from assembly2lib import FreeCAD, updateOldStyleConstraintProperties
+        import os, undo
         doc = FreeCAD.activeDocument()
         if hasattr(doc, 'Objects'):
             updateOldStyleConstraintProperties(doc)
+        __dir2__ = os.path.dirname(undo.__file__)
+        GuiPath = os.path.join( __dir2__, 'Gui' )
+        constraintFile = os.path.join( GuiPath , 'constraintFile.txt')
+        if os.path.exists(constraintFile):
+            os.remove(constraintFile)
 
     def ContextMenu(self, recipient):
         selection = [s  for s in FreeCADGui.Selection.getSelection() if s.Document == FreeCAD.ActiveDocument ]
