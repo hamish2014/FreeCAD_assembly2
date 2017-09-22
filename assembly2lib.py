@@ -29,7 +29,7 @@ assert resourcesLoaded
 __dir__ = path_assembly2
 wb_globals = {}
 __dir2__ = os.path.dirname(__file__)
-GuiPath = os.path.join( __dir2__, 'Gui' )
+GuiPath = os.path.expanduser ("~") #GuiPath = os.path.join( __dir2__, 'Gui' )
 
 def make_string(input):
     if (sys.version_info > (3, 0)):  #py3

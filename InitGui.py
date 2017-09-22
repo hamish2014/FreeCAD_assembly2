@@ -41,7 +41,7 @@ class Assembly2Workbench (Workbench):
         if hasattr(doc, 'Objects'):
             updateOldStyleConstraintProperties(doc)
         __dir2__ = os.path.dirname(undo.__file__)
-        GuiPath = os.path.join( __dir2__, 'Gui' )
+        GuiPath = os.path.expanduser ("~") # os.path.join( __dir2__, 'Gui' )
         constraintFile = os.path.join( GuiPath , 'constraintFile.txt')
         if os.path.exists(constraintFile):
             os.remove(constraintFile)
