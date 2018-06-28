@@ -28,8 +28,8 @@ def parseSelection(selection, objectToUpdate=None):
      if not validSelection:
           msg = '''To add an axial constraint select two cylindrical surfaces or two straight lines, each from a different part. Selection made:
 %s'''  % printSelection(selection)
-          QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
-          return 
+          QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Incorrect Usage", msg)
+          return
 
      if objectToUpdate == None:
           cName = findUnusedObjectName('axialConstraint')
@@ -40,14 +40,14 @@ def parseSelection(selection, objectToUpdate=None):
           c.addProperty("App::PropertyString","SubElement1","ConstraintInfo").SubElement1 = cParms[0][1]
           c.addProperty("App::PropertyString","Object2","ConstraintInfo").Object2 = cParms[1][0]
           c.addProperty("App::PropertyString","SubElement2","ConstraintInfo").SubElement2 = cParms[1][1]
-     
+
           c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
           c.directionConstraint = ["none","aligned","opposed"]
           c.addProperty("App::PropertyBool","lockRotation","ConstraintInfo")
-                         
+
           c.setEditorMode('Type',1)
           for prop in ["Object1","Object2","SubElement1","SubElement2"]:
-               c.setEditorMode(prop, 1) 
+               c.setEditorMode(prop, 1)
 
           c.Proxy = ConstraintObjectProxy()
           c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/axialConstraint.svg', True, cParms[1][2], cParms[0][2])
@@ -61,8 +61,8 @@ def parseSelection(selection, objectToUpdate=None):
           updateObjectProperties(c)
      constraintFile = os.path.join( GuiPath , 'constraintFile.txt')
      with open(constraintFile, 'w') as outfile:
-          outfile.write(make_string(s1.ObjectName)+'\n'+str(s1.Object.Placement.Base)+'\n'+str(s1.Object.Placement.Rotation)+'\n')        
-          outfile.write(make_string(s2.ObjectName)+'\n'+str(s2.Object.Placement.Base)+'\n'+str(s2.Object.Placement.Rotation)+'\n')        
+          outfile.write(make_string(s1.ObjectName)+'\n'+str(s1.Object.Placement.Base)+'\n'+str(s1.Object.Placement.Rotation)+'\n')
+          outfile.write(make_string(s2.ObjectName)+'\n'+str(s2.Object.Placement.Base)+'\n'+str(s2.Object.Placement.Rotation)+'\n')
      constraints = [ obj for obj in FreeCAD.ActiveDocument.Objects if 'ConstraintInfo' in obj.Content ]
      #print constraints
      if len(constraints) > 0:
@@ -78,7 +78,7 @@ def parseSelection(selection, objectToUpdate=None):
 
 selection_text = '''Selection options:
   - cylindrical surface
-  - edge 
+  - edge
   - face '''
 
 class AxialConstraintCommand:
@@ -89,19 +89,19 @@ class AxialConstraintCommand:
                parseSelection( selection )
           else:
                FreeCADGui.Selection.clearSelection()
-               ConstraintSelectionObserver( 
-                    AxialSelectionGate(), 
+               ConstraintSelectionObserver(
+                    AxialSelectionGate(),
                     parseSelection,
-                    taskDialog_title ='add axial constraint', 
-                    taskDialog_iconPath = self.GetResources()['Pixmap'], 
+                    taskDialog_title ='add axial constraint',
+                    taskDialog_iconPath = self.GetResources()['Pixmap'],
                     taskDialog_text = selection_text
                     )
-     def GetResources(self): 
+     def GetResources(self):
           return {
-               'Pixmap' : ':/assembly2/icons/axialConstraint.svg', 
-               'MenuText': 'Add axial constraint', 
+               'Pixmap' : ':/assembly2/icons/axialConstraint.svg',
+               'MenuText': 'Add axial constraint',
                'ToolTip': 'Add an axial constraint between two objects'
-               } 
+               }
 
 FreeCADGui.addCommand('addAxialConstraint', AxialConstraintCommand())
 
@@ -110,19 +110,19 @@ class RedefineConstraintCommand:
         self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
         debugPrint(3,'redefining %s' % self.constObject.Name)
         FreeCADGui.Selection.clearSelection()
-        ConstraintSelectionObserver( 
-             AxialSelectionGate(), 
+        ConstraintSelectionObserver(
+             AxialSelectionGate(),
              self.UpdateConstraint,
-             taskDialog_title ='redefine axial constraint', 
-             taskDialog_iconPath = ':/assembly2/icons/axialConstraint.svg', 
+             taskDialog_title ='redefine axial constraint',
+             taskDialog_iconPath = ':/assembly2/icons/axialConstraint.svg',
              taskDialog_text = selection_text
              )
         #
-        #if wb_globals.has_key('selectionObserver'): 
+        #if wb_globals.has_key('selectionObserver'):
         #    wb_globals['selectionObserver'].stopSelectionObservation()
         #wb_globals['selectionObserver'] =  ConstraintSelectionObserver( AxialSelectionGate(), self.UpdateConstraint  )
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)
-    def GetResources(self): 
-        return { 'MenuText': 'Redefine' } 
+    def GetResources(self):
+        return { 'MenuText': 'Redefine' }
 FreeCADGui.addCommand('redefineAxialConstraint', RedefineConstraintCommand())

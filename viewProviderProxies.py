@@ -8,9 +8,9 @@ def group_constraints_under_parts():
 
 def allow_deletetion_when_activice_doc_ne_object_doc():
     parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
-    return parms.GetBool('allowDeletetionFromExternalDocuments', False) 
+    return parms.GetBool('allowDeletetionFromExternalDocuments', False)
 
-class ImportedPartViewProviderProxy:   
+class ImportedPartViewProviderProxy:
     def onDelete(self, viewObject, subelements): # subelements is a tuple of strings
         if not allow_deletetion_when_activice_doc_ne_object_doc() and FreeCAD.activeDocument() != viewObject.Object.Document:
             FreeCAD.Console.PrintMessage("preventing deletetion of %s since active document != %s. Disable behavior in assembly2 preferences.\n" % (viewObject.Object.Label, viewObject.Object.Document.Name) )
@@ -27,7 +27,7 @@ class ImportedPartViewProviderProxy:
             #FreeCAD.Console.PrintMessage("  delete list %s\n" % str(deleteList) )
             for c in deleteList:
                 #FreeCAD.Console.PrintMessage("  - removing constraint %s\n" % c.Name )
-                if hasattr( c.Proxy, 'mirrorName'): # then also deleter constraints mirror 
+                if hasattr( c.Proxy, 'mirrorName'): # then also deleter constraints mirror
                     doc.removeObject( c.Proxy.mirrorName )
                 doc.removeObject(c.Name)
         return True # If False is returned the object won't be deleted
@@ -37,7 +37,7 @@ class ImportedPartViewProviderProxy:
 
     def __setstate__(self, state):
         return None
-    
+
     def attach(self, vobj):
         self.object_Name = vobj.Object.Name
         #self.ViewObject = vobj
@@ -61,7 +61,7 @@ class ImportedPartViewProviderProxy:
         or something like that ...
         '''
 
-        
+
         children = []
         if hasattr(self, 'Object'):
             importedPart = self.Object
@@ -132,10 +132,10 @@ class ConstraintViewProviderProxy:
             if hasattr( getattr(part1.ViewObject,'Proxy',None),'claimChildren') \
                or hasattr( getattr(part2.ViewObject,'Proxy',None),'claimChildren'):
                 self.mirror_name = create_constraint_mirror(  constraintObj, iconPath, origLabel, mirrorLabel, extraLabel )
-        
+
     def getIcon(self):
         return self.iconPath
-        
+
     def attach(self, vobj): #attach to what document?
         vobj.addDisplayMode( coin.SoGroup(),"Standard" )
 
@@ -157,7 +157,7 @@ class ConstraintViewProviderProxy:
         doc = obj.Document
         if isinstance( obj.Proxy, ConstraintMirrorObjectProxy ):
             doc.removeObject(  obj.Proxy.constraintObj_name ) # also delete the original constraint which obj mirrors
-        elif hasattr( obj.Proxy, 'mirror_name'): # the original constraint, #isinstance( obj.Proxy,  ConstraintObjectProxy ) not done since ConstraintObjectProxy not defined in namespace 
+        elif hasattr( obj.Proxy, 'mirror_name'): # the original constraint, #isinstance( obj.Proxy,  ConstraintObjectProxy ) not done since ConstraintObjectProxy not defined in namespace
             doc.removeObject( obj.Proxy.mirror_name ) # also delete mirror
         return True
 
@@ -213,7 +213,7 @@ class ConstraintMirrorObjectProxy:
         constraintObj.Proxy.mirror_name = obj.Name
         self.disable_onChanged = False
         obj.Proxy = self
-        
+
     def execute(self, obj):
         return #no work required in onChanged causes touched in original constraint ...
 
@@ -224,7 +224,7 @@ class ConstraintMirrorObjectProxy:
         '''
         #FreeCAD.Console.PrintMessage("%s.%s property changed\n" % (obj.Name, prop))
         if getattr( self, 'disable_onChanged', True):
-            return 
+            return
         if obj.getGroupOfProperty( prop ) == 'ConstraintNfo':
             if hasattr( self, 'constraintObj_name' ):
                 constraintObj = obj.Document.getObject( self.constraintObj_name )
@@ -243,9 +243,9 @@ def repair_tree_view():
             if isinstance(c,QtGui.QTreeView) and isinstance(c, QtGui.QTreeWidget):
                 matches.append(c)
             search_children_recursively( c)
-    search_children_recursively(QtGui.qApp.activeWindow())
+    search_children_recursively(QtGui.QApplication.activeWindow())
     for m in matches:
-        tree_nodes =  get_treeview_nodes(m) 
+        tree_nodes =  get_treeview_nodes(m)
         def get_node_by_label( label ):
             if label in tree_nodes and len( tree_nodes[label] ) == 1:
                 return tree_nodes[label][0]
@@ -266,7 +266,7 @@ def repair_tree_view():
                                 FreeCAD.Console.PrintMessage('repair_tree_view: %s.ViewObject.Proxy.Object = %s' % (imported_obj.Name, imported_obj.Name) )
                             for constraint_obj in imported_obj.ViewObject.Proxy.claimChildren():
                                 #FreeCAD.Console.PrintMessage('  - %s\n' % constraint_obj.Label )
-                                if get_node_by_label( constraint_obj.Label ): 
+                                if get_node_by_label( constraint_obj.Label ):
                                     #FreeCAD.Console.PrintMessage('     (found treeview node)\n')
                                     node_constraint_obj = get_node_by_label( constraint_obj.Label )
                                     if id( node_constraint_obj.parent()) != id(node_imported_obj):
@@ -292,4 +292,3 @@ def get_treeview_nodes( treeWidget ):
             walk( node.child( i ) )
     walk( treeWidget.itemAt(0,0) )
     return tree_nodes
-

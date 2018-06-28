@@ -6,7 +6,7 @@ Notes regarding the assembly constraints problem.
 
 Approach followed is therefore, for the case of adding a constraint
   1. first try solve problem by moving&rotating one part only, if this fails then
-  2. solve entire constraint system by moving&rotating all non-fixed objects 
+  2. solve entire constraint system by moving&rotating all non-fixed objects
 
 '''
 
@@ -34,21 +34,21 @@ def constraintsObjectsAllExist( doc ):
             if not (obj.Object1 in objectNames and obj.Object2 in objectNames):
                 flags = QtGui.QMessageBox.StandardButton.Yes | QtGui.QMessageBox.StandardButton.Abort
                 message = "%s is refering to an object no longer in the assembly. Delete constraint? otherwise abort solving." % obj.Name
-                response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Broken Constraint", message, flags )
+                response = QtGui.QMessageBox.critical(QtGui.QApplication.activeWindow(), "Broken Constraint", message, flags )
                 if response == QtGui.QMessageBox.Yes:
                     FreeCAD.Console.PrintError("removing constraint %s" % obj.Name)
                     doc.removeObject(obj.Name)
                 else:
                     missingObject = obj.Object2 if obj.Object1 in objectNames else obj.Object1
                     FreeCAD.Console.PrintError("aborted solving constraints due to %s refering the non-existent object %s" % (obj.Name, missingObject))
-                    return False            
+                    return False
     return True
-    
+
 def findBaseObject( doc, objectNames  ):
     debugPrint( 4,'solveConstraints: searching for fixed object to begin solving constraints from.' )
     fixed = [ getattr( doc.getObject( name ), 'fixedPosition', False ) for name in objectNames ]
     if sum(fixed) > 0:
-        return objectNames[ fixed.index(True) ]        
+        return objectNames[ fixed.index(True) ]
     if sum(fixed) == 0:
         debugPrint( 1, 'It is recommended that the assembly 2 module is used with parts imported using the assembly 2 module.')
         debugPrint( 1, 'This allows for part updating, parts list support, object copying (shift + assembly2 move) and also tells the solver which objects to treat as fixed.')
@@ -74,7 +74,7 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
     debugPrint(3,' variableManager.X0 %s' % variableManager.X0 )
     constraintSystem = FixedObjectSystem( variableManager, findBaseObject(doc, objectNames) )
     debugPrint(4, 'solveConstraints base system: %s' % constraintSystem.str() )
-    
+
 
     solved = True
     if cache != None:
@@ -138,14 +138,14 @@ def solveConstraints( doc, showFailureErrorDialog=True, printErrors=True, cache=
         debugPrint(2,'Constraint system solved in %2.2fs; resulting system has %i degrees-of-freedom' % (time.time()-T_start, len( constraintSystem.degreesOfFreedom)))
     elif showFailureErrorDialog and  QtGui.qApp != None: #i.e. GUI active
         # http://www.blog.pythonlibrary.org/2013/04/16/pyside-standard-dialogs-and-message-boxes/
-        flags = QtGui.QMessageBox.StandardButton.Yes 
+        flags = QtGui.QMessageBox.StandardButton.Yes
         flags |= QtGui.QMessageBox.StandardButton.No
         #flags |= QtGui.QMessageBox.Ignore
         message = """The assembly2 solver failed to satisfy the constraint "%s".
 
 possible causes
-  - impossible/contridictorary constraints have be specified, or  
-  - the contraint problem is too difficult for the solver, or 
+  - impossible/contridictorary constraints have be specified, or
+  - the contraint problem is too difficult for the solver, or
   - a bug in the assembly 2 workbench
 
 potential solutions
@@ -154,7 +154,7 @@ potential solutions
 
 Delete constraint "%s"?
 """ % (constraintObj.Name, constraintObj.Name)
-        response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Solver Failure!", message, flags)
+        response = QtGui.QMessageBox.critical(QtGui.QApplication.activeWindow(), "Solver Failure!", message, flags)
         if response == QtGui.QMessageBox.Yes:
             removeConstraint( constraintObj )
         #elif response == QtGui.QMessageBox.Ignore:
@@ -170,12 +170,12 @@ class Assembly2SolveConstraintsCommand:
         else:
             solverCache = None
         solveConstraints( FreeCAD.ActiveDocument, cache = solverCache )
-    def GetResources(self): 
+    def GetResources(self):
         return {
-            'Pixmap' : ':/assembly2/icons/assembly2SolveConstraints.svg', 
-            'MenuText': 'Solve Assembly 2 constraints', 
+            'Pixmap' : ':/assembly2/icons/assembly2SolveConstraints.svg',
+            'MenuText': 'Solve Assembly 2 constraints',
             'ToolTip': 'Solve Assembly 2 constraints'
-            } 
+            }
 
 FreeCADGui.addCommand('assembly2SolveConstraints', Assembly2SolveConstraintsCommand())
 
@@ -202,7 +202,7 @@ if __name__ == '__main__':
     t_solver = 0
     t_cache = 0
     t_start = time.time()
-    testFiles = sorted(glob.glob('tests/*.fcstd')) 
+    testFiles = sorted(glob.glob('tests/*.fcstd'))
     if args.lastTestCaseOnly:
         testFiles = testFiles[-1:]
     for testFile in testFiles:
@@ -220,7 +220,7 @@ if __name__ == '__main__':
             solverCache.debugMode = 1
             constraintSystem = solveConstraints( doc, cache=solverCache )
             solverCache.debugMode = 0
-            t_cache = t_cache  + time.time() - t_start_cache 
+            t_cache = t_cache  + time.time() - t_start_cache
             constraintSystem.update()
         print('\n\n\n')
     print('All %i tests passed:' % len(testFiles) )

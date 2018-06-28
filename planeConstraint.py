@@ -17,7 +17,7 @@ class PlaneSelectionGate2:
 def promt_user_for_axis_for_constraint_label():
      preferences = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
      return preferences.GetBool('promtUserForAxisConstraintLabel', False)
-     
+
 
 def parseSelection(selection, objectToUpdate=None):
      validSelection = False
@@ -33,16 +33,16 @@ def parseSelection(selection, objectToUpdate=None):
      if not validSelection:
           msg = '''Plane constraint requires a selection of either
 - 2 planes, or
-- 1 plane and 1 vertex 
+- 1 plane and 1 vertex
 
 Selection made:
 %s'''  % printSelection(selection)
-          QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", msg)
-          return 
+          QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Incorrect Usage", msg)
+          return
 
      if objectToUpdate is None:
           if promt_user_for_axis_for_constraint_label():
-               extraText, extraOk = QtGui.QInputDialog.getText(QtGui.qApp.activeWindow(), "Axis", "Axis for constraint Label", QtGui.QLineEdit.Normal, "0")
+               extraText, extraOk = QtGui.QInputDialog.getText(QtGui.QApplication.activeWindow(), "Axis", "Axis for constraint Label", QtGui.QLineEdit.Normal, "0")
                if not extraOk:
                     return
           else:
@@ -56,15 +56,15 @@ Selection made:
           c.addProperty("App::PropertyString","Object2","ConstraintInfo").Object2 = cParms[1][0]
           c.addProperty("App::PropertyString","SubElement2","ConstraintInfo").SubElement2 = cParms[1][1]
           c.addProperty('App::PropertyDistance','offset',"ConstraintInfo")
-     
+
           c.addProperty("App::PropertyEnumeration","directionConstraint", "ConstraintInfo")
           c.directionConstraint = ["none","aligned","opposed"]
 
           c.setEditorMode('Type',1)
           for prop in ["Object1","Object2","SubElement1","SubElement2"]:
-               c.setEditorMode(prop, 1) 
+               c.setEditorMode(prop, 1)
           c.Proxy = ConstraintObjectProxy()
-          c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/planeConstraint.svg', True, cParms[1][2], cParms[0][2], extraText) 
+          c.ViewObject.Proxy = ConstraintViewProviderProxy( c, ':/assembly2/icons/planeConstraint.svg', True, cParms[1][2], cParms[0][2], extraText)
      else:
           debugPrint(2, "redefining %s" % objectToUpdate.Name )
           c = objectToUpdate
@@ -72,11 +72,11 @@ Selection made:
           c.SubElement1 = cParms[0][1]
           c.Object2 = cParms[1][0]
           c.SubElement2 = cParms[1][1]
-          updateObjectProperties(c)          
+          updateObjectProperties(c)
      constraintFile = os.path.join( GuiPath , 'constraintFile.txt')
      with open(constraintFile, 'w') as outfile:
-          outfile.write(make_string(s1.ObjectName)+'\n'+str(s1.Object.Placement.Base)+'\n'+str(s1.Object.Placement.Rotation)+'\n')        
-          outfile.write(make_string(s2.ObjectName)+'\n'+str(s2.Object.Placement.Base)+'\n'+str(s2.Object.Placement.Rotation)+'\n')        
+          outfile.write(make_string(s1.ObjectName)+'\n'+str(s1.Object.Placement.Base)+'\n'+str(s1.Object.Placement.Rotation)+'\n')
+          outfile.write(make_string(s2.ObjectName)+'\n'+str(s2.Object.Placement.Base)+'\n'+str(s2.Object.Placement.Rotation)+'\n')
      constraints = [ obj for obj in FreeCAD.ActiveDocument.Objects if 'ConstraintInfo' in obj.Content ]
      #print constraints
      if len(constraints) > 0:
@@ -89,7 +89,7 @@ Selection made:
      c.purgeTouched()
      c.Proxy.callSolveConstraints()
      repair_tree_view()
-         
+
 
 selection_text = '''Selection 1 options:
   - plane
@@ -105,20 +105,20 @@ class PlaneConstraintCommand:
                parseSelection( selection )
           else:
                FreeCADGui.Selection.clearSelection()
-               ConstraintSelectionObserver( 
-                    PlaneSelectionGate(), 
-                    parseSelection, 
-                    taskDialog_title ='add plane constraint', 
-                    taskDialog_iconPath = self.GetResources()['Pixmap'], 
+               ConstraintSelectionObserver(
+                    PlaneSelectionGate(),
+                    parseSelection,
+                    taskDialog_title ='add plane constraint',
+                    taskDialog_iconPath = self.GetResources()['Pixmap'],
                     taskDialog_text = selection_text,
                     secondSelectionGate = PlaneSelectionGate2() )
-               
-     def GetResources(self): 
+
+     def GetResources(self):
           return {
-               'Pixmap' : ':/assembly2/icons/planeConstraint.svg', 
-               'MenuText': 'Add plane constraint', 
+               'Pixmap' : ':/assembly2/icons/planeConstraint.svg',
+               'MenuText': 'Add plane constraint',
                'ToolTip': 'Add a plane constraint between two objects'
-               } 
+               }
 
 FreeCADGui.addCommand('addPlaneConstraint', PlaneConstraintCommand())
 
@@ -128,17 +128,17 @@ class RedefineConstraintCommand:
         self.constObject = FreeCADGui.Selection.getSelectionEx()[0].Object
         debugPrint(3,'redefining %s' % self.constObject.Name)
         FreeCADGui.Selection.clearSelection()
-        ConstraintSelectionObserver( 
-                    PlaneSelectionGate(), 
-                    self.UpdateConstraint, 
-                    taskDialog_title ='add plane constraint', 
-                    taskDialog_iconPath = ':/assembly2/icons/planeConstraint.svg', 
+        ConstraintSelectionObserver(
+                    PlaneSelectionGate(),
+                    self.UpdateConstraint,
+                    taskDialog_title ='add plane constraint',
+                    taskDialog_iconPath = ':/assembly2/icons/planeConstraint.svg',
                     taskDialog_text = selection_text,
                     secondSelectionGate = PlaneSelectionGate2() )
 
     def UpdateConstraint(self, selection):
         parseSelection( selection, self.constObject)
 
-    def GetResources(self): 
-        return { 'MenuText': 'Redefine' } 
+    def GetResources(self):
+        return { 'MenuText': 'Redefine' }
 FreeCADGui.addCommand('redefinePlaneConstraint', RedefineConstraintCommand())
