@@ -43,7 +43,7 @@ def parts_list_clickHandler( x, y ):
 class AddPartsList:
     def Activated(self):
         if not drawing_dimensioning_installed:
-            QtGui.QMessageBox.critical( QtGui.qApp.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning). Release from 12 April 2016 or later required.' )
+            QtGui.QMessageBox.critical( QtGui.QApplication.activeWindow(), 'drawing dimensioning wb required', 'the parts list feature requires the drawing dimensioning wb (https://github.com/hamish2014/FreeCAD_drawing_dimensioning). Release from 12 April 2016 or later required.' )
             return
         V = getDrawingPageGUIVars() #needs to be done before dialog show, else Qt active is dialog and not freecads
         d.activate( V, dialogIconPath= ':/assembly2/icons/partsList.svg')
@@ -58,14 +58,14 @@ class AddPartsList:
         d.taskDialog =  PartsListTaskDialog()
         FreeCADGui.Control.showDialog( d.taskDialog )
         previewDimension.initializePreview( d, table_dd.table_preview, parts_list_clickHandler )
-        
-    def GetResources(self): 
+
+    def GetResources(self):
         tip = 'Create a part list from the objects imported using the assembly 2 workbench'
         return {
-            'Pixmap' : ':/assembly2/icons/partsList.svg' , 
-            'MenuText': tip, 
+            'Pixmap' : ':/assembly2/icons/partsList.svg' ,
+            'MenuText': tip,
             'ToolTip': tip
-            } 
+            }
 FreeCADGui.addCommand('addPartsList', AddPartsList())
 
 
@@ -81,7 +81,7 @@ class PartsListTaskDialog:
                 if hasattr(w, 'valueChanged'):
                     w.valueChanged.connect( self.getValues )
                 if isinstance(w, QtGui.QLineEdit):
-                    w.textChanged.connect( self.getValues ) 
+                    w.textChanged.connect( self.getValues )
         self.form.pushButton_set_as_default.clicked.connect( self.setDefaults )
 
     def setIntialValues(self):
@@ -104,16 +104,16 @@ class PartsListTaskDialog:
                 item.setCheckState( QtCore.Qt.CheckState.Checked )
                 filtersAdded.append( entry.parentDirectory )
         d.partsList.directoryMask = filtersAdded
-        form.listWidget_directoryFilter.itemChanged.connect( self.update_directoryFilter )  
+        form.listWidget_directoryFilter.itemChanged.connect( self.update_directoryFilter )
 
     def setDefaults(self):
         parms = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2/partsList")
-        form = self.form        
+        form = self.form
         parms.SetFloat('column_part_width',       form.doubleSpinBox_column_part_width.value()       )
         parms.SetFloat('column_sourceFile_width', form.doubleSpinBox_column_sourceFile_width.value() )
         parms.SetFloat('column_quantity_width',   form.doubleSpinBox_column_quantity_width.value()   )
         parms.SetString('column_part_label',      form.lineEdit_column_part_label.text()             )
-        parms.SetString('column_sourceFile_label',form.lineEdit_column_sourceFile_label.text()       ) 
+        parms.SetString('column_sourceFile_label',form.lineEdit_column_sourceFile_label.text()       )
         parms.SetString('column_quantity_label',  form.lineEdit_column_quantity_label.text()         )
         parms.SetFloat('lineWidth',               form.doubleSpinBox_lineWidth.value()               )
         parms.SetFloat('fontSize',                form.doubleSpinBox_fontSize.value()                )
@@ -148,16 +148,16 @@ class PartsListTaskDialog:
                 ],
             border_width = form.doubleSpinBox_lineWidth.value(),
             border_color='rgb(0,0,0)',
-            padding_x = form.doubleSpinBox_padding.value(), 
-            padding_y = form.doubleSpinBox_padding.value(), 
+            padding_x = form.doubleSpinBox_padding.value(),
+            padding_y = form.doubleSpinBox_padding.value(),
             extra_rows= 0,
             textRenderer_table = SvgTextRenderer(
-                u'inherit', 
-                u'%1.2f pt' % form.doubleSpinBox_fontSize.value(), 
-                form.lineEdit_fontColor.text() 
+                u'inherit',
+                u'%1.2f pt' % form.doubleSpinBox_fontSize.value(),
+                form.lineEdit_fontColor.text()
                 )
             )
-    
+
     def update_directoryFilter(self, *args):
         try:
             del d.partsList.directoryMask[:]
@@ -174,7 +174,6 @@ class PartsListTaskDialog:
     def reject(self):
         previewDimension.removePreviewGraphicItems( recomputeActiveDocument = True )
         FreeCADGui.Control.closeDialog()
-        
+
     def getStandardButtons(self): #http://forum.freecadweb.org/viewtopic.php?f=10&t=11801
         return 0x00400000
-

@@ -24,14 +24,14 @@ class boltMultipleCircularEdgesCommand:
             if valid:
                 boltSelection()
             else:
-                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Incorrect Usage", 'Select only circular edges')
-    def GetResources(self): 
+                QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Incorrect Usage", 'Select only circular edges')
+    def GetResources(self):
         msg = 'Bolt multiple circular edges'
         return {
-            'Pixmap' : ':/assembly2/icons/boltMultipleCircularEdges.svg', 
-            'MenuText': msg, 
+            'Pixmap' : ':/assembly2/icons/boltMultipleCircularEdges.svg',
+            'MenuText': msg,
             'ToolTip': msg
-            } 
+            }
 
 FreeCADGui.addCommand('boltMultipleCircularEdges', boltMultipleCircularEdgesCommand())
 
@@ -40,10 +40,10 @@ class RapidBoltingTaskDialog:
         self.form = RapidBoltingForm('''Instructions:
 
 1) select mating edge on Bolt
-2) add to the Selection the edges 
+2) add to the Selection the edges
 to which the bolt is to be mated
 3) press Ok ''' )
-        self.form.setWindowTitle( 'Bolt multiple circular edges' )    
+        self.form.setWindowTitle( 'Bolt multiple circular edges' )
         self.form.setWindowIcon( QtGui.QIcon( ':/assembly2/icons/boltMultipleCircularEdges.svg' ) )
     def reject(self):
         FreeCADGui.Selection.removeSelectionGate()
@@ -52,10 +52,10 @@ to which the bolt is to be mated
         FreeCADGui.Selection.removeSelectionGate()
         FreeCADGui.Control.closeDialog()
         boltSelection()
-class RapidBoltingForm(QtGui.QWidget):    
+class RapidBoltingForm(QtGui.QWidget):
     def __init__(self, textLines ):
         super(RapidBoltingForm, self).__init__()
-        self.textLines = textLines 
+        self.textLines = textLines
         self.initUI()
     def initUI(self):
         vbox = QtGui.QVBoxLayout()
@@ -73,7 +73,7 @@ def boltSelection():
     selection = FreeCADGui.Selection.getSelectionEx()
     bolt = selection[0].Object
     bolt_se_name = selection[0].SubElementNames[0]
-    S = [] #edgesToConstrainTo 
+    S = [] #edgesToConstrainTo
     for s in selection[1:]:
         for se_name in s.SubElementNames:
             S.append( SelectionExObject(doc, s.Object, se_name) )
@@ -82,8 +82,8 @@ def boltSelection():
         s1 = SelectionExObject(doc, newBolt, bolt_se_name)
         debugPrint(3,'s1 %s' % [s1, s2])
         parseSelection(
-            [s1, s2 ], 
-            callSolveConstraints= False, lockRotation = True 
+            [s1, s2 ],
+            callSolveConstraints= False, lockRotation = True
             )
     solveConstraints( doc )
     FreeCAD.ActiveDocument.commitTransaction()

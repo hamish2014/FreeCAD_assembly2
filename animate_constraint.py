@@ -18,14 +18,14 @@ class AnimateConstraint_Command:
         constraint_to_animate = selection[0]
         if not 'ConstraintInfo' in constraint_to_animate.Content: #then mirror selected
             constraint_to_animate = FreeCAD.ActiveDocument.getObject( constraint_to_animate.ViewObject.Proxy.constraintObj_name )
-            #return 
+            #return
         self.taskPanel = AnimateConstraint_TaskPanel( constraint_to_animate  )
         FreeCADGui.Control.showDialog( self.taskPanel )
-    def GetResources(self): 
+    def GetResources(self):
         return {
-            'MenuText': 'Animate', 
+            'MenuText': 'Animate',
             'ToolTip':  'Animate constraint'
-            } 
+            }
 FreeCADGui.addCommand( 'assemly2_animate_constraint', AnimateConstraint_Command() )
 
 class AnimateConstraint_TaskPanel:
@@ -78,8 +78,8 @@ class AnimateConstraint_Form( QtGui.QWidget):
         self.button_generate_animiation =  QtGui.QPushButton('Generate')
         self.button_generate_animiation.clicked.connect( self.generate_animation )
         vbox.addWidget( self.button_generate_animiation )
-        self.setLayout(vbox)  
-          
+        self.setLayout(vbox)
+
     def generate_animation( self ):
         preferences = FreeCAD.ParamGet("User parameter:BaseApp/Preferences/Mod/Assembly2")
         org_auto_solve = preferences.GetBool('autoSolveConstraintAttributesChanged', True)
@@ -99,8 +99,8 @@ class AnimateConstraint_Form( QtGui.QWidget):
             self.X = []
             if not hasattr(constraint_to_animate, 'a'):
                 constraint_to_animate.addProperty(
-                    {'angle_between_planes':'App::PropertyAngle', 'plane':'App::PropertyDistance', 'circularEdge':'App::PropertyDistance'}[ constraint_to_animate.Type ], 
-                    'a', 
+                    {'angle_between_planes':'App::PropertyAngle', 'plane':'App::PropertyDistance', 'circularEdge':'App::PropertyDistance'}[ constraint_to_animate.Type ],
+                    'a',
                     "animationParameters"
                     )
                 constraint_to_animate.setEditorMode( 'a', 2)
@@ -177,7 +177,7 @@ class AnimateConstraint_Form( QtGui.QWidget):
     def slider_moved( self, position ):
         try:
             dt = self.constraintAnimator.runningTime
-            p = 1.0 * position / self.animationSlider.maximum() 
+            p = 1.0 * position / self.animationSlider.maximum()
             if not self.constraintAnimator.playing():
                 self.constraintAnimator.showAt( p*dt )
             else:
@@ -206,7 +206,7 @@ class ConstraintAnimator:
         return frame
 
     def play( self, speed, renderFrameHook=None, tick = 20 ):
-        self.timer_speed = speed 
+        self.timer_speed = speed
         self.timer_t_start = time.time()
         self.renderFrameHook = renderFrameHook
         self.timer.start( tick )
@@ -216,7 +216,7 @@ class ConstraintAnimator:
 
     def stop( self ):
         self.timer.stop()
-        
+
     def jumpTo( self, t ):
         self.timer_t_start = time.time() - t/self.timer_speed
 
@@ -260,7 +260,7 @@ class InfoButton( QtGui.QPushButton ):
         self.setMaximumWidth( 12 )
         self.clicked.connect( self.clickFun )
     def clickFun( self ):
-        QtGui.QMessageBox.information( QtGui.qApp.activeWindow(), 'Info', self.info_text ) 
+        QtGui.QMessageBox.information( QtGui.QApplication.activeWindow(), 'Info', self.info_text )
 
 
 class RealParemeter:
@@ -419,18 +419,18 @@ def spline_interp( P, X, n_per_seg ):
     https://en.wikipedia.org/wiki/Cubic_Hermite_spline
     implemented here to assembly2 independent from SciPy
 
-    p ( x ) = h_00 ( t ) p_k + h_10 ( t ) ( x_{k+1} - x_k ) m_k + h_01 ( t ) p_{k + 1} + h_11 ( t ) ( x_{k+1} - x_k ) m_{k+1} . 
+    p ( x ) = h_00 ( t ) p_k + h_10 ( t ) ( x_{k+1} - x_k ) m_k + h_01 ( t ) p_{k + 1} + h_11 ( t ) ( x_{k+1} - x_k ) m_{k+1} .
 
-    with 
+    with
        m = the tangent
        t = ( x - x k ) / ( x k + 1 - x k )
        h_00 =   2 t**3 - 3 t**2       + 1
        h_10 =     t**3 - 2 t**2 + t
-       h_01 = - 2 t**3 + 3 t**2 
-       h_11 =     t**3 -   t**2 
+       h_01 = - 2 t**3 + 3 t**2
+       h_11 =     t**3 -   t**2
 
     natural spline 0,1st, and 2nd order continous, with 2 derivative being 0 and ends
-    
+
     Catmull-Rom spline is obtained, being a special case of a cardinal spline. This assumes uniform parameter spacing.
         m k = ( p_{k+1} - p_{k-1} )/ (t_{k+1} - t_{k-1} )
     '''
@@ -450,8 +450,8 @@ def spline_interp( P, X, n_per_seg ):
             for t in t_int:
                 h_00 =   2*t**3 - 3*t**2       + 1
                 h_10 =     t**3 - 2*t**2 + t
-                h_01 =  -2*t**3 + 3*t**2 
-                h_11 =     t**3 -   t**2 
+                h_01 =  -2*t**3 + 3*t**2
+                h_11 =     t**3 -   t**2
                 p_int.append( h_00*P[k][j] + h_10*dx*m[k] + h_01*P[k+1][j] + h_11*dx*m[k+1])
         P_int[:,j] = p_int
     return P_int
@@ -479,4 +479,3 @@ if __name__ == "__main__":
     pyplot.plot( P_linear[:,0], P_linear[:,1], '--g' )
     pyplot.plot( [p[0] for p in P], [p[1] for p in P], 'go' )
     pyplot.show()
-    

@@ -15,7 +15,7 @@ class UndoConstraint:
     def Activated(self):
         constraints = [ obj for obj in FreeCAD.ActiveDocument.Objects if 'ConstraintInfo' in obj.Content ]
         if len(constraints) == 0:
-            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Command Aborted", 'Undo aborted since no assembly2 constraints in active document.')
+            QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Command Aborted", 'Undo aborted since no assembly2 constraints in active document.')
             return
         lastConstraintAdded = constraints[-1]
         #print lastConstraintAdded.Name
@@ -54,7 +54,7 @@ class UndoConstraint:
                 FreeCAD.ActiveDocument.getObject(s_nm[1]).Placement.Rotation = FreeCAD.Rotation (s_plcR[1][0],s_plcR[1][1],s_plcR[1][2],s_plcR[1][3])  #App.Vector (5.000000000000001, 5.000000000000003, 5.00)
             constraints = [ obj for obj in FreeCAD.ActiveDocument.Objects if 'ConstraintInfo' in obj.Content ]
             if len(constraints) == 0:
-                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Command Aborted", 'Flip aborted since no assembly2 constraints in active document.')
+                QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Command Aborted", 'Flip aborted since no assembly2 constraints in active document.')
                 return
             lastConstraintAdded = constraints[-1]
             if undo_constraint == lastConstraintAdded.Name:
@@ -64,7 +64,7 @@ class UndoConstraint:
             FreeCAD.ActiveDocument.recompute()
             os.remove(constraintFile)
         return
-        
+
     def IsActive(self):
         constraintFile = os.path.join( GuiPath , 'constraintFile.txt')
         if not os.path.exists(constraintFile):
@@ -73,7 +73,7 @@ class UndoConstraint:
 
     def GetResources(self):
         return {
-            'Pixmap' : os.path.join( iconPath , 'EditUndo.svg'), 
+            'Pixmap' : os.path.join( iconPath , 'EditUndo.svg'),
             'MenuText': 'Undo last Constrain',
             'ToolTip': 'Undo last Constrain'
             }

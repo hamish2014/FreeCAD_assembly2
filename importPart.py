@@ -62,11 +62,11 @@ def importPart( filename, partName=None, doc_assembly=None ):
         if len(visibleObjects) != 1:
             if not updateExistingPart:
                 msg = "A part can only be imported from a FreeCAD document with exactly one visible part. Aborting operation"
-                QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Value Error", msg )
+                QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Value Error", msg )
             else:
                 msg = "Error updating part from %s: A part can only be imported from a FreeCAD document with exactly one visible part. Aborting update of %s" % (partName, filename)
-            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Value Error", msg )
-        #QtGui.QMessageBox.warning( QtGui.qApp.activeWindow(), "Value Error!", msg, QtGui.QMessageBox.StandardButton.Ok )
+            QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Value Error", msg )
+        #QtGui.QMessageBox.warning( QtGui.QApplication.activeWindow(), "Value Error!", msg, QtGui.QMessageBox.StandardButton.Ok )
             return
         obj_to_copy  = visibleObjects[0]
 
@@ -106,7 +106,7 @@ def importPart( filename, partName=None, doc_assembly=None ):
             obj.ViewObject.Transparency = tsp+1
         if tsp == 100:
             obj.ViewObject.Transparency = tsp-1
-        obj.ViewObject.Transparency = tsp   # .Transparency workaround end 
+        obj.ViewObject.Transparency = tsp   # .Transparency workaround end
     obj.Proxy = Proxy_importPart()
     obj.timeLastImport = os.path.getmtime( filename )
     #clean up
@@ -128,13 +128,13 @@ class ImportPartCommand:
             FreeCAD.newDocument()
         view = FreeCADGui.activeDocument().activeView()
         #filename, filetype = QtGui.QFileDialog.getOpenFileName(
-        #    QtGui.qApp.activeWindow(),
+        #    QtGui.QApplication.activeWindow(),
         #    "Select FreeCAD document to import part from",
         #    "",# "" is the default, os.path.dirname(FreeCAD.ActiveDocument.FileName),
         #    "FreeCAD Document (*.fcstd)"
         #    )
         dialog = QtGui.QFileDialog(
-            QtGui.qApp.activeWindow(),
+            QtGui.QApplication.activeWindow(),
             "Select FreeCAD document to import part from"
             )
         dialog.setNameFilter("Supported Formats (*.FCStd *.brep *.brp *.imp *.iges *.igs *.obj *.step *.stp);;All files (*.*)")
@@ -234,7 +234,7 @@ class UpdateImportedPartsCommand:
                                     replacement = newFn
                                     break
                                 reply = QtGui.QMessageBox.question(
-                                    QtGui.qApp.activeWindow(), "%s source file not found" % obj.Name,
+                                    QtGui.QApplication.activeWindow(), "%s source file not found" % obj.Name,
                                     "Unable to find\n  %s \nUse \n  %s\n instead?" % (obj.sourceFile, newFn) ,
                                     QtGui.QMessageBox.Yes | QtGui.QMessageBox.YesToAll | QtGui.QMessageBox.No, QtGui.QMessageBox.Yes)
                                 if reply == QtGui.QMessageBox.Yes:
@@ -250,7 +250,7 @@ class UpdateImportedPartsCommand:
                     if replacement != None:
                         obj.sourceFile = replacement
                     else:
-                        QtGui.QMessageBox.critical(  QtGui.qApp.activeWindow(), "Source file not found", "update of %s aborted!\nUnable to find %s" % (obj.Name, obj.sourceFile) )
+                        QtGui.QMessageBox.critical(  QtGui.QApplication.activeWindow(), "Source file not found", "update of %s aborted!\nUnable to find %s" % (obj.Name, obj.sourceFile) )
                         obj.timeLastImport = 0 #force update if users repairs link
                 if path_rel_to_abs( obj.sourceFile ) is not None:
                     absolutePath = path_rel_to_abs( obj.sourceFile )
@@ -444,7 +444,7 @@ class ForkPartCommand:
         selection = [s for s in FreeCADGui.Selection.getSelection() if s.Document == FreeCAD.ActiveDocument ]
         obj = selection[0]
         filename, filetype = QtGui.QFileDialog.getSaveFileName(
-            QtGui.qApp.activeWindow(),
+            QtGui.QApplication.activeWindow(),
             "Specify the filename for the fork of '%s'" % obj.Label[:obj.Label.find('_import')],
             os.path.dirname(FreeCAD.ActiveDocument.FileName),
             "FreeCAD Document (*.fcstd)"
@@ -457,7 +457,7 @@ class ForkPartCommand:
             obj.sourceFile = filename
             FreeCAD.open(obj.sourceFile)
         else:
-            QtGui.QMessageBox.critical(  QtGui.qApp.activeWindow(), "Bad filename", "Specify a new filename!")
+            QtGui.QMessageBox.critical(  QtGui.QApplication.activeWindow(), "Bad filename", "Specify a new filename!")
 
     def GetResources(self):
         return {
@@ -477,11 +477,11 @@ class DeletePartsConstraints:
                 if part.Name in [ c.Object1, c.Object2 ]:
                     deleteList.append(c)
         if len(deleteList) == 0:
-            QtGui.QMessageBox.information(  QtGui.qApp.activeWindow(), "Info", 'No constraints refer to "%s"' % part.Name)
+            QtGui.QMessageBox.information(  QtGui.QApplication.activeWindow(), "Info", 'No constraints refer to "%s"' % part.Name)
         else:
             flags = QtGui.QMessageBox.StandardButton.Yes | QtGui.QMessageBox.StandardButton.No
             msg = "Delete %s's constraint(s):\n  - %s?" % ( part.Name, '\n  - '.join( c.Name for c in deleteList))
-            response = QtGui.QMessageBox.critical(QtGui.qApp.activeWindow(), "Delete constraints?", msg, flags )
+            response = QtGui.QMessageBox.critical(QtGui.QApplication.activeWindow(), "Delete constraints?", msg, flags )
             if response == QtGui.QMessageBox.Yes:
                 for c in deleteList:
                     removeConstraint(c)
