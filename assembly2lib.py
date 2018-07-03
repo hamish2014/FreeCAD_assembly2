@@ -153,6 +153,8 @@ class ConstraintObjectProxy:
     def onChanged(self, obj, prop):
         if hasattr(self, 'mirror_name'):
             cMirror = obj.Document.getObject( self.mirror_name )
+            if cMirror == None: 
+                return # no mirror at all...
             if cMirror.Proxy == None:
                 return #this occurs during document loading ...
             if obj.getGroupOfProperty( prop ) == 'ConstraintInfo':
