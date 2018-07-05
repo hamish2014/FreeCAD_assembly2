@@ -500,6 +500,96 @@ FreeCADGui.addCommand('assembly2_deletePartsConstraints', DeletePartsConstraints
 
 
 
+toolTipText = \
+'''
+Highlight a constraint
+
+Select a constraint which you
+want to be highlighted in the
+3D view.
+
+This function switches whole assembly
+to transparent mode and 
+highlights the constrained
+subelements of the selected
+constraint.
+
+Use Icon "Toggle Transparency" to
+switch back again to intransparent
+assembly.
+'''        
+
+class a2_SearchConstraintsCommand:
+    def Activated(self):
+        selection = [s for s in FreeCADGui.Selection.getSelection() if s.Document == FreeCAD.ActiveDocument ]
+        if len(selection) == 0: return
+        FreeCADGui.Selection.clearSelection()
+        
+        doc = FreeCAD.ActiveDocument
+        connectionToView = selection[0]
+        
+        if not 'ConstraintInfo' in connectionToView.Content and not 'ConstraintNfo' in connectionToView.Content: 
+            return # Selected Object is not a connection/constraint
+        
+        # Save Transparency of Objects and make all transparent
+        for obj in doc.Objects:
+            if hasattr(obj,'ViewObject'):
+                if hasattr(obj.ViewObject,'Transparency'):
+                    obj.ViewObject.Transparency = 80 
+        
+        FreeCADGui.Selection.addSelection(
+            doc.getObject(connectionToView.Object1),
+            connectionToView.SubElement1
+            )
+        FreeCADGui.Selection.addSelection(
+            doc.getObject(connectionToView.Object2),
+            connectionToView.SubElement2
+            )
+        
+
+    def GetResources(self):
+        return {
+            'Pixmap' : ':/assembly2/icons/searchConstraint.svg',
+            'MenuText': 'highlight constrainted subelements',
+            'ToolTip': toolTipText
+            }
+        
+FreeCADGui.addCommand('a2_SearchConstraintsCommand', a2_SearchConstraintsCommand())
+
+
+
+class a2_ToggleTransparencyCommand:
+
+    def Activated(self):
+        doc = FreeCAD.ActiveDocument
+        
+        NONTRANSPARENT = 0
+        TRANSPARENT = 80
+        
+        desiredTransparency = NONTRANSPARENT
+        # Get transparency of first visible object
+        for obj in doc.Objects:
+            if hasattr(obj,'ViewObject'):
+                if hasattr(obj.ViewObject,'Transparency'):
+                    if (obj.ViewObject.Transparency == NONTRANSPARENT):
+                        desiredTransparency = TRANSPARENT 
+                break
+        # set transparency of objects...
+        for obj in doc.Objects:
+            if hasattr(obj,'ViewObject'):
+                if hasattr(obj.ViewObject,'Transparency'):
+                    obj.ViewObject.Transparency = desiredTransparency
+        
+    def GetResources(self):
+        return {
+            'Pixmap' : ':/assembly2/icons/a2_toggleTransparency.svg',
+            'MenuText': 'toggle transparency of assembly',
+            'ToolTip': 'toggle transparency of assembly'
+            }
+FreeCADGui.addCommand('a2_ToggleTransparencyCommand', a2_ToggleTransparencyCommand())
+
+
+
 
 
 from variableManager import ReversePlacementTransformWithBoundsNormalization

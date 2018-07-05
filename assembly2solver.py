@@ -17,6 +17,7 @@ if __name__ == '__main__': #then testing library.
     assert not hasattr(FreeCADGui, 'addCommand')
     FreeCADGui.addCommand = lambda x,y: 0
 
+from PySide import QtGui
 from assembly2lib import *
 from lib3D import *
 import time, numpy
@@ -53,6 +54,7 @@ def findBaseObject( doc, objectNames  ):
         debugPrint( 1, 'It is recommended that the assembly 2 module is used with parts imported using the assembly 2 module.')
         debugPrint( 1, 'This allows for part updating, parts list support, object copying (shift + assembly2 move) and also tells the solver which objects to treat as fixed.')
         debugPrint( 1, 'since no objects have the fixedPosition attribute, fixing the postion of the first object in the first constraint')
+        
         debugPrint( 1, 'assembly 2 solver: assigning %s a fixed position' % objectNames[0])
         debugPrint( 1, 'assembly 2 solver: assigning %s, %s a fixed position' % (objectNames[0], doc.getObject(objectNames[0]).Label))
         return objectNames[0]

@@ -23,12 +23,20 @@ class Assembly2Workbench (Workbench):
             'assembly2_checkAssembly'
             ]
         self.appendToolbar('Assembly 2', commandslist)
+        
         shortcut_commandslist = [
             'flipLastConstraintsDirection',
             'lockLastConstraintsRotation',
             'boltMultipleCircularEdges',
             ]
         self.appendToolbar('Assembly 2 shortcuts', shortcut_commandslist )
+        
+        a2_tools_commandslist = [
+            'a2_SearchConstraintsCommand',
+            'a2_ToggleTransparencyCommand'
+            ]
+        self.appendToolbar('Assembly 2 tools', a2_tools_commandslist )
+        
         self.treecmdList = ['importPart', 'updateImportedPartsCommand']
         FreeCADGui.addIconPath( ':/assembly2/icons' )
         FreeCADGui.addPreferencePage( ':/assembly2/ui/assembly2_prefs.ui','Assembly2' )
