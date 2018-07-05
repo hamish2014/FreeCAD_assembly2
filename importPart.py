@@ -144,6 +144,13 @@ class ImportPartCommand:
             return
         importedObject = importPart( filename )
         FreeCAD.ActiveDocument.recompute()
+        
+        mw = FreeCADGui.getMainWindow()
+        mdi = mw.findChild(QtGui.QMdiArea)
+        sub = mdi.activeSubWindow()
+        if sub != None:
+            sub.showMaximized()
+        
         if not importedObject.fixedPosition: #will be true for the first imported part
             PartMover( view, importedObject )
         else:
