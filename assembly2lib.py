@@ -353,8 +353,8 @@ def CircularEdgeSelected( selection ):
             elif isLine(edge.Curve):
                 return False
             else:
-                BSpline = edge.Curve.toBSpline()
                 try:
+                    BSpline = edge.Curve.toBSpline()
                     arcs = BSpline.toBiArcs(10**-6)
                 except:  #FreeCAD exception thrown ()
                     return False
@@ -376,8 +376,8 @@ def LinearEdgeSelected( selection ):
             elif hasattr( edge.Curve, 'Radius' ):
                 return False
             else:
-                BSpline = edge.Curve.toBSpline()
                 try:
+                    BSpline = edge.Curve.toBSpline()
                     arcs = BSpline.toBiArcs(10**-6)
                 except:  #FreeCAD exception thrown ()
                     return False

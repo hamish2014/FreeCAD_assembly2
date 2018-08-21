@@ -13,11 +13,14 @@ from assembly2lib import *
 from assembly2lib import __dir__
 import Part
 from PySide import QtGui
-import os, numpy, shutil, copy, time, posixpath, ntpath
+import os, numpy, shutil, copy, time
 from lib3D import *
 from assembly2solver import solveConstraints
 from muxAssembly import muxObjects, Proxy_muxAssemblyObj, muxMapColors
 from viewProviderProxies import group_constraints_under_parts
+from fcstd_parser import Fcstd_File_Parser
+from importPath import *
+from selectionMigration import *
 
 def importPart( filename, partName=None, doc_assembly=None ):
     if doc_assembly == None:
@@ -31,15 +34,16 @@ def importPart( filename, partName=None, doc_assembly=None ):
     debugPrint(4, "%s open already %s" % (filename, doc_already_open))
     if doc_already_open:
         doc = [ d for d in FreeCAD.listDocuments().values() if d.FileName == filename][0]
+        close_doc = False
     else:
         if filename.lower().endswith('.fcstd'):
-            debugPrint(4, '  opening %s' % filename)
-            doc = FreeCAD.openDocument(filename)
-            debugPrint(4, '  succesfully opened %s' % filename)
+            doc = Fcstd_File_Parser( filename )
+            close_doc = False
         else: #trying shaping import http://forum.freecadweb.org/viewtopic.php?f=22&t=12434&p=99772#p99772x
             import ImportGui
             doc = FreeCAD.newDocument( os.path.basename(filename) )
-            shapeobj=ImportGui.insert(filename,doc.Name)
+            shapeobj = ImportGui.insert(filename,doc.Name)
+            close_doc = True
 
     visibleObjects = [ obj for obj in doc.Objects
                        if hasattr(obj,'ViewObject') and obj.ViewObject.isVisible()
@@ -94,11 +98,15 @@ def importPart( filename, partName=None, doc_assembly=None ):
     if updateExistingPart:
         obj.Placement = prevPlacement
     else:
+        # for Fcstd_File_Parser not all properties are implemented...
         for p in obj_to_copy.ViewObject.PropertiesList: #assuming that the user may change the appearance of parts differently depending on the assembly.
             if hasattr(obj.ViewObject, p) and p not in ['DiffuseColor']:
-                setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
+                try:
+                    setattr(obj.ViewObject, p, getattr(obj_to_copy.ViewObject, p))
+                except Exception as msg:
+                    FreeCAD.Console.PrintWarning('Unable to setattr(obj.ViewObject, %s, %s)\n' % (p, getattr(obj_to_copy.ViewObject, p) ))
         obj.ViewObject.Proxy = ImportedPartViewProviderProxy()
-    if getattr(obj,'updateColors',True):
+    if getattr(obj,'updateColors',True) and hasattr( obj_to_copy.ViewObject, 'DiffuseColor'):
         obj.ViewObject.DiffuseColor = copy.copy( obj_to_copy.ViewObject.DiffuseColor )
         #obj.ViewObject.Transparency = copy.copy( obj_to_copy.ViewObject.Transparency )   # .Transparency property
         tsp = copy.copy( obj_to_copy.ViewObject.Transparency )   #  .Transparency workaround for FC 0.17 @ Nov 2016
@@ -112,9 +120,9 @@ def importPart( filename, partName=None, doc_assembly=None ):
     #clean up
     if subAssemblyImport:
         doc_assembly.removeObject(tempPartName)
-    if not doc_already_open: #then close again
-        FreeCAD.closeDocument(doc.Name)
-        FreeCAD.setActiveDocument(doc_assembly.Name)
+    if close_doc: 
+        FreeCAD.closeDocument( doc.Name )
+        FreeCAD.setActiveDocument( doc_assembly.Name )
         FreeCAD.ActiveDocument = doc_assembly
     return obj
 
@@ -163,45 +171,6 @@ class ImportPartCommand:
             'ToolTip': 'Import a part from another FreeCAD document'
             }
 FreeCADGui.addCommand('importPart', ImportPartCommand())
-
-
-
-def path_split( pathLib, path):
-    parentPath, childPath = pathLib.split( path )
-    parts = [childPath]
-    while childPath != '':
-        parentPath, childPath = pathLib.split( parentPath )
-        parts.insert(0, childPath)
-    parts[0] = parentPath
-    if  pathLib == ntpath and parts[0].endswith(':/'): #ntpath ...
-        parts[0] = parts[0][:-2] + ':\\'
-    return parts
-
-def path_join( pathLib, parts):
-    if pathLib == posixpath and parts[0].endswith(':\\'):
-        path = parts[0][:-2]+ ':/'
-    else:
-        path = parts[0]
-    for part in parts[1:]:
-        path = pathLib.join( path, part)
-    return path
-
-def path_convert( path, pathLibFrom, pathLibTo):
-    parts =  path_split( pathLibFrom, path)
-    return path_join(pathLibTo, parts )
-
-def path_rel_to_abs(path):
-    j = FreeCAD.ActiveDocument.FileName.rfind('/')
-    k = path.find('/')
-    absPath = FreeCAD.ActiveDocument.FileName[:j] + path[k:]
-    FreeCAD.Console.PrintMessage("First %s\n" % FreeCAD.ActiveDocument.FileName[:j])
-    FreeCAD.Console.PrintMessage("Next %s\n" % path[k:])
-    FreeCAD.Console.PrintMessage("absolutePath is %s\n" % absPath)
-    if path.startswith('.') and os.path.exists( absPath ):
-        return absPath
-    else:
-        return None
-
 
 
 class UpdateImportedPartsCommand:
@@ -494,152 +463,3 @@ FreeCADGui.addCommand('assembly2_deletePartsConstraints', DeletePartsConstraints
 
 
 
-
-from variableManager import ReversePlacementTransformWithBoundsNormalization
-
-class _SelectionWrapper:
-    'as to interface with assembly2lib classification functions'
-    def __init__(self, obj, subElementName):
-        self.Object = obj
-        self.SubElementNames = [subElementName]
-
-
-def classifySubElement( obj, subElementName ):
-    selection = _SelectionWrapper( obj, subElementName )
-    if planeSelected( selection ):
-        return 'plane'
-    elif cylindricalPlaneSelected( selection ):
-        return 'cylindricalSurface'
-    elif CircularEdgeSelected( selection ):
-        return 'circularEdge'
-    elif LinearEdgeSelected( selection ):
-        return 'linearEdge'
-    elif vertexSelected( selection ):
-        return 'vertex' #all vertex belong to Vertex classification
-    elif sphericalSurfaceSelected( selection ):
-        return 'sphericalSurface'
-    else:
-        return 'other'
-
-def classifySubElements( obj ):
-    C = {
-        'plane': [],
-        'cylindricalSurface': [],
-        'circularEdge':[],
-        'linearEdge':[],
-        'vertex':[],
-        'sphericalSurface':[],
-        'other':[]
-        }
-    prefixDict = {'Vertexes':'Vertex','Edges':'Edge','Faces':'Face'}
-    for listName in ['Vertexes','Edges','Faces']:
-        for j, subelement in enumerate( getattr( obj.Shape, listName) ):
-            subElementName = '%s%i' % (prefixDict[listName], j+1 )
-            catergory = classifySubElement( obj, subElementName )
-            C[catergory].append(subElementName)
-    return C
-
-class SubElementDifference:
-    def __init__(self, obj1, SE1, T1, obj2, SE2, T2):
-        self.obj1 = obj1
-        self.SE1 = SE1
-        self.T1 = T1
-        self.obj2 = obj2
-        self.SE2 = SE2
-        self.T2 = T2
-        self.catergory = classifySubElement( obj1, SE1 )
-        #assert self.catergory == classifySubElement( obj2, SE2 )
-        self.error1 = 0 #not used for 'vertex','sphericalSurface','other'
-        if self.catergory in ['cylindricalSurface','circularEdge','plane','linearEdge']:
-            v1 = getSubElementAxis( obj1, SE1 )
-            v2 = getSubElementAxis( obj2, SE2 )
-            self.error1 = 1 - dot( T1.unRotate(v1), T2.unRotate(v2) )
-        if self.catergory != 'other':
-            p1 = getSubElementPos( obj1, SE1 )
-            p2 = getSubElementPos( obj2, SE2 )
-            self.error2 = norm( T1(p1) - T2(p2) )
-        else:
-            self.error2 = 1 - (SE1 == SE2) #subelements have the same name
-    def __lt__(self, b):
-        if self.error1 != b.error1:
-            return self.error1 < b.error1
-        else:
-            return self.error2 < b.error2
-    def __str__(self):
-        return '<SubElementDifference:%s SE1:%s SE2:%s error1: %f error2: %f>' % ( self.catergory, self.SE1, self.SE2, self.error1, self.error2 )
-
-def subElements_equal(obj1, SE1, T1, obj2, SE2, T2):
-    try:
-        if classifySubElement( obj1, SE1 ) == classifySubElement( obj2, SE2 ):
-            diff = SubElementDifference(obj1, SE1, T1, obj2, SE2, T2)
-            return diff.error1 == 0 and diff.error2 == 0
-        else:
-            return False
-    except (IndexError, AttributeError) as e:
-        return False
-
-
-def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
-    '''
-    TO DO (if time allows): add a task dialog (using FreeCADGui.Control.addDialog) as to allow the user to specify which scheme to use to update the constraint subelement names.
-    '''
-    #classify subelements
-    if len([c for c in doc.Objects if  'ConstraintInfo' in c.Content and oldObject.Name in [c.Object1, c.Object2] ]) == 0:
-        debugPrint(3,'Aborint Import Updating Constraint SubElements Names since no matching constraints')
-        return
-    debugPrint(2,'Import: Updating Constraint SubElements Names')
-    newObjSubElements = classifySubElements( newObject )
-    debugPrint(3,'newObjSubElements: %s' % newObjSubElements)
-    # generating transforms
-    T_old = ReversePlacementTransformWithBoundsNormalization( oldObject )
-    T_new = ReversePlacementTransformWithBoundsNormalization( newObject )
-    partName = oldObject.Name
-    for c in doc.Objects:
-        if 'ConstraintInfo' in c.Content:
-            if partName == c.Object1:
-                SubElement = "SubElement1"
-            elif partName == c.Object2:
-                SubElement = "SubElement2"
-            else:
-                SubElement = None
-            if SubElement: #same as subElement != None
-                subElementName = getattr(c, SubElement)
-                debugPrint(3,'  updating %s.%s' % (c.Name, SubElement))
-                if not subElements_equal(  oldObject, subElementName, T_old, newObject, subElementName, T_new):
-                    catergory = classifySubElement( oldObject, subElementName )
-                    D = [ SubElementDifference( oldObject, subElementName, T_old, newObject, SE2, T_new)
-                          for SE2 in newObjSubElements[catergory] ]
-                    #for d in D:
-                    #    debugPrint(2,'      %s' % d)
-                    d_min = min(D)
-                    debugPrint(3,'    closest match %s' % d_min)
-                    newSE =  d_min.SE2
-                    debugPrint(2,'  updating %s.%s   %s->%s' % (c.Name, SubElement, subElementName, newSE))
-                    setattr(c, SubElement, newSE)
-                    c.purgeTouched() #prevent constraint Proxy.execute being called when document recomputed.
-                else:
-                    debugPrint(3,'  leaving %s.%s as is, since subElement in old and new shape are equal' % (c.Name, SubElement))
-
-
-
-if __name__ == '__main__':
-    print('\nTesting importPart.py')
-    def test_split_and_join( pathLib, path):
-        print('Testing splitting and rejoining. lib %s' % (str(pathLib)))
-        parts = path_split( pathLib, path )
-        print('  parts %s' % parts )
-        print('  rejoined   %s'  %  path_join(pathLib, parts ) )
-        print('  original   %s'  %  path )
-
-    test_split_and_join( ntpath, 'C:/Users/gyb/Desktop/Circular Saw Jig\Side support V1.00.FCStd')
-    test_split_and_join( ntpath, 'C:/Users/gyb/Desktop/Circular Saw Jig/Side support V1.00.FCStd')
-    test_split_and_join( posixpath, '/temp/hello1/foo.FCStd')
-
-    def test_path_convert( path, pathLibFrom, pathLibTo):
-        print('Testing path_convert_lib.')
-        print('  original    %s'  %  path )
-        converted = path_convert( path, pathLibFrom, pathLibTo)
-        print('  converted   %s'  %  converted )
-        print('  reversed    %s'  % path_convert( path, pathLibTo, pathLibFrom) )
-
-    test_path_convert( r'C:\Users\gyb\Desktop\Circular Saw Jig\Side support V1.00.FCStd', ntpath, os.path )
