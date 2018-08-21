@@ -8,9 +8,7 @@ class SolverCache:
         self.result = None
         self.debugMode = 0
 
-    def retrieve( self, rootSystem, constraintObjectQue, prepare_for_record=True):
-        if prepare_for_record:
-            self.record_levels = []
+    def retrieve( self, rootSystem, constraintObjectQue):
         if self.result == None:
             return rootSystem , 0
         if rootParameters(rootSystem) != self.rootParameters:
@@ -54,7 +52,7 @@ class SolverCache:
             new_vM = rootSystem.variableManager
             old_vM = self.result.variableManager
             for objName in old_vM.index.keys():
-                if obj_name in new_vM.index:
+                if objName in new_vM.index:
                     i_new = new_vM.index[ objName ]
                     i_old = old_vM.index[ objName ]
                     new_vM.X[ i_new: i_new+6] = old_vM.X[ i_old: i_old+6 ]
@@ -64,8 +62,19 @@ class SolverCache:
             #use id to determin the memory location of a variable
             return new_sys, i+1
 
+
+
+    def prepare( self ):
+        'code called before constraint solving loop'
+        self.record_levels = [] #used in finalize
+
+    def record( self, constraintSystem ):
+        'code called inside constraint solving loop'
+        self.record_levels.append( constraintSystem.numberOfParentSystems() )
+
         
-    def record( self, constraintSystem, constraintObjectQue, que_start):
+    def commit( self, constraintSystem, constraintObjectQue, que_start):
+        'call if constraints solved'
         self.vM = constraintSystem.variableManager
         self.result = constraintSystem
         #update_variableManagers( constraintSystem, self.vM ) #ensures all system nodes point to same vM, with out this different vM will result from partially solved systems
