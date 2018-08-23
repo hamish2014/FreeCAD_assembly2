@@ -58,6 +58,13 @@ Mac Installation Instructions
 For more in-depth information refer to the corresponding tutorial on the FreeCAD-Homepage:
 http://www.freecadweb.org/wiki/index.php?title=How_to_install_additional_workbenches
 
+Testing
+-------
+```bash
+$ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
+$ python2 test.py
+```
+
 Wiki
 ----
 
