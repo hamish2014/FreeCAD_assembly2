@@ -1,47 +1,48 @@
-import assembly2lib #QtCore.QResource.registerResource happens in assembly2lib
+import assembly2 #QtCore.QResource.registerResource happens here
+import FreeCAD
 
 class Assembly2Workbench (Workbench): 
     MenuText = 'Assembly 2'
     def Initialize(self):
-        import axialConstraint, assembly2solver, importPart, planeConstraint, circularEdgeConstraint, muxAssembly, angleConstraint, partsList, degreesOfFreedomAnimation, \
-               sphericalSurfaceConstraint, checkAssembly, boltMultipleCircularEdges, animate_constraint, undo
         commandslist = [
-            'importPart', 
-            'updateImportedPartsCommand', 
+            'assembly2_importPart', 
+            'assembly2_updateImportedPartsCommand', 
             'assembly2_movePart', 
-            'addCircularEdgeConstraint', 
-            'addPlaneConstraint', 
-            'addAxialConstraint', 
-            'addAngleConstraint', 
-            'addSphericalSurfaceConstraint',
-            'a2_UndoConstraint',
-            'degreesOfFreedomAnimation', 
-            'assembly2SolveConstraints',
-            'muxAssembly',
-            'muxAssemblyRefresh',
-            'addPartsList',
+            'assembly2_addCircularEdgeConstraint', 
+            'assembly2_addPlaneConstraint', 
+            'assembly2_addAxialConstraint', 
+            'assembly2_addAngleConstraint', 
+            'assembly2_addSphericalSurfaceConstraint',
+            #'assembly2_undoConstraint', not ready yet
+            'assembly2_degreesOfFreedomAnimation', 
+            'assembly2_solveConstraints',
+            'assembly2_muxAssembly',
+            'assembly2_muxAssemblyRefresh',
+            'assembly2_addPartsList',
             'assembly2_checkAssembly'
             ]
         self.appendToolbar('Assembly 2', commandslist)
         shortcut_commandslist = [
-            'flipLastConstraintsDirection',
-            'lockLastConstraintsRotation',
-            'boltMultipleCircularEdges',
+            'assembly2_flipLastConstraintsDirection',
+            'assembly2_lockLastConstraintsRotation',
+            'assembly2_boltMultipleCircularEdges',
             ]
         self.appendToolbar('Assembly 2 shortcuts', shortcut_commandslist )
-        self.treecmdList = ['importPart', 'updateImportedPartsCommand']
+        self.treecmdList = [
+            'assembly2_importPart',
+            'assembly2_updateImportedPartsCommand'
+        ]
         FreeCADGui.addIconPath( ':/assembly2/icons' )
         FreeCADGui.addPreferencePage( ':/assembly2/ui/assembly2_prefs.ui','Assembly2' )
         self.appendMenu('Assembly 2', commandslist)
 
     def Activated(self):
-        from assembly2lib import FreeCAD, updateOldStyleConstraintProperties
-        import os, undo
+        from assembly2.constraints import updateOldStyleConstraintProperties
+        import os
         doc = FreeCAD.activeDocument()
         if hasattr(doc, 'Objects'):
             updateOldStyleConstraintProperties(doc)
-        __dir2__ = os.path.dirname(undo.__file__)
-        GuiPath = os.path.expanduser ("~") # os.path.join( __dir2__, 'Gui' )
+        GuiPath = os.path.expanduser ("~")
         constraintFile = os.path.join( GuiPath , 'constraintFile.txt')
         if os.path.exists(constraintFile):
             os.remove(constraintFile)
@@ -53,17 +54,18 @@ class Assembly2Workbench (Workbench):
             if hasattr(obj,'Content'):
                 if 'ConstraintInfo' in obj.Content or 'ConstraintNfo' in obj.Content:
                     redefineCmd = {
-                        'plane':'redefinePlaneConstraint',
-                        'angle_between_planes':'redefineAngleConstraint',
-                        'axial': 'redefineAxialConstraint',
-                        'circularEdge' : 'redefineCircularEdgeConstraint',
-                        'sphericalSurface' : 'redefineSphericalSurfaceConstraint'
+                        'plane':'assembly2_redefinePlaneConstraint',
+                        'angle_between_planes':'assembly2_redefineAngleConstraint',
+                        'axial': 'assembly2_redefineAxialConstraint',
+                        'circularEdge' : 'assembly2_redefineCircularEdgeConstraint',
+                        'sphericalSurface' : 'assembly2_redefineSphericalSurfaceConstraint'
                         }[ obj.Type ]
                     self.appendContextMenu( "Assembly2", [
-                            'assemly2_animate_constraint',
+                            'assembly2_animate_constraint',
                             redefineCmd,
-                            'selectConstraintObjects',
-                            'selectConstraintElements'])
+                            'assembly2_selectConstraintObjects',
+                            'assembly2_selectConstraintElements'
+                    ])
             if 'sourceFile' in  obj.Content:
                 self.appendContextMenu( 
                     "Assembly2", 
@@ -77,4 +79,4 @@ class Assembly2Workbench (Workbench):
 
     Icon = ':/assembly2/icons/workBenchIcon.svg'
 
-Gui.addWorkbench(Assembly2Workbench())
+Gui.addWorkbench( Assembly2Workbench() )
