@@ -62,7 +62,7 @@ Testing
 -------
 ```bash
 $ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
-$ python2 test.py
+$ python test.py
 ```
 
 Wiki
