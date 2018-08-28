@@ -2,11 +2,7 @@ FreeCAD_assembly2
 =================
 
 Assembly workbench for FreeCAD v0.15, 0.16 and 0.17 with support for importing parts from external files.
-Although the original programmer of the workbench (hamish) is no longer active
-this workbench is still maintained as good as possible.
-Feel free to post issues and pull requests.
-Assembly2 requires numpy to be installed (bundled with FreeCAD since 0.15.4671).
-Thanks to Maurice (easyw-fc) assembly2 will work with files from FreeCAD 0.17.
+This workbench in not maintained.
 
 
 Linux Installation Instructions
@@ -64,6 +60,11 @@ Testing
 $ cd ~/.FreeCAD/Mod/FreeCAD_assembly2
 $ python test.py
 ```
+
+Acknowledgements
+----------------
+
+My thanks to BRLRFE, easyw-fc (Maurice), kbwbe and the various others who contributed to this workbench.
 
 Wiki
 ----

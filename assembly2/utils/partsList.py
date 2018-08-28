@@ -6,9 +6,9 @@ from PySide import QtCore
 
 if FreeCAD.GuiUp:
     try:
-        from dimensioning import getDrawingPageGUIVars, PlacementClick
-        import previewDimension, table_dd #Added 12 April 2016
-        from svgLib_dd import SvgTextRenderer
+        from drawingDimensioning import table as table_dd
+        from drawingDimensioning.table import getDrawingPageGUIVars, PlacementClick, previewDimension
+        from drawingDimensioning.svgLib import SvgTextRenderer
         #dimensioningTracker = DimensioningProcessTracker()
         d = table_dd.d
         drawing_dimensioning_installed = True
