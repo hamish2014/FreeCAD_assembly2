@@ -452,6 +452,7 @@ class DeletePartsConstraints:
             response = QtGui.QMessageBox.critical(QtGui.QApplication.activeWindow(), "Delete constraints?", msg, flags )
             if response == QtGui.QMessageBox.Yes:
                 for c in deleteList:
+                    from assembly2.constraints import removeConstraint
                     removeConstraint(c)
     def GetResources(self):
         return {

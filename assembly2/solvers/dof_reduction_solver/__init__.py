@@ -119,6 +119,7 @@ Delete constraint "%s"?
 """ % (constraintObj.Name, constraintObj.Name)
         response = QtGui.QMessageBox.critical(QtGui.QApplication.activeWindow(), "Solver Failure!", message, flags)
         if response == QtGui.QMessageBox.Yes:
+            from assembly2.constraints import removeConstraint
             removeConstraint( constraintObj )
         #elif response == QtGui.QMessageBox.Ignore:
         #    variableManager.updateFreeCADValues( constraintSystem.variableManager.X )
