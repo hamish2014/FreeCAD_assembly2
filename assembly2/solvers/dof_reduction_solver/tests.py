@@ -37,8 +37,12 @@ class Test_Dof_Reduction_Solver(unittest.TestCase):
         debugPrint(0,'    total running time:     %3.2f s' % (time.time() - stats.t_start) )
         debugPrint(0,'------------------------------------------')
 
-    def check_solution( self, constraintSystem, solution ):
-        a = constraintSystem.variableManager.X
+
+    def get_solver_X( self, solver_result ):
+        return solver_result.variableManager.X
+        
+    def check_solution( self, solver_result, solution ):
+        a = self.get_solver_X( solver_result )
         b = solution if type( solution ) != str else [ float(v) for v in solution[1:-1].split() ]
         self.assertTrue(
             len(a) == len(b) and  numpy.allclose( a, b ),
@@ -55,7 +59,7 @@ class Test_Dof_Reduction_Solver(unittest.TestCase):
         #    continue
         doc =  FreeCAD.open(testFile)
         t_start_solver = time.time()
-        constraintSystem = solveConstraints( doc, solver_name = 'dof_reduction_solver', use_cache = self.use_cache )
+        constraintSystem = solveConstraints( doc, solver_name = 'dof_reduction_solver', use_cache = self.use_cache, showFailureErrorDialog=False )
         if solution:
             self.check_solution( constraintSystem, solution )
         stats.t_solver += time.time() - t_start_solver
@@ -73,6 +77,7 @@ class Test_Dof_Reduction_Solver(unittest.TestCase):
             stats.t_cache += time.time() - t_start_cache
             constraintSystem.update()
         stats.n_solved += 1
+        FreeCAD.closeDocument( doc.Name )
         debugPrint(1,'\n\n\n')
         
     def testAssembly_01_2_cubes( self ):

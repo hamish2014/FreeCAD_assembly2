@@ -3,6 +3,7 @@ degree-of-freedom reduction solver
 '''
 from assembly2.lib3D import *
 from assembly2.solvers.common import *
+from assembly2.core import QtGui
 import time, numpy
 from numpy import pi, inf
 from numpy.linalg import norm
