@@ -18,7 +18,8 @@ def muxObjects(doc, mode=0):
     for obj in objects:
         if 'importPart' in obj.Content:
             debugPrint(3, '  - parsing "%s"' % (obj.Name))
-            faces = faces + obj.Shape.Faces
+            if hasattr(obj, 'Shape'):
+                faces = faces + obj.Shape.Faces
     return Part.makeShell(faces)
 
 def muxMapColors(doc, muxedObj, mode=0):
@@ -32,7 +33,7 @@ def muxMapColors(doc, muxedObj, mode=0):
         objects = doc.Objects
 
     for obj in objects:
-        if 'importPart' in obj.Content:
+        if 'importPart' in obj.Content and hasattr(obj, 'Shape'):
             for i, face in enumerate(obj.Shape.Faces):
                 if i < len(obj.ViewObject.DiffuseColor):
                     clr = obj.ViewObject.DiffuseColor[i]
