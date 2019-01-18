@@ -101,13 +101,13 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
     if len([c for c in doc.Objects if  'ConstraintInfo' in c.Content and oldObject.Name in [c.Object1, c.Object2] ]) == 0:
         debugPrint(3,'Aborint Import Updating Constraint SubElements Names since no matching constraints')
         return
-    debugPrint(2,'Import: Updating Constraint SubElements Names')
+    partName = oldObject.Name
+    debugPrint(2,'Import: Updating Constraint SubElements Names: "%s"' % partName)
     newObjSubElements = classifySubElements( newObject )
     debugPrint(3,'newObjSubElements: %s' % newObjSubElements)
     # generating transforms
     T_old = ReversePlacementTransformWithBoundsNormalization( oldObject )
     T_new = ReversePlacementTransformWithBoundsNormalization( newObject )
-    partName = oldObject.Name
     for c in doc.Objects:
         if 'ConstraintInfo' in c.Content:
             if partName == c.Object1:
@@ -123,6 +123,7 @@ def importUpdateConstraintSubobjects( doc, oldObject, newObject ):
                     catergory = classifySubElement( oldObject, subElementName )
                     D = [ SubElementDifference( oldObject, subElementName, T_old, newObject, SE2, T_new)
                           for SE2 in newObjSubElements[catergory] ]
+                    assert len(D) > 0, "%s no longer has any %ss." % ( partName, catergory)
                     #for d in D:
                     #    debugPrint(2,'      %s' % d)
                     d_min = min(D)
