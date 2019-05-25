@@ -1,4 +1,4 @@
-from constraintSystems import *
+from .constraintSystems import *
 import copy
 
 class SolverCache:
@@ -92,7 +92,7 @@ def rootParameters( sys ):
     if isinstance(sys, FixedObjectSystem):
         return ['%s.FixedObjectSystem' % sys.variableManager.doc.Name, sys.objName] + [ d.getValue() for d in sys.degreesOfFreedom ]
     else:
-        raise NotImplementedError, 'RootParameters for %s not support' % sys
+        raise NotImplementedError('RootParameters for %s not support' % sys)
 
 
 class CacheInput:
@@ -109,7 +109,7 @@ class CacheInput:
         elif  constraint.Type == 'sphericalSurface':
             self.constraintArgs = ()
         else:
-            raise NotImplementedError, "CacheInput for constraint type %s not supported yet"  %  constraint.Type 
+            raise NotImplementedError("CacheInput for constraint type %s not supported yet"  %  constraint.Type)
         self.shapeElement1 = ShapeElementInfo(vM, constraint.Object1, constraint.SubElement1)
         self.shapeElement2 = ShapeElementInfo(vM, constraint.Object2, constraint.SubElement2)
     def __eq__(self, b):
@@ -233,7 +233,7 @@ def update_variableManagers( obj, new_vM, history ): #vanurable to circular refe
                 try:
                     d.migrate_to_new_variableManager( new_vM )
                 except AttributeError as msg:
-                    raise NotImplementedError,"%s.migrate_to_new_variableManager" % d
+                    raise NotImplementedError("%s.migrate_to_new_variableManager" % d)
                 history.add( id(d) )
 
 

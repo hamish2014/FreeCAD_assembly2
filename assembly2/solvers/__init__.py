@@ -4,10 +4,10 @@ The solvers for assembly2 constraint systems are accessed here.
 
 from assembly2.core import *
 from assembly2.constraints import updateOldStyleConstraintProperties
-import common 
-from common import constraintsObjectsAllExist
-from dof_reduction_solver import solveConstraints as solveConstraints_dof_reduction_solver
-from newton_solver import solveConstraints as solveConstraints_newton_solver
+from assembly2.constraints import common 
+from .common import constraintsObjectsAllExist
+from assembly2.solvers.dof_reduction_solver import solveConstraints as solveConstraints_dof_reduction_solver
+from assembly2.solvers.newton_solver import solveConstraints as solveConstraints_newton_solver
 
 _default =  "_assembly2_preference_"
     

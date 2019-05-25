@@ -1,4 +1,4 @@
-from common import *
+from .common import *
 
 class PlaneSelectionGate:
      def allow(self, doc, obj, sub):
@@ -9,7 +9,7 @@ def parseSelection(selection, objectToUpdate=None):
      validSelection = False
      if len(selection) == 2:
           s1, s2 = selection
-          if s1.ObjectName <> s2.ObjectName:
+          if s1.ObjectName != s2.ObjectName:
                if ( planeSelected(s1) or LinearEdgeSelected(s1) or AxisOfPlaneSelected(s1)) \
                         and ( planeSelected(s2) or LinearEdgeSelected(s2) or AxisOfPlaneSelected(s2)):
                     validSelection = True

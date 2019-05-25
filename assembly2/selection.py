@@ -1,5 +1,5 @@
-from core import *
-from lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
+from .core import *
+from .lib3D import fit_plane_to_surface1, fit_rotation_axis_to_surface1
 
 
 class ConstraintSelectionObserver:

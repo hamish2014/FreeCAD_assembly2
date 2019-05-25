@@ -1,4 +1,4 @@
-from common import *
+from .common import *
 
 class CircularEdgeSelectionGate:
      def allow(self, doc, obj, sub):

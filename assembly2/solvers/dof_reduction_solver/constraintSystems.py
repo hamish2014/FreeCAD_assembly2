@@ -27,8 +27,8 @@ from assembly2.selection import *
 import numpy
 from numpy import pi, inf
 from numpy.linalg import norm
-from solverLib import *
-from degreesOfFreedom import *
+from .solverLib import *
+from .degreesOfFreedom import *
 
 class Assembly2SolverError(Exception):
     def __init__(self, value):
@@ -564,7 +564,7 @@ class PlaneOffsetUnion(ConstraintSystemPrototype):
                     error = -error
                 #print('error * a : %s' % (error*a))
                 A = numpy.array( [[ dot(a,m.directionVector) for m in matches]] )
-                V = numpy.linalg.lstsq(A,[error])[0]
+                V = numpy.linalg.lstsq(A,[error],rcond=None)[0]
                 for m,v in zip(matches, V):
                     m.setValue( m.getValue() + v )
                 self.parentSystem.update() 

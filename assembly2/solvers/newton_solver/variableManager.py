@@ -41,7 +41,7 @@ class VariableManager:
         self.placementVariables[objectName].fixed = True
     def fixEveryObjectExcept(self, objectName):
         for key,pV in self.placementVariables.iteritems():
-            if key <> objectName:
+            if key != objectName:
                 pV.fixed = True
     def objFixed( self, objectName ):
         return self.placementVariables[objectName].fixed 
