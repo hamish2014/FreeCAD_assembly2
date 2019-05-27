@@ -12,14 +12,14 @@ from assembly2.utils.muxAssembly import (
     Proxy_muxAssemblyObj,
     muxMapColors
 )
-from viewProviderProxy import ImportedPartViewProviderProxy, group_constraints_under_parts
+from .viewProviderProxy import ImportedPartViewProviderProxy, group_constraints_under_parts
 import Part
 from PySide import QtGui
 import os, numpy, shutil, copy, time
 
-from fcstd_parser import Fcstd_File_Parser
-from importPath import *
-from selectionMigration import *
+from assembly2.importPart.fcstd_parser import Fcstd_File_Parser
+from .importPath import *
+from .selectionMigration import *
 
 def importPart( filename, partName=None, doc_assembly=None ):
     if doc_assembly == None:

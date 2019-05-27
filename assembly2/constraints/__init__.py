@@ -9,14 +9,14 @@ see http://www.freecadweb.org/wiki/index.php?title=Scripted_objects#Available_pr
 '''
 
 import FreeCAD
-import angleConstraint
-import axialConstraint
-import circularEdgeConstraint
-import planeConstraint
-import sphericalSurfaceConstraint
-from viewProviderProxy import ConstraintViewProviderProxy
+from assembly2.constraints import angleConstraint
+from assembly2.constraints import axialConstraint
+from assembly2.constraints import circularEdgeConstraint
+from assembly2.constraints import planeConstraint
+from assembly2.constraints import sphericalSurfaceConstraint
+from assembly2.constraints.viewProviderProxy import ConstraintViewProviderProxy
 from assembly2.core import debugPrint
-from common import updateObjectProperties
+from assembly2.constraints.common import updateObjectProperties
 
 def updateOldStyleConstraintProperties( doc ):
     'used to update old constraint attributes, [object, faceInd] -> [object, subElement]...'

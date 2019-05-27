@@ -7,12 +7,12 @@ from assembly2.core import QtGui
 import time, numpy
 from numpy import pi, inf
 from numpy.linalg import norm
-from solverLib import *
-from variableManager import VariableManager
-from constraintSystems import *
+from .solverLib import *
+from .variableManager import VariableManager
+from .constraintSystems import *
 
 import traceback
-import cache as cacheLib
+from . import cache as cacheLib
 
 cache = cacheLib.defaultCache
 

@@ -1,8 +1,8 @@
 from assembly2.core import *
 from assembly2.lib3D import *
 from assembly2.selection import *
-from objectProxy import ConstraintObjectProxy
-from viewProviderProxy import ConstraintViewProviderProxy, repair_tree_view
+from .objectProxy import ConstraintObjectProxy
+from .viewProviderProxy import ConstraintViewProviderProxy, repair_tree_view
 from pivy import coin
 from PySide import QtGui
 

@@ -1,7 +1,7 @@
 import numpy
 from numpy.linalg import norm
 from numpy.random import rand
-from lineSearches import *
+from .lineSearches import *
 
 def toStdOut(txt):
     print(txt)

@@ -1,4 +1,4 @@
-from common import *
+from .common import *
 
 class PlaneSelectionGate:
      def allow(self, doc, obj, sub):

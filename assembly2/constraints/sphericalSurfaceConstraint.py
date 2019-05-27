@@ -1,4 +1,4 @@
-from common import *
+from .common import *
 
 class SphericalSurfaceSelectionGate:
     def allow(self, doc, obj, sub):

@@ -7,8 +7,8 @@ import traceback, time
 import FreeCAD
 from assembly2.solvers.common import *
 from assembly2.core import QtGui
-from variableManager import VariableManager
-from constraints import AxialConstraint, PlaneConstraint, CircularEdgeConstraint, AngleConstraint, SphericalSurfaceConstraint
+from .variableManager import VariableManager
+from assembly2.constraints import *
 import numpy
 
 
@@ -132,7 +132,7 @@ def solveConstraints(
 
     algName, warningMsg, optResults = solver(constraintEqs, x0, variableManager.bounds() )
     debugPrint(3, str(optResults))
-    if warningMsg <>  '' or optResults['fOpt'] > 10**-4 and random_restart_attempts > 0:
+    if warningMsg !=  '' or optResults['fOpt'] > 10**-4 and random_restart_attempts > 0:
         for i in range(random_restart_attempts):
             variableManager.setValues(x0)
             xN = variableManager.peturbValues( vObjects )
